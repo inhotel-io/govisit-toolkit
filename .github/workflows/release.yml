@@ -5,7 +5,7 @@ on:
       tag:
         description: Versioned release tag matching config/release.json
         required: true
-        default: v0.1.0
+        default: v0.2.0
         type: string
 permissions:
   contents: read

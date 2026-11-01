@@ -14,10 +14,10 @@ explains each tool's inputs and interpretation limits.
 | --- | --- | --- |
 | All | `govisit` | All 22 public read skills, including documentation and catalog statistics |
 | Travel Planner | `govisit-travel-planner` | 18 destination, place, category, collection, and activity readers/searches |
-| Destination | Planned | Update destination plus its required readers; available after authorized authoring ships |
-| Local Business | Planned | Update place plus its required readers; available after authenticated recommendations and authorized updates ship |
+| Destination | `govisit-destination` | 13 skills to find and inspect destination profiles and their published inventory; Update destination is planned |
+| Local Business | `govisit-local-business` | 10 skills to find and inspect place profiles and their local context; Update place is planned |
 
-Choose All or the audience package you need. The current release reads public
+Audience packages overlap: the same canonical reader can be useful to a travel planner, a destination manager, and a local business. Choose All or any audience package you need. The current release reads public
 information without a GoVisit API key; it does not include editing workflows.
 An AI host may still request network/tool permission. Service limits and the
 Data Use License apply, and model usage follows your assistant's plan.
@@ -55,15 +55,29 @@ claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 Codex:
 
 ```sh
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.1.0
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.0
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
-Use `govisit@govisit-toolkit` for All instead. Native packages live under
+Use `govisit@govisit-toolkit` for All, `govisit-destination@govisit-toolkit` for Destination, or `govisit-local-business@govisit-toolkit` for Local Business. Native packages live under
 `plugins/`; their included skill files are generated from the canonical `skills/`
 selection, and all resources remain inside the plugin root. A native Claude skill
 is namespaced, for example `/govisit-travel-planner:govisit-search-places`; portable
 skill invocation uses the host's own skill selector.
+
+## For destination and local business managers
+
+Start by finding your own published entry. A destination manager can use
+`govisit-search-destinations`, then `govisit-get-destination-overview` and
+`govisit-get-destination-section`. A local business manager can use
+`govisit-search-places`, then `govisit-get-place-overview`,
+`govisit-get-place-section`, and `govisit-get-place-visit-facts`.
+
+These skills are already included in the corresponding audience package and can
+also be installed individually. The same readers are reused across audiences.
+The planned `govisit-update-destination` and `govisit-update-place` skills will
+join those packages when their secure authoring workflows are implemented. Reading
+a public profile does not establish ownership or grant permission to update it.
 
 ## First task
 

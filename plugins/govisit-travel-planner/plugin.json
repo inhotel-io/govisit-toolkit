@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "govisit-travel-planner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
   "author": {
     "name": "inHotel Sàrl"

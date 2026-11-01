@@ -17,16 +17,16 @@ test("native packages are complete, selected once, and archives match approved d
   const dir = await fixture();
   try {
     const result = cli(dir); assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual((await readdir(path.join(dir, "plugins"))).sort(), ["govisit", "govisit-travel-planner"]);
+    assert.deepEqual((await readdir(path.join(dir, "plugins"))).sort(), ["govisit", "govisit-destination", "govisit-local-business", "govisit-travel-planner"]);
     assert.equal((await readdir(path.join(dir, "plugins/govisit/skills"))).length, 22);
     assert.equal((await readdir(path.join(dir, "plugins/govisit-travel-planner/skills"))).length, 18);
     const portable = JSON.parse(await readFile(path.join(dir, "plugins/govisit/plugin.json")));
     const claude = JSON.parse(await readFile(path.join(dir, "plugins/govisit/.claude-plugin/plugin.json")));
-    assert.equal(portable.name, claude.name); assert.equal(portable.version, "0.1.0");
+    assert.equal(portable.name, claude.name); assert.equal(portable.version, JSON.parse(await readFile(path.join(dir, "config/release.json"))).tag.slice(1));
     assert.equal(portable.version, claude.version);
     const native = JSON.parse(await readFile(path.join(dir, ".agents/plugins/marketplace.json")));
     assert.equal(native.plugins[0].source.source, "git-subdir");
-    assert.equal(native.plugins[0].source.ref, "v0.1.0");
+    assert.equal(native.plugins[0].source.ref, JSON.parse(await readFile(path.join(dir, "config/release.json"))).tag);
     assert.equal(native.plugins[0].source.path, "./plugins/govisit");
     const index = JSON.parse(await readFile(path.join(dir, "dist/index.json")));
     for (const entry of index.skills) {

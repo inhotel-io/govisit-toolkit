@@ -19,8 +19,10 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm run verify:release -- --local
-      - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate ./plugins/govisit
-      - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate ./plugins/govisit-travel-planner
+      - run: |
+          for plugin in plugins/*; do
+            npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate "$plugin"
+          done
       - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate .
       - run: npx --yes skills@1.7.4 add . --list
       - uses: actions/upload-artifact@v4
