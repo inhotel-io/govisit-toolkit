@@ -5,10 +5,10 @@ license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "get_place_overview"
-  version: "1-a641884911210a40"
+  version: "1-98a44e0080865524"
   contract-version: "1"
   canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.1.0/skills/govisit-get-place-overview/SKILL.md"
-  source-digest: "sha256:a641884911210a40a655d2c0e56c6e4a29efb2addde6c1890014e18ea1fcb1c4"
+  source-digest: "sha256:98a44e0080865524dcfe6786971bb8f5b186a7bd2caae94a86528c2953cd4f54"
 ---
 
 # Get place overview
@@ -67,8 +67,8 @@ Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/dow
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-a641884911210a40`; its source digest is
-`sha256:a641884911210a40a655d2c0e56c6e4a29efb2addde6c1890014e18ea1fcb1c4`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-98a44e0080865524`; its source digest is
+`sha256:98a44e0080865524dcfe6786971bb8f5b186a7bd2caae94a86528c2953cd4f54`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

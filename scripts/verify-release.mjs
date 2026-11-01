@@ -43,7 +43,15 @@ export async function verifyRelease({ manifest, index, fetchAsset = download }) 
     const bytes = Buffer.from(await fetchAsset(asset.url, asset.size));
     if (bytes.length !== asset.size || digest(bytes) !== asset.digest) throw new Error(`Asset digest/size mismatch: ${asset.filename}`);
   }
-  return manifest.assets.length;
+  // Metadata is checked against reviewed local bytes without a self-hash.
+  const manifestBytes = Buffer.from(json(manifest));
+  const sums = Buffer.from([...manifest.assets.map(a => [a.filename, a.digest]), ["release-manifest.json", digest(manifestBytes)]]
+    .sort(([a], [b]) => a.localeCompare(b)).map(([file, hash]) => `${hash.slice(7)}  ${file}\n`).join(""));
+  for (const [filename, expected] of [["release-manifest.json", manifestBytes], ["SHA256SUMS", sums]]) {
+    const actual = Buffer.from(await fetchAsset(base + filename, expected.length));
+    if (!actual.equals(expected)) throw new Error(`Release metadata mismatch: ${filename}`);
+  }
+  return manifest.assets.length + 2;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

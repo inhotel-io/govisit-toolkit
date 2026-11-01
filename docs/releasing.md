@@ -31,7 +31,7 @@ Enable immutable releases in the toolkit repository settings **before publicatio
 See [GitHub immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
 The manual `Prepare draft release` workflow uploads all verified assets to a new
 draft and deliberately stops before public publication. Existing releases cause
-creation to fail; there is no clobber/update path.
+creation to fail; an existing tag must resolve to the exact build commit. There is no clobber/update path.
 
 After reviewing the draft and immutable-release setting, publish it using GitHub
 or `gh release edit v0.1.0 --draft=false --repo inhotel-io/govisit-toolkit`.
@@ -43,9 +43,13 @@ npm run verify:release
 ```
 
 The first command verifies immutability/attestation. The second downloads every
-asset referenced by the approved local release manifest and compares its size
-and SHA-256 digest. It must run from the reviewed candidate checkout after build.
+payload asset referenced by the approved local release manifest and compares its size
+and SHA-256 digest, then compares both metadata files against the reviewed bytes. It must run from the reviewed candidate checkout after build.
 For additional verification, use `gh release verify-asset` on the local archives.
+
+From the reviewed website checkout, run `npm run promote:toolkit -- --toolkit /absolute/path/to/govisit-toolkit`. This repeats public verification before writing the frozen
+`config/agent-skill-release-index.json` projection. Ordinary website builds read
+this file and cannot recalculate release checksums from changing runtime sources.
 
 Only after these checks pass should the matching GoVisit discovery projection
 and all public installation/reference pages be deployed. Verify public index
