@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "source": {
     "repository": "inhotel-io/govisit-web",
-    "revision": "a96cc179de02913ecc545b3120781181ee4d39b7"
+    "revision": "913a546cf5a623357d493f8468ddd82bff3ed41b"
   },
   "sourceDigest": "sha256:98a44e0080865524dcfe6786971bb8f5b186a7bd2caae94a86528c2953cd4f54",
   "packages": [
