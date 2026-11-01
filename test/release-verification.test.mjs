@@ -19,7 +19,7 @@ test("release verification fails closed on moving URLs, incomplete inventory and
   const output = await buildToolkit({ root });
   const original = JSON.parse(output.assets["release-manifest.json"]);
   const fetchAsset = async url => output.assets[new URL(url).pathname.split("/").pop()];
-  const moving = structuredClone(original); moving.assets[0].url = moving.assets[0].url.replace("/v0.1.0/", "/latest/");
+  const moving = structuredClone(original); moving.assets[0].url = moving.assets[0].url.replace(`/${original.release.tag}/`, "/latest/");
   await assert.rejects(verifyRelease({ manifest: moving, index: output.index, fetchAsset }), /pinned|URL/i);
   const missing = structuredClone(original); missing.assets = missing.assets.filter(a => a.filename !== "govisit-skill-search-places.tar.gz");
   await assert.rejects(verifyRelease({ manifest: missing, index: output.index, fetchAsset }), /inventory|missing/i);

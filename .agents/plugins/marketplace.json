@@ -10,7 +10,7 @@
         "source": "git-subdir",
         "url": "https://github.com/inhotel-io/govisit-toolkit.git",
         "path": "./plugins/govisit",
-        "ref": "v0.1.0"
+        "ref": "v0.2.0"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -24,7 +24,35 @@
         "source": "git-subdir",
         "url": "https://github.com/inhotel-io/govisit-toolkit.git",
         "path": "./plugins/govisit-travel-planner",
-        "ref": "v0.1.0"
+        "ref": "v0.2.0"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Travel"
+    },
+    {
+      "name": "govisit-destination",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
+        "path": "./plugins/govisit-destination",
+        "ref": "v0.2.0"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Travel"
+    },
+    {
+      "name": "govisit-local-business",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
+        "path": "./plugins/govisit-local-business",
+        "ref": "v0.2.0"
       },
       "policy": {
         "installation": "AVAILABLE",

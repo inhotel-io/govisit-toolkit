@@ -9,8 +9,9 @@ node scripts/export-toolkit.mjs --target /absolute/path/to/govisit-toolkit
 
 Inspect `upstream.json`, the canonical skill diff, and the public file inventory.
 Generated plugin packages are derived from `skills/` and `config/packs.json`.
-They are never edited independently. Destination/Local Business packages remain
-unavailable until their required authoring skills exist.
+They are never edited independently. Audience packages share canonical readers. Destination and Local Business
+packages are useful before authoring ships; add the appropriate update skill to
+the existing selection when its secure workflow is implemented.
 
 ## Prepare and review
 
@@ -34,11 +35,11 @@ draft and deliberately stops before public publication. Existing releases cause
 creation to fail; an existing tag must resolve to the exact build commit. There is no clobber/update path.
 
 After reviewing the draft and immutable-release setting, publish it using GitHub
-or `gh release edit v0.1.0 --draft=false --repo inhotel-io/govisit-toolkit`.
+or `gh release edit v0.2.0 --draft=false --repo inhotel-io/govisit-toolkit`.
 Then run:
 
 ```sh
-gh release verify v0.1.0 --repo inhotel-io/govisit-toolkit
+gh release verify v0.2.0 --repo inhotel-io/govisit-toolkit
 npm run verify:release
 ```
 

@@ -14,6 +14,16 @@
       "name": "govisit-travel-planner",
       "source": "./plugins/govisit-travel-planner",
       "description": "Discover destinations and research places, categories, collections, and activities using GoVisit."
+    },
+    {
+      "name": "govisit-destination",
+      "source": "./plugins/govisit-destination",
+      "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned."
+    },
+    {
+      "name": "govisit-local-business",
+      "source": "./plugins/govisit-local-business",
+      "description": "Find and inspect business profiles and their local destination context. Place updates are planned."
     }
   ]
 }

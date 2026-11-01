@@ -1,0 +1,11 @@
+{
+  "name": "govisit-local-business",
+  "version": "0.2.0",
+  "description": "Find and inspect business profiles and their local destination context. Place updates are planned.",
+  "author": {
+    "name": "inHotel Sàrl"
+  },
+  "homepage": "https://govisit.ai/en/docs/developers/agent-skills/overview",
+  "repository": "https://github.com/inhotel-io/govisit-toolkit",
+  "license": "MIT"
+}

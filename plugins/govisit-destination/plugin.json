@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "govisit-destination",
+  "version": "0.2.0",
+  "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
+  "author": {
+    "name": "inHotel Sàrl"
+  },
+  "homepage": "https://govisit.ai/en/docs/developers/agent-skills/overview",
+  "repository": "https://github.com/inhotel-io/govisit-toolkit",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "GoVisit — Destination",
+        "shortDescription": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
+        "developerName": "inHotel Sàrl",
+        "category": "Travel",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://govisit.ai"
+      }
+    }
+  }
+}
