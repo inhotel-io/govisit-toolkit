@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "govisit-travel-planner",
+  "version": "0.1.0",
+  "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
+  "author": {
+    "name": "inHotel Sàrl"
+  },
+  "homepage": "https://govisit.ai/en/docs/developers/agent-skills/overview",
+  "repository": "https://github.com/inhotel-io/govisit-toolkit",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "GoVisit — Travel Planner",
+        "shortDescription": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
+        "developerName": "inHotel Sàrl",
+        "category": "Travel",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://govisit.ai"
+      }
+    }
+  }
+}

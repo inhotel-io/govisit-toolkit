@@ -1,0 +1,159 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "govisit-get-category-overview",
+      "description": "Read the published overview for the selected destination category page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-category-overview.tar.gz",
+      "digest": "sha256:885d18a9d07eda98587dff205a97d61b7f4194163246bbb40c2c1256e9632855"
+    },
+    {
+      "name": "govisit-get-category-section",
+      "description": "Read one published section for the selected destination category page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-category-section.tar.gz",
+      "digest": "sha256:114b712d07f72246e52ec9fc711d34d4affc3c78ed7b7d685d536c984d48ad41"
+    },
+    {
+      "name": "govisit-get-collection-overview",
+      "description": "Read the published overview for the selected destination collection page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-collection-overview.tar.gz",
+      "digest": "sha256:1a9df6ef8c62f7254fdb12913d702356643fa4ed78fb214df7bf6a2959d15fdf"
+    },
+    {
+      "name": "govisit-get-collection-section",
+      "description": "Read one published section for the selected destination collection page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-collection-section.tar.gz",
+      "digest": "sha256:8a133fb0e4ad23d9466e641d54403e2b01a93f857f2e5a37458713b35254e846"
+    },
+    {
+      "name": "govisit-get-destination-overview",
+      "description": "Read the published overview fields for the selected destination. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-destination-overview.tar.gz",
+      "digest": "sha256:c1589c12a3faae2f458e424b63a993ebe1df5c22eef13fcedeb3e68f84baf4ac"
+    },
+    {
+      "name": "govisit-get-destination-section",
+      "description": "Read one published section of the selected destination. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-destination-section.tar.gz",
+      "digest": "sha256:52d3b575dc21d5111fb1d5d2c2fa6c3e884db84f76dc724ae1d920ac2d53cb99"
+    },
+    {
+      "name": "govisit-get-documentation-page",
+      "description": "Read bounded structured content from the selected published article. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-documentation-page.tar.gz",
+      "digest": "sha256:4fbae8876634229bf434eae423ba478e515de38dcaa312bd333ae248d99f5aee"
+    },
+    {
+      "name": "govisit-get-page-faq",
+      "description": "Read the published questions and answers on the selected blog or documentation article. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-page-faq.tar.gz",
+      "digest": "sha256:68e43b60c196e75e00e754c941fa0d4cbd8ed495c733af454ec7419517a46629"
+    },
+    {
+      "name": "govisit-get-place-overview",
+      "description": "Read the published overview fields for the selected place. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-place-overview.tar.gz",
+      "digest": "sha256:b413d098ff6675f3f84cfd0bc0e7156ec1dc3f991e506d23d55d2a40fe76236b"
+    },
+    {
+      "name": "govisit-get-place-section",
+      "description": "Read one published section of the selected place, including spatial details when requested. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-place-section.tar.gz",
+      "digest": "sha256:fd8be37562382cd2a788420509b6039e4f1e681b8fe1c5bf6a0a35b5a285a4a6"
+    },
+    {
+      "name": "govisit-get-place-visit-facts",
+      "description": "Read compact, normalized visit facts for the selected place. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-place-visit-facts.tar.gz",
+      "digest": "sha256:a8420d4e1fc3393bac320338a959224e32559270a1e1b83728ff15d1818fef51"
+    },
+    {
+      "name": "govisit-get-statistics",
+      "description": "Use when an agent needs exact GoVisit catalog coverage counts for the physical World or a selected Destination, with observation dates and provenance.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-get-statistics.tar.gz",
+      "digest": "sha256:18b848b4d49b84cee1fb4cfa8361e54376c81e8f08a1b583be10c7cfea0f6ea7"
+    },
+    {
+      "name": "govisit-list-category-places",
+      "description": "Filter the published place cards shown on the selected destination category page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-category-places.tar.gz",
+      "digest": "sha256:e239403fd75d3740316df6038597daf1226e2b45cbd25ef885b6118cebffe755"
+    },
+    {
+      "name": "govisit-list-collection-places",
+      "description": "Filter the published place cards shown on the selected destination collection page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-collection-places.tar.gz",
+      "digest": "sha256:c69f54695af4a8b7a3a9693769c09e3a2afe2f4badbc780b0c107ad42c20a1ba"
+    },
+    {
+      "name": "govisit-list-destination-activities",
+      "description": "Read the bounded published activities shown on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-destination-activities.tar.gz",
+      "digest": "sha256:a960308065f0c71f4bd5286444dd03f12b623166776d4892404928aaa550b0fa"
+    },
+    {
+      "name": "govisit-list-destination-categories",
+      "description": "Read the published category projection shown on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-destination-categories.tar.gz",
+      "digest": "sha256:13804bc33d574228583abaf6d1dc1670aae7c9608730e43827cef3dc58a11f92"
+    },
+    {
+      "name": "govisit-list-destination-highlights",
+      "description": "Read the bounded published highlights shown on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-destination-highlights.tar.gz",
+      "digest": "sha256:b8b23930021fbcd66f269503effd300227b46f16b5e12d8bc6e9a325800c704b"
+    },
+    {
+      "name": "govisit-list-destination-places",
+      "description": "Filter the published place cards already present on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-destination-places.tar.gz",
+      "digest": "sha256:f43a0c6e0840f303db39a33edd9f3f2512e2eeb334574383cb1b581a4b0cf819"
+    },
+    {
+      "name": "govisit-list-related-places",
+      "description": "Find bounded, page-local related place cards using optional published-field filters. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-list-related-places.tar.gz",
+      "digest": "sha256:d116b21ed19b86de43d10704faab73e9d65b66d04abe5dec40da22ec2d4c17c2"
+    },
+    {
+      "name": "govisit-search-destinations",
+      "description": "Search GoVisit destinations by name or traveler intent and return canonical destination codes and URLs. Use when a traveler needs to identify or explore a country, region, district, city, or highlight.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-search-destinations.tar.gz",
+      "digest": "sha256:5f4f9e0835957434a3750fccc8d848d9f577a5f2f9972e9249c5b60336e277fe"
+    },
+    {
+      "name": "govisit-search-documentation",
+      "description": "Search the published documentation links rendered on the selected documentation index page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-search-documentation.tar.gz",
+      "digest": "sha256:ee0674faa01f42bd4e1c6c72112c7ba5af6be0f98837d63933745401c697284c"
+    },
+    {
+      "name": "govisit-search-places",
+      "description": "Search GoVisit places by name or traveler intent, optionally constrained by country, destination, or proximity. Use when a traveler needs candidate places and canonical profile URLs.",
+      "type": "archive",
+      "url": "https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.1.0/govisit-skill-search-places.tar.gz",
+      "digest": "sha256:960e1a281e73da09b8cb3ed28c761b03d2c7186032167c5887f2058672eaa74c"
+    }
+  ]
+}

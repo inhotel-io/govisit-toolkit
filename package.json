@@ -1,0 +1,20 @@
+{
+  "name": "govisit-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "test": "node --test",
+    "verify:release": "node scripts/verify-release.mjs"
+  },
+  "devDependencies": {
+    "fflate": "0.8.3",
+    "yaml": "2.9.0"
+  }
+}

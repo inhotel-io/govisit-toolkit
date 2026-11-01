@@ -1,0 +1,11 @@
+{
+  "name": "govisit-travel-planner",
+  "version": "0.1.0",
+  "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
+  "author": {
+    "name": "inHotel Sàrl"
+  },
+  "homepage": "https://govisit.ai/en/docs/developers/agent-skills/overview",
+  "repository": "https://github.com/inhotel-io/govisit-toolkit",
+  "license": "MIT"
+}
