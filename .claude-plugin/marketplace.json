@@ -1,0 +1,19 @@
+{
+  "name": "govisit-toolkit",
+  "description": "GoVisit travel discovery skills and native agent packages.",
+  "owner": {
+    "name": "inHotel Sàrl"
+  },
+  "plugins": [
+    {
+      "name": "govisit",
+      "source": "./plugins/govisit",
+      "description": "Read published GoVisit travel information with all available toolkit skills."
+    },
+    {
+      "name": "govisit-travel-planner",
+      "source": "./plugins/govisit-travel-planner",
+      "description": "Discover destinations and research places, categories, collections, and activities using GoVisit."
+    }
+  ]
+}

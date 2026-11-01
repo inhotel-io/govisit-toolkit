@@ -1,0 +1,6 @@
+[
+  { "name": "govisit", "label": "All skills", "description": "Read published GoVisit travel information with all available toolkit skills.", "include": "all", "exclude": [], "requires": [] },
+  { "name": "govisit-travel-planner", "label": "Travel Planner", "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.", "include": "all", "exclude": ["govisit-get-statistics", "govisit-search-documentation", "govisit-get-documentation-page", "govisit-get-page-faq"], "requires": [] },
+  { "name": "govisit-destination", "label": "Destination", "description": "Prepare and manage authorized destination content updates.", "include": "all", "exclude": [], "requires": ["govisit-update-destination"] },
+  { "name": "govisit-local-business", "label": "Local Business", "description": "Prepare recommendations and authorized updates for a GoVisit business profile.", "include": "all", "exclude": [], "requires": ["govisit-update-place"] }
+]

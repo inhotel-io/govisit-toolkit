@@ -3,21 +3,96 @@
 Tools and resources for using [GoVisit](https://govisit.ai) with AI agents and
 coding assistants, including Claude Code, Codex, and other compatible tools.
 
-This repository is the home for GoVisit skills, documentation, tools, examples,
-and reference implementation guides. Resources will be added incrementally;
-see the [agent skills documentation](https://govisit.ai/en/docs/developers/agent-skills/overview)
-for existing skill packages and links to their supported interfaces.
+This repository contains 22 portable read skills, native Claude Code/Codex
+packages, release tooling, and implementation resources for GoVisit.
+The [website documentation](https://govisit.ai/en/docs/developers/agent-skills/overview)
+explains each tool's inputs and interpretation limits.
 
-## Find your starting point
+## Choose a package
 
-| Audience | What you can work on |
-| --- | --- |
-| **Travel Planner** | Discover destinations, research places, and plan trips using published GoVisit information. |
-| **Destination** | Prepare destination content updates and manage publication through your destination OU's permissions. |
-| **Local Business** | Prepare business-profile recommendations and manage authorized updates to your place profile. |
+| Audience | Available package | Contents |
+| --- | --- | --- |
+| All | `govisit` | All 22 public read skills, including documentation and catalog statistics |
+| Travel Planner | `govisit-travel-planner` | 18 destination, place, category, collection, and activity readers/searches |
+| Destination | Planned | Update destination plus its required readers; available after authorized authoring ships |
+| Local Business | Planned | Update place plus its required readers; available after authenticated recommendations and authorized updates ship |
 
-Skill packages belong under the top-level `skills/` directory. Related tools,
-documentation, guides, and reference implementations can live alongside them.
+Choose All or the audience package you need. The current release reads public
+information without a GoVisit API key; it does not include editing workflows.
+An AI host may still request network/tool permission. Service limits and the
+Data Use License apply, and model usage follows your assistant's plan.
+
+## Install portable skills
+
+Run in your project and choose the target agent and installation scope:
+
+```sh
+npx skills add inhotel-io/govisit-toolkit --skill '*'
+```
+
+For a single skill and an explicit target:
+
+```sh
+npx skills add inhotel-io/govisit-toolkit --skill govisit-search-places --agent codex
+```
+
+The canonical files live under `skills/govisit-*/`. Names already include
+`govisit-`; keep the directory and SKILL.md name together without rewriting them.
+Manual downloads use the [discovery index](https://govisit.ai/.well-known/agent-skills/index.json),
+which points to versioned release assets and their SHA-256 digests. Verify the
+original archive bytes before unpacking the complete package, including LICENSE
+and references. A collection archive is not a universally supported skill-upload format.
+
+## Install native plugins
+
+Claude Code:
+
+```sh
+claude plugin marketplace add inhotel-io/govisit-toolkit
+claude plugin install govisit-travel-planner@govisit-toolkit --scope project
+```
+
+Codex:
+
+```sh
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.1.0
+codex plugin add govisit-travel-planner@govisit-toolkit
+```
+
+Use `govisit@govisit-toolkit` for All instead. Native packages live under
+`plugins/`; their included skill files are generated from the canonical `skills/`
+selection, and all resources remain inside the plugin root. A native Claude skill
+is namespaced, for example `/govisit-travel-planner:govisit-search-places`; portable
+skill invocation uses the host's own skill selector.
+
+## First task
+
+After installation, start a session if your host needs to refresh discovery:
+
+> Use GoVisit to find Prague, then find hotels there suitable for a quiet weekend.
+> Read the published profiles, explain missing evidence, and link the GoVisit sources.
+
+An empty result does not prove absence, and published discovery facts do not prove
+live prices or availability. The example performs reads and makes no reservation.
+
+## Updates and diagnostics
+
+Installed copies are snapshots. For portable skills, use `npx skills check` and
+`npx skills update`, or reinstall the selected complete package through your
+installer. Native users update the marketplace/plugin using their client's
+supported commands. Pin a reviewed release/commit for reproducible automation;
+GitHub Release archives are versioned, while a checkout of `main` can change.
+
+Remove portable skills through `npx skills remove`; native users use
+`claude plugin uninstall` or `codex plugin remove` with the installed package ID.
+Confirm actual installed paths/versions in your client before removing anything.
+
+If a task fails, check the package version, network access to GitHub release
+assets and `govisit.ai`, required arguments, and the response's error/freshness
+metadata. HTTP 429 requires respecting Retry-After. Never paste credentials or
+private business/travel data into a public issue.
+
+For maintainers, see [release preparation and verification](docs/releasing.md).
 
 ## Licensing
 

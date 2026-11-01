@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "govisit",
+  "version": "0.1.0",
+  "description": "Read published GoVisit travel information with all available toolkit skills.",
+  "author": {
+    "name": "inHotel Sàrl"
+  },
+  "homepage": "https://govisit.ai/en/docs/developers/agent-skills/overview",
+  "repository": "https://github.com/inhotel-io/govisit-toolkit",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "GoVisit — All skills",
+        "shortDescription": "Read published GoVisit travel information with all available toolkit skills.",
+        "developerName": "inHotel Sàrl",
+        "category": "Travel",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://govisit.ai"
+      }
+    }
+  }
+}
