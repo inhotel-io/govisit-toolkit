@@ -1,7 +1,8 @@
 # GoVisit Toolkit
 
 Tools and resources for using [GoVisit](https://govisit.ai) with AI agents and
-coding assistants, including Claude Code, Codex, and other compatible tools.
+coding assistants, including Claude Code, Codex, GitHub Copilot, Cursor, and other
+Agent Skills-compatible tools.
 
 This repository contains 22 portable read skills, native Claude Code/Codex
 packages, release tooling, and implementation resources for GoVisit.
@@ -29,6 +30,28 @@ Run in your project and choose the target agent and installation scope:
 ```sh
 npx skills add inhotel-io/govisit-toolkit --skill '*'
 ```
+
+The portable skills are the shared route for compatible harnesses. For an
+explicit target, install all 22 skills for GitHub Copilot or Cursor:
+
+```sh
+npx skills add inhotel-io/govisit-toolkit --skill '*' --agent github-copilot
+npx skills add inhotel-io/govisit-toolkit --skill '*' --agent cursor
+```
+
+Choose the command for your assistant; you do not need to install twice. See
+[GitHub's skills guide](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills)
+and [Cursor's skills guide](https://cursor.com/docs/skills) for discovery and scope.
+The installer currently uses the shared project directory `.agents/skills/` for
+both targets; their host-specific directories `.github/skills/` and
+`.cursor/skills/` are also options for manual installation.
+
+For another harness, select it in the interactive installer or install complete
+skill directories in its documented Agent Skills location. The host must load
+`SKILL.md` and its `references/contract.json`, and have permission to make HTTPS
+requests to GoVisit. Model choice alone does not provide those capabilities.
+See the [compatibility and verification record](docs/compatibility.md) for the
+difference between installation checks and an exercised model conversation.
 
 For a single skill and an explicit target:
 
