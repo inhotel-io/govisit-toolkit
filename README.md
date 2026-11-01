@@ -91,6 +91,20 @@ live prices or availability. The example performs reads and makes no reservation
 
 ## Updates and diagnostics
 
+For a Codex marketplace pinned to an older release, review the new release,
+remove and re-add that marketplace at its new tag, then install the selected
+package again. Existing plugin snapshots are updated by the final command:
+
+```sh
+codex plugin marketplace remove govisit-toolkit
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.0
+codex plugin add govisit-travel-planner@govisit-toolkit
+```
+
+Use your audience package name in the last command. This path was tested from
+v0.1.0 to v0.2.0. Re-adding an existing marketplace with a different `--ref`
+requires removing its old marketplace declaration first.
+
 Installed copies are snapshots. For portable skills, use `npx skills check` and
 `npx skills update`, or reinstall the selected complete package through your
 installer. Native users update the marketplace/plugin using their client's
