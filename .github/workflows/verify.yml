@@ -1,0 +1,30 @@
+name: Verify toolkit
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run check
+      - run: npm run build
+      - run: npm run verify:release -- --local
+      - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate ./plugins/govisit
+      - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate ./plugins/govisit-travel-planner
+      - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate .
+      - run: npx --yes skills@1.7.4 add . --list
+      - uses: actions/upload-artifact@v4
+        with:
+          name: govisit-toolkit-candidate
+          path: dist/*
+          if-no-files-found: error
