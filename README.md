@@ -25,13 +25,17 @@ Data Use License apply, and model usage follows your assistant's plan.
 
 ## Install portable skills
 
+For a three-step setup with one choice of AI assistant, follow the
+[Installation guide](https://govisit.ai/en/docs/developers/agent-skills/installation).
+Install once, then use any included skill.
+
 Run in your project and choose the target agent and installation scope:
 
 ```sh
 npx skills add inhotel-io/govisit-toolkit --skill '*'
 ```
 
-The portable skills are the shared route for compatible harnesses. For an
+The portable skills are the shared route for compatible AI tools. For an
 explicit target, install all 22 skills for GitHub Copilot or Cursor:
 
 ```sh
@@ -46,7 +50,7 @@ The installer currently uses the shared project directory `.agents/skills/` for
 both targets; their host-specific directories `.github/skills/` and
 `.cursor/skills/` are also options for manual installation.
 
-For another harness, select it in the interactive installer or install complete
+For another AI tool, select it in the interactive installer or install complete
 skill directories in its documented Agent Skills location. The host must load
 `SKILL.md` and its `references/contract.json`, and have permission to make HTTPS
 requests to GoVisit. Model choice alone does not provide those capabilities.
