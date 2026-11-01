@@ -18,6 +18,23 @@ The audience selections overlap: All 22, Travel Planner 18, Destination 13 and
 Local Business 10. Only Update destination and Update place are still planned.
 Public reads do not establish business ownership or permit publishing edits.
 
+## Other compatible harnesses
+
+The portable `skills/` packages are shared resources for Agent Skills-compatible
+hosts, including GitHub Copilot and Cursor. Native Claude Code/Codex packaging
+adds convenient installation routes; it does not limit the portable packages to
+those two clients.
+
+| Harness | Portable route | Verification scope |
+|---|---|---|
+| GitHub Copilot | `--agent github-copilot`; installer uses `.agents/skills/`, with `.github/skills/` also documented by the host | skills 1.7.4 remote installation passed; all 22 skills/66 files match canonical resources. No Copilot model conversation run |
+| Cursor | `--agent cursor`; installer uses `.agents/skills/`, with `.cursor/skills/` also documented by the host | skills 1.7.4 remote installation passed; all 22 skills/66 files match canonical resources. No Cursor model conversation run |
+| Other Agent Skills-compatible hosts | Interactive installer target or the host's documented skill directory | Requires skill/reference discovery and HTTPS tool execution; verify the specific client/version before relying on a workflow |
+
+Host references: [GitHub Copilot agent skills](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills)
+and [Cursor agent skills](https://cursor.com/docs/skills), checked 2026-11-01.
+Provider support for the format is separate from our end-to-end GoVisit testing.
+
 ## Limits and remaining findings
 
 - A Claude model conversation was not run because this machine has no Claude
