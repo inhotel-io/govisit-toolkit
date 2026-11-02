@@ -1,5 +1,10 @@
 # GoVisit Toolkit
 
+[GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
+discover destinations, local businesses, and experiences. It brings together
+published destination and business profiles so travelers can explore what places
+offer and local businesses can make their services easier to find and understand.
+
 Tools and resources for using [GoVisit](https://govisit.ai) with AI agents and
 coding assistants, including Claude Code, Codex, GitHub Copilot, Cursor, and other
 Agent Skills-compatible tools.
