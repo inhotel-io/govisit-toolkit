@@ -112,6 +112,12 @@ maintenance follow-up.
 
 ## Deploy
 
+The accepted GoVisit hosting decision is to serve the launcher and iframe app on
+`floating-chat.govisit.ai`, with independently versioned releases. See
+[the hosting decision](docs/hosting.md) for URL policy, managed TLS, caching,
+rollback, and migration from `chat.inhotel.io`. This is the target deployment
+design; the import does not provision that hostname or implement version routing.
+
 Build from this tool directory so its Docker context contains its own files:
 
 ```sh
