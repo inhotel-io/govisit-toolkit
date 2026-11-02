@@ -42,6 +42,11 @@ npm run dev
 Open [localhost:3000](http://localhost:3000). To exercise the local iframe UI
 with an existing assistant, open
 `http://localhost:3000/?token=-1&inbox=YOUR_ASSISTANT_PROFILE_ID&version=1.0.0`.
+Add `&shouldShowContactForm=true` to that preview URL to show the envelope
+control in the footer. Click it to open the contact form; opening or focusing the
+form does not submit it. Form fields reserve their border space so focus and
+validation do not move neighbouring fields.
+
 The legacy `token=-1` value selects the UI; it is not an authentication credential.
 Sending a message uses the remote agent service described above.
 

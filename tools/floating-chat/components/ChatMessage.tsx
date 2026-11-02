@@ -282,8 +282,8 @@ const ChatMessage = ({
             }}
             content={body}
             attachments={attachments}
-            thumbsup={thumbsup}
-            thumbsdown={thumbsdown}
+            thumbsup={type === 'agent' ? thumbsup : undefined}
+            thumbsdown={type === 'agent' ? thumbsdown : undefined}
             timestamp={timestampNode}
             tail
           />

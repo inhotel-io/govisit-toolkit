@@ -36,11 +36,10 @@ const second = 'f1a4e101-0000-8000-8000-000000000002';
 const icon = 'https://images.example/agent.webp';
 const fallback = 'https://images.example/legacy.svg';
 const nextTick = () => new Promise(setImmediate);
-function welcome(chat) {
+function welcome(chat, id = 'greeting') {
   function find(node) {
     if (!React.isValidElement(node)) return null;
-    if (node.type === ChatMessage && node.props.message.id === 'greeting')
-      return node;
+    if (node.type === ChatMessage && node.props.message.id === id) return node;
     for (const child of React.Children.toArray(node.props.children)) {
       const result = find(child);
       if (result) return result;
@@ -100,13 +99,58 @@ const response = (card) => ({
 
 async function runPresentationChecks() {
   const saved = new Map(
-    ['window', 'document', 'parent', 'fetch'].map((name) => [
+    ['window', 'document', 'parent', 'fetch', 'localStorage'].map((name) => [
       name,
       Object.getOwnPropertyDescriptor(global, name),
     ])
   );
   const tests = [];
   const test = (name, run) => tests.push({name, run});
+  test('only agent replies have feedback controls', () => {
+    for (const type of ['bot', 'customer', 'agent']) {
+      const html = renderToStaticMarkup(
+        React.createElement(ChatMessage, {
+          message: {
+            id: type === 'bot' ? 'greeting' : 'reply',
+            type,
+            body: 'Hello',
+          },
+          isMe: type === 'customer',
+        })
+      );
+      assert.equal(
+        (html.match(/class="btn_up_down"/g) || []).length,
+        type === 'agent' ? 2 : 0
+      );
+    }
+  });
+  test('history distinguishes welcome messages from agent replies', async () => {
+    for (const [type, content, count] of [
+      [undefined, 'Welcome to our hotel', 0],
+      ['bot', 'An older welcome', 0],
+      ['agent', 'Welcome to our hotel', 2],
+    ]) {
+      const f = fixture(async () => response({}));
+      const messages = [
+        {role: 'assistant', type, content, timestamp: new Date().toISOString()},
+      ];
+      global.localStorage = {
+        getItem: (key) =>
+          key.startsWith('inhotel_chat_history')
+            ? JSON.stringify({messages, timestamp: Date.now()})
+            : null,
+      };
+      try {
+        await f.chat.componentDidMount();
+        await nextTick();
+        const html = renderToStaticMarkup(welcome(f.chat, 'restored-0'));
+        assert.equal((html.match(/class="btn_up_down"/g) || []).length, count);
+      } finally {
+        f.chat.componentWillUnmount();
+        delete global.localStorage;
+      }
+    }
+  });
   test('iframe uses GoVisit blue-600 for missing or invalid colors', () => {
     for (const primary of [undefined, null, '', 'not-a-color']) {
       assert.equal(getThemeConfig({primary}).colors.primary, '#465ea4');

@@ -10,6 +10,7 @@ const EXPIRY_HOURS = 24;
 
 export interface StoredMessage {
   role: 'user' | 'assistant';
+  type?: 'bot' | 'agent' | 'customer';
   content: string;
   timestamp: string;
 }

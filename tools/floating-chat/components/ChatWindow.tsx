@@ -213,10 +213,11 @@ class ChatWindow extends React.Component<Props, State> {
         customer_id: m.role === 'user' ? 'customer' : undefined,
         user_id: m.role === 'assistant' ? 1 : undefined, // Use number for user_id
         created_at: m.timestamp,
-        type: (m.role === 'user' ? 'customer' : 'agent') as
-          | 'customer'
-          | 'agent'
-          | 'bot',
+        type: (m.role === 'user'
+          ? 'customer'
+          : m.type === 'bot' || (!m.type && idx === 0 && m.content === greeting)
+          ? 'bot'
+          : 'agent') as 'customer' | 'agent' | 'bot',
         // Add user object for assistant messages to preserve avatar
         user:
           m.role === 'assistant'
@@ -639,6 +640,7 @@ class ChatWindow extends React.Component<Props, State> {
             role: (m.customer_id ? 'user' : 'assistant') as
               | 'user'
               | 'assistant',
+            type: m.type,
             content: m.body || '',
             timestamp: m.created_at || new Date().toISOString(),
           }));

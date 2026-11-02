@@ -129,6 +129,7 @@ class ContactForm extends React.Component<Props, State> {
       primaryColor,
     } = this.props;
     const {textAreaRows, errors} = this.state;
+    // A 2px border plus 2px padding preserves the original 4px content inset.
 
     return (
       <Box
@@ -164,13 +165,13 @@ class ContactForm extends React.Component<Props, State> {
             id="firstName"
             mb={3}
             mr={3}
-            p={1}
+            p="2px"
             sx={{
-              borderStyle: !firstName && clickedSubmit ? 'solid' : 'none',
+              borderStyle: 'solid',
               borderRadius: '4px',
               bg: 'white',
-              borderWidth: '1.5px',
-              borderColor: !firstName && clickedSubmit ? 'red' : 'normal',
+              borderWidth: '2px',
+              borderColor: !firstName && clickedSubmit ? 'red' : 'transparent',
             }}
             value={firstName}
             placeholder="First Name"
@@ -180,13 +181,13 @@ class ContactForm extends React.Component<Props, State> {
           <Input
             className="on-focus"
             sx={{
-              borderStyle: !lastName && clickedSubmit ? 'solid' : 'none',
+              borderStyle: 'solid',
               borderRadius: '4px',
               bg: 'white',
-              borderWidth: '1.5px',
-              borderColor: !lastName && clickedSubmit ? 'red' : 'normal',
+              borderWidth: '2px',
+              borderColor: !lastName && clickedSubmit ? 'red' : 'transparent',
             }}
-            p={1}
+            p="2px"
             name="lastName"
             id="lastName"
             mb={3}
@@ -199,13 +200,13 @@ class ContactForm extends React.Component<Props, State> {
         <Input
           className="on-focus"
           sx={{
-            borderStyle: !email && clickedSubmit ? 'solid' : 'none',
+            borderStyle: 'solid',
             borderRadius: '4px',
             bg: 'white',
-            borderWidth: '1.5px',
-            borderColor: !email && clickedSubmit ? 'red' : 'normal',
+            borderWidth: '2px',
+            borderColor: !email && clickedSubmit ? 'red' : 'transparent',
           }}
-          p={1}
+          p="2px"
           name="email"
           id="email"
           mb={3}
@@ -238,16 +239,16 @@ class ContactForm extends React.Component<Props, State> {
           <Textarea
             className="on-focus"
             sx={{
-              borderStyle: !message && clickedSubmit ? 'solid' : 'none',
+              borderStyle: 'solid',
               borderRadius: '4px',
               bg: 'white',
-              borderWidth: '1.5px',
-              borderColor: !message && clickedSubmit ? 'red' : 'normal',
+              borderWidth: '2px',
+              borderColor: !message && clickedSubmit ? 'red' : 'transparent',
               resize: 'none',
               opacity: shouldSummarize ? 0.1 : 1, // Apply fading effect based on shouldSummarize
               pointerEvents: shouldSummarize ? 'none' : 'auto', // Prevent interaction when faded/disabled
             }}
-            p={1}
+            p="2px"
             name="message"
             id="message"
             rows={textAreaRows}
