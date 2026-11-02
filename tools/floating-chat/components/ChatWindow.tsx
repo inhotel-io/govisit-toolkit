@@ -41,6 +41,7 @@ import {
   QuickReply,
 } from '../helpers/types';
 import Logger from '../helpers/logger';
+import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
 import {
   isWindowHidden,
   addVisibilityEventListener,
@@ -119,10 +120,14 @@ type State = {
   isSummarizeGenerated: boolean;
   shouldShowMessageLoading: boolean;
   avatarURL: string;
+  agentCardAvatarURL: string | null | undefined;
+  isAvatarLoading: boolean;
 };
 
 class ChatWindow extends React.Component<Props, State> {
   scrollToEl: any = null;
+  avatarRequest: AbortController | null = null;
+  avatarTimeout: ReturnType<typeof setTimeout> | null = null;
   subscriptions: Array<() => void> = [];
   logger: Logger;
   // A2A mode - no legacy SDK instance
@@ -189,6 +194,8 @@ class ChatWindow extends React.Component<Props, State> {
       isSummarizeGenerated: false,
       shouldShowMessageLoading: false,
       avatarURL: props.avatarURL,
+      agentCardAvatarURL: undefined,
+      isAvatarLoading: true,
     };
   }
 
@@ -241,6 +248,7 @@ class ChatWindow extends React.Component<Props, State> {
       });
     }
 
+    this.loadAgentAvatar();
     this.emit('chat:loaded');
 
     if (this.isOnDeprecatedVersion()) {
@@ -251,7 +259,41 @@ class ChatWindow extends React.Component<Props, State> {
     }
   }
 
+  componentDidUpdate(previous: Props) {
+    if (previous.inboxId !== this.props.inboxId) {
+      this.setState({agentCardAvatarURL: undefined, isAvatarLoading: true});
+      this.loadAgentAvatar();
+    }
+  }
+
+  loadAgentAvatar = () => {
+    if (this.avatarRequest) this.avatarRequest.abort();
+    if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
+    const controller = new AbortController();
+    const profileId = this.props.inboxId || '';
+    this.avatarRequest = controller;
+    this.avatarTimeout = setTimeout(() => {
+      if (this.avatarRequest !== controller) return;
+      controller.abort();
+      this.avatarTimeout = null;
+      this.setState({agentCardAvatarURL: null, isAvatarLoading: false});
+    }, AVATAR_LOAD_TIMEOUT_MS);
+    fetchAgentAvatar(profileId, controller.signal).then((url) => {
+      if (
+        controller.signal.aborted ||
+        this.avatarRequest !== controller ||
+        this.props.inboxId !== profileId
+      )
+        return;
+      if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
+      this.avatarTimeout = null;
+      this.setState({agentCardAvatarURL: url, isAvatarLoading: false});
+    });
+  };
+
   componentWillUnmount() {
+    if (this.avatarRequest) this.avatarRequest.abort();
+    if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
     // A2A mode - no legacy SDK to disconnect
     this.subscriptions.forEach((unsubscribe) => {
       if (typeof unsubscribe === 'function') {
@@ -1087,7 +1129,8 @@ class ChatWindow extends React.Component<Props, State> {
                         isLastInGroup={isLastInGroup}
                         shouldDisplayTimestamp={isLastMessage}
                         shouldShowLoader={false}
-                        avatarURL={avatarURL}
+                        avatarURL={this.state.agentCardAvatarURL}
+                        isAvatarLoading={this.state.isAvatarLoading}
                       />
                     </motion.div>
                     {isLastMessage && this.state.shouldShowMessageLoading && (
@@ -1100,7 +1143,8 @@ class ChatWindow extends React.Component<Props, State> {
                           message={{body: '', user: userBot}}
                           loader={loader}
                           shouldShowLoader={true}
-                          avatarURL={avatarURL}
+                          avatarURL={this.state.agentCardAvatarURL}
+                          isAvatarLoading={this.state.isAvatarLoading}
                         />
                         {/* <SyncLoader color={this.props.primaryColor}  size='7px'/> */}
                       </motion.div>

@@ -1,0 +1,287 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+const oldExtensions = new Map();
+for (const ext of ['.ts', '.tsx']) {
+  oldExtensions.set(ext, require.extensions[ext]);
+  require.extensions[ext] = (module, filename) => {
+    const result = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+      compilerOptions: {
+        jsx: ts.JsxEmit.React,
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2019,
+        esModuleInterop: true,
+      },
+    });
+    module._compile(result.outputText, filename);
+  };
+}
+oldExtensions.set('.css', require.extensions['.css']);
+require.extensions['.css'] = (module) => {
+  module.exports = {btn_up_down: 'btn_up_down'};
+};
+const React = require('react');
+const {renderToStaticMarkup} = require('react-dom/server');
+const ChatWindow = require('../components/ChatWindow.tsx').default;
+const ChatMessage = require('../components/ChatMessage.tsx').default;
+for (const [ext, previous] of oldExtensions) {
+  if (previous) require.extensions[ext] = previous;
+  else delete require.extensions[ext];
+}
+
+const first = 'f1a4e101-533a-8355-80f0-f448ed950b76';
+const second = 'f1a4e101-0000-8000-8000-000000000002';
+const icon = 'https://images.example/agent.webp';
+const fallback = 'https://images.example/legacy.svg';
+const nextTick = () => new Promise(setImmediate);
+function welcome(chat) {
+  function find(node) {
+    if (!React.isValidElement(node)) return null;
+    if (node.type === ChatMessage && node.props.message.id === 'greeting')
+      return node;
+    for (const child of React.Children.toArray(node.props.children)) {
+      const result = find(child);
+      if (result) return result;
+    }
+    return null;
+  }
+  const result = find(chat.render());
+  assert.ok(
+    result,
+    'welcome message should be present without waiting for the card'
+  );
+  return result;
+}
+function fixture(fetcher, profile = first) {
+  const calls = [];
+  global.window = {
+    document: {},
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  global.document = {
+    hidden: false,
+    addEventListener() {},
+    removeEventListener() {},
+    documentElement: {style: {setProperty() {}}},
+  };
+  global.parent = {postMessage() {}};
+  global.fetch = (url, options) => {
+    calls.push({url, options});
+    return fetcher(url, options);
+  };
+  const chat = new ChatWindow({
+    accountId: '-1',
+    inboxId: profile,
+    greeting: 'Welcome to our hotel',
+    disableAnalyticsTracking: true,
+    avatarURL: fallback,
+  });
+  let updates = 0;
+  chat.setState = (change, callback) => {
+    updates++;
+    chat.state = {
+      ...chat.state,
+      ...(typeof change === 'function'
+        ? change(chat.state, chat.props)
+        : change),
+    };
+    if (callback) callback();
+  };
+  return {chat, calls, updates: () => updates};
+}
+const response = (card) => ({
+  ok: true,
+  url: `https://${first}.agents.inhotel.io/.well-known/agent-card.json`,
+  json: async () => card,
+});
+
+async function runPresentationChecks() {
+  const saved = new Map(
+    ['window', 'document', 'parent', 'fetch'].map((name) => [
+      name,
+      Object.getOwnPropertyDescriptor(global, name),
+    ])
+  );
+  const tests = [];
+  const test = (name, run) => tests.push({name, run});
+  test('welcome uses the public card icon before any message is sent', async () => {
+    const f = fixture(async () => response({iconUrl: icon}));
+    await f.chat.componentDidMount();
+    await nextTick();
+    assert.equal(f.calls.length, 1);
+    assert.equal(
+      f.calls[0].url,
+      `https://${first}.agents.inhotel.io/.well-known/agent-card.json`
+    );
+    assert.equal(f.calls[0].options.credentials, 'omit');
+    assert.equal(welcome(f.chat).props.avatarURL, icon);
+    assert.match(
+      renderToStaticMarkup(welcome(f.chat)),
+      /<img[^>]+src="https:\/\/images\.example\/agent\.webp"/
+    );
+    f.chat.componentWillUnmount();
+  });
+  test('welcome stays visible while the card is pending', async () => {
+    const f = fixture(() => new Promise(() => {}));
+    await f.chat.componentDidMount();
+    assert.equal(welcome(f.chat).props.message.body, 'Welcome to our hotel');
+    assert.equal(welcome(f.chat).props.isAvatarLoading, true);
+    assert.doesNotMatch(
+      renderToStaticMarkup(welcome(f.chat)),
+      /data-avatar-state="fallback"/
+    );
+    f.chat.componentWillUnmount();
+  });
+  test('relative icon URLs resolve against the card URL', async () => {
+    const f = fixture(async () => response({iconUrl: '/images/avatar.png'}));
+    await f.chat.componentDidMount();
+    await nextTick();
+    assert.equal(
+      welcome(f.chat).props.avatarURL,
+      `https://${first}.agents.inhotel.io/images/avatar.png`
+    );
+    f.chat.componentWillUnmount();
+  });
+  for (const [name, fetcher] of [
+    ['missing icon', async () => response({name: 'Agent'})],
+    ['unsafe icon URL', async () => response({iconUrl: 'javascript:alert(1)'})],
+    ['HTTP error', async () => ({ok: false})],
+    [
+      'network failure',
+      async () => {
+        throw new Error('offline');
+      },
+    ],
+    [
+      'invalid JSON',
+      async () => ({
+        ok: true,
+        json: async () => {
+          throw new Error('invalid JSON');
+        },
+      }),
+    ],
+  ]) {
+    test('welcome retains SVG fallback on ' + name, async () => {
+      const f = fixture(fetcher);
+      await f.chat.componentDidMount();
+      await nextTick();
+      const html = renderToStaticMarkup(welcome(f.chat));
+      assert.equal(welcome(f.chat).props.avatarURL, null);
+      assert.equal(welcome(f.chat).props.isAvatarLoading, false);
+      assert.match(html, /<svg/);
+      assert.doesNotMatch(html, /<img[^>]+src="javascript:/);
+      assert.equal(welcome(f.chat).props.message.body, 'Welcome to our hotel');
+      f.chat.componentWillUnmount();
+    });
+  }
+  test('a timed-out card load resolves to the fallback', async () => {
+    const f = fixture(() => new Promise(() => {}));
+    await f.chat.componentDidMount();
+    assert.equal(welcome(f.chat).props.isAvatarLoading, true);
+    await new Promise((resolve) => setTimeout(resolve, 3100));
+    assert.equal(welcome(f.chat).props.isAvatarLoading, false);
+    assert.equal(welcome(f.chat).props.avatarURL, null);
+    f.chat.componentWillUnmount();
+  });
+  test('a malformed profile ID never makes a card request', async () => {
+    const f = fixture(() => {
+      throw new Error('must not fetch');
+    }, 'evil.example/path');
+    await f.chat.componentDidMount();
+    await nextTick();
+    assert.equal(f.calls.length, 0);
+    assert.equal(welcome(f.chat).props.avatarURL, null);
+    f.chat.componentWillUnmount();
+  });
+  test('late avatar responses cannot update an unmounted chat', async () => {
+    let resolve;
+    const f = fixture(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+    await f.chat.componentDidMount();
+    assert.equal(f.calls.length, 1);
+    f.chat.componentWillUnmount();
+    const before = f.updates();
+    resolve(response({iconUrl: icon}));
+    await nextTick();
+    assert.equal(f.updates(), before);
+  });
+  test('a previous assistant card cannot replace the current avatar', async () => {
+    let resolve;
+    const f = fixture((url) =>
+      url.includes(first)
+        ? new Promise((done) => {
+            resolve = done;
+          })
+        : Promise.resolve(
+            response({iconUrl: 'https://images.example/current.webp'})
+          )
+    );
+    await f.chat.componentDidMount();
+    const previous = f.chat.props;
+    f.chat.props = {...previous, inboxId: second};
+    assert.equal(typeof f.chat.componentDidUpdate, 'function');
+    f.chat.componentDidUpdate(previous);
+    await nextTick();
+    resolve(response({iconUrl: icon}));
+    await nextTick();
+    assert.equal(
+      welcome(f.chat).props.avatarURL,
+      'https://images.example/current.webp'
+    );
+    f.chat.componentWillUnmount();
+  });
+  test('avatar rendering does not mutate message user data', () => {
+    const user = Object.freeze({
+      id: 1,
+      email: 'assistant@example.com',
+      profile_photo_url: 'https://images.example/original.webp',
+    });
+    const html = renderToStaticMarkup(
+      React.createElement(ChatMessage, {
+        message: {body: 'Hello', type: 'agent', user},
+        avatarURL: icon,
+      })
+    );
+    assert.match(html, /<img[^>]+src="https:\/\/images\.example\/agent\.webp"/);
+    assert.equal(
+      user.profile_photo_url,
+      'https://images.example/original.webp'
+    );
+  });
+  let failed = 0;
+  try {
+    for (const {name, run} of tests) {
+      try {
+        await run();
+        console.log('PASS ' + name);
+      } catch (error) {
+        failed++;
+        console.error('FAIL ' + name + '\n' + error.stack);
+      }
+    }
+  } finally {
+    for (const [name, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(global, name, descriptor);
+      else delete global[name];
+    }
+  }
+  if (failed)
+    throw new Error(
+      `${failed}/${tests.length} presentation regressions failed`
+    );
+  console.log(
+    `${tests.length}/${tests.length} presentation regressions passed`
+  );
+}
+module.exports = runPresentationChecks;
+if (require.main === module)
+  runPresentationChecks().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

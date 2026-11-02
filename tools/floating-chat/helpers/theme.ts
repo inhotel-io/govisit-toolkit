@@ -49,7 +49,7 @@ export const getThemeConfig = (settings: ThemeSettings) => {
     text: {
       default: {
         color: 'text',
-        fontSize: 1,
+        fontSize: 2,
       },
       caps: {
         textTransform: 'uppercase',
@@ -115,7 +115,7 @@ export const getThemeConfig = (settings: ThemeSettings) => {
         fontFamily: 'body',
         lineHeight: 'body',
         fontWeight: 'body',
-        fontSize: 1,
+        fontSize: 2,
       },
       h1: {
         color: 'text',

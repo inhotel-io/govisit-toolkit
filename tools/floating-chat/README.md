@@ -21,6 +21,12 @@ The initial import retains the inHotel adapter: settings and contact forms use
 currently requires adapting these URL/settings mappings and allowing the chat
 origin in that service's CORS policy. There is no arbitrary agent URL setting yet.
 
+The welcome message and assistant replies use the public agent card's `iconUrl`
+from `/.well-known/agent-card.json`. The text appears immediately while a fixed
+32px avatar slot stays blank until the image is ready. Missing or unusable icons
+use the built-in SVG fallback; card and image loading each have a three-second
+timeout before showing the fallback. No guest message is required to load it.
+
 ## Development
 
 Run the following from this directory, using Node.js **16.20.2** and npm
@@ -83,7 +89,8 @@ npm start
 ```
 
 `npm run build` compiles and type-checks the Next.js application. `npm test`
-starts the production server on a temporary local port, checks the launcher,
+runs avatar/card lifecycle regression checks with mocked requests, then starts
+the production server on a temporary local port and checks the launcher,
 iframe pages, compiled JavaScript, and license files, then stops the server.
 These checks do not contact a live agent or send guest messages.
 
