@@ -4,7 +4,7 @@ import gfm from 'remark-gfm';
 import breaks from 'remark-breaks';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {oneLight} from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import {Box, Image} from 'theme-ui';
+import {Box, Flex, Image, SxStyleProp} from 'theme-ui';
 import {Attachment} from '../helpers/types';
 import CustomEmoji from './CustomEmoji';
 
@@ -146,6 +146,8 @@ type ChatMessageBodyProps = {
   attachments?: Array<Attachment>;
   thumbsup?: object;
   thumbsdown?: object;
+  timestamp?: React.ReactNode;
+  tail?: boolean;
 };
 
 const ChatMessageBody = ({
@@ -155,27 +157,44 @@ const ChatMessageBody = ({
   attachments = [],
   thumbsup,
   thumbsdown,
+  timestamp,
+  tail,
 }: ChatMessageBodyProps) => {
-  const parsedSx = Object.assign(
-    {
-      px: '14px',
-      py: 2,
-      borderRadius: 4,
-      maxWidth: '80%',
-      p: {mb: 0},
-      ul: {my: 2},
-      ol: {my: 2},
-      blockquote: {
-        px: 2,
-        borderLeft: '3px solid',
-        mb: 0,
-      },
+  const parsedSx: SxStyleProp = {
+    px: '14px',
+    py: 2,
+    borderRadius: '16px',
+    fontSize: '16px',
+    position: 'relative',
+    ...(tail
+      ? {
+          borderBottomLeftRadius: 0,
+          '::before': {
+            content: '""',
+            position: 'absolute',
+            left: '-8px',
+            bottom: 0,
+            width: 24,
+            height: 14,
+            backgroundColor: 'inherit',
+            clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+          },
+        }
+      : {}),
+    maxWidth: '80%',
+    p: {mb: 0},
+    ul: {my: 2},
+    ol: {my: 2},
+    blockquote: {
+      px: 2,
+      borderLeft: '3px solid',
+      mb: 0,
     },
-    sx
-  );
+    ...sx,
+  };
 
   return (
-    <Box sx={parsedSx}>
+    <Box sx={parsedSx} data-chat-bubble="true">
       <ReactMarkdown
         className={`Text--markdown ${className || ''}`}
         source={content}
@@ -195,8 +214,25 @@ const ChatMessageBody = ({
           })}
         </Box>
       )}
-      {thumbsup}
-      {thumbsdown}
+      {(thumbsup || thumbsdown || timestamp) && (
+        <Flex
+          data-chat-meta="true"
+          sx={{
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 2,
+            mt: thumbsup || thumbsdown ? 0 : 1,
+          }}
+        >
+          {(thumbsup || thumbsdown) && (
+            <Flex sx={{alignItems: 'baseline'}}>
+              {thumbsup}
+              {thumbsdown}
+            </Flex>
+          )}
+          {timestamp}
+        </Flex>
+      )}
     </Box>
   );
 };

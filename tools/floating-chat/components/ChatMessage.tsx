@@ -1,12 +1,12 @@
-import React, {useState} from 'react';
-import {Box, Flex, Text} from 'theme-ui';
+import React, {useEffect, useState} from 'react';
+import {Box, Flex, Image} from 'theme-ui';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import BotIcon from './BotIcon';
 import ChatMessageBody from './ChatMessageBody';
 import {Message, User} from '../helpers/types';
 import styles from './ChatMessage.module.css';
-import {SyncLoader} from 'react-spinners';
+import {AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
 
 dayjs.extend(utc);
 
@@ -39,62 +39,69 @@ const SenderAvatar = ({
   user,
   isBot,
   avatarURL,
+  isAvatarLoading,
 }: {
   name: string;
   user?: User;
   isBot?: boolean;
-  avatarURL?: string;
+  avatarURL?: string | null;
+  isAvatarLoading?: boolean;
 }) => {
-  if (!isBot && user) {
-    // Transparent
-    // user.profile_photo_url =
-    //   'https://uploads-ssl.webflow.com/657ae60d92ed823479730a3f/65c81fa5c254bb0f9763ce5f_guest-relations-assistant-avatar-64x64-transparent.png';
-    // Black
-    user.profile_photo_url = avatarURL;
-    // White
-    // user.profile_photo_url =
-    //   'https://uploads-ssl.webflow.com/657ae60d92ed823479730a3f/65c81fcb8e01ed41a967bd37_guest-relations-assistant-avatar-64x64-white.png'
-  }
+  const url =
+    avatarURL === null ? null : avatarURL || (user && user.profile_photo_url);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const [timedOutUrl, setTimedOutUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!url || isAvatarLoading || loadedUrl === url || timedOutUrl === url)
+      return;
+    const timer = setTimeout(() => setTimedOutUrl(url), AVATAR_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [url, isAvatarLoading, loadedUrl, timedOutUrl]);
 
-  const profilePhotoUrl = user && user.profile_photo_url;
-
-  if (profilePhotoUrl) {
+  const size = {
+    height: 32,
+    width: 32,
+    flexShrink: 0,
+    alignSelf: 'flex-end',
+    borderRadius: '50%',
+  };
+  if (isAvatarLoading) {
     return (
-      <Box
+      <Box mr={2} sx={size} data-avatar-state="loading" aria-hidden="true" />
+    );
+  }
+  if (url && timedOutUrl !== url) {
+    return (
+      <Image
         mr={2}
-        style={{
-          height: 32,
-          width: 32,
-          borderRadius: '50%',
-          justifyContent: 'center',
-          alignItems: 'center',
-
-          backgroundPosition: 'top',
-          backgroundSize: 'cover',
-          backgroundImage: `url(${profilePhotoUrl})`,
+        src={url}
+        alt={name}
+        data-avatar-state={loadedUrl === url ? 'ready' : 'loading'}
+        onLoad={() => setLoadedUrl(url)}
+        sx={{
+          ...size,
+          objectFit: 'cover',
+          objectPosition: 'top',
+          opacity: loadedUrl === url ? 1 : 0,
         }}
       />
     );
   }
-
   return (
     <Flex
       mr={2}
+      role="img"
+      aria-label={name}
+      data-avatar-state="fallback"
       sx={{
+        ...size,
         bg: isBot ? 'lighter' : 'primary',
-        height: 32,
-        width: 32,
-        borderRadius: '50%',
         justifyContent: 'center',
         alignItems: 'center',
         color: '#fff',
       }}
     >
-      {isBot && name.toLowerCase() === 'bot' ? (
-        <BotIcon fill="background" height={16} width={16} />
-      ) : (
-        name.slice(0, 1).toUpperCase()
-      )}
+      <BotIcon fill="background" height={16} width={16} />
     </Flex>
   );
 };
@@ -107,7 +114,8 @@ type Props = {
   shouldDisplayTimestamp?: boolean;
   shouldShowLoader?: boolean;
   loader?: React.ReactNode;
-  avatarURL?: string;
+  avatarURL?: string | null;
+  isAvatarLoading?: boolean;
 };
 
 const ChatMessage = ({
@@ -119,10 +127,20 @@ const ChatMessage = ({
   shouldShowLoader,
   loader,
   avatarURL,
+  isAvatarLoading,
 }: Props) => {
   const {body, created_at, user, type, attachments = []} = message;
   const created = created_at ? dayjs.utc(created_at) : null;
   const timestamp = created ? formatRelativeTime(created) : null;
+  const timestampNode = shouldDisplayTimestamp ? (
+    <time
+      className={styles.timestamp}
+      data-mine={isMe || undefined}
+      dateTime={created ? created.toISOString() : undefined}
+    >
+      {isMe ? (timestamp ? `Sent ${timestamp}` : 'Sending...') : timestamp}
+    </time>
+  ) : null;
   const isBot = type === 'bot';
   const defaultBotName = companyName || 'Bot';
   const identifer = isBot ? defaultBotName : getAgentIdentifier(user);
@@ -238,27 +256,22 @@ const ChatMessage = ({
             }}
             content={body}
             attachments={attachments}
+            timestamp={timestampNode}
           />
         </Flex>
-        {shouldDisplayTimestamp && (
-          <Flex m={1} sx={{justifyContent: 'flex-end'}}>
-            <Text sx={{color: 'gray'}}>
-              {timestamp ? `Sent ${timestamp}` : 'Sending...'}
-            </Text>
-          </Flex>
-        )}
       </Box>
     );
   }
 
   return (
     <Box pr={4} pl={0} pb={isLastInGroup ? 3 : 2}>
-      <Flex sx={{justifyContent: 'flex-start', alignItems: 'center'}}>
+      <Flex sx={{justifyContent: 'flex-start', alignItems: 'flex-end'}}>
         <SenderAvatar
           name={identifer}
           user={user}
           isBot={isBot}
           avatarURL={avatarURL}
+          isAvatarLoading={isAvatarLoading}
         />
         {!shouldShowLoader && (
           <ChatMessageBody
@@ -269,24 +282,24 @@ const ChatMessage = ({
             }}
             content={body}
             attachments={attachments}
-            thumbsup={thumbsup}
-            thumbsdown={thumbsdown}
+            thumbsup={type === 'agent' ? thumbsup : undefined}
+            thumbsdown={type === 'agent' ? thumbsdown : undefined}
+            timestamp={timestampNode}
+            tail
           />
         )}
 
         {loader}
       </Flex>
-
-      {shouldDisplayTimestamp && (
-        <Flex m={1} sx={{justifyContent: 'flex-start'}}>
-          <Text sx={{color: 'gray'}}> {timestamp}</Text>
-        </Flex>
-      )}
     </Box>
   );
 };
 
-export const PopupChatMessage = ({message, avatarURL}: Props) => {
+export const PopupChatMessage = ({
+  message,
+  avatarURL,
+  isAvatarLoading,
+}: Props) => {
   const {body, user, type} = message;
   const isBot = type === 'bot';
   const identifer = isBot ? 'Bot' : getAgentIdentifier(user);
@@ -295,13 +308,18 @@ export const PopupChatMessage = ({message, avatarURL}: Props) => {
   return (
     <Box pr={0} pl={0} pb={2}>
       <Flex
-        sx={{justifyContent: 'flex-start', alignItems: 'center', width: '100%'}}
+        sx={{
+          justifyContent: 'flex-start',
+          alignItems: 'flex-end',
+          width: '100%',
+        }}
       >
         <SenderAvatar
           name={identifer}
           user={user}
           isBot={isBot}
           avatarURL={avatarURL}
+          isAvatarLoading={isAvatarLoading}
         />
 
         <ChatMessageBody

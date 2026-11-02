@@ -21,6 +21,12 @@ The initial import retains the inHotel adapter: settings and contact forms use
 currently requires adapting these URL/settings mappings and allowing the chat
 origin in that service's CORS policy. There is no arbitrary agent URL setting yet.
 
+The welcome message and assistant replies use the public agent card's `iconUrl`
+from `/.well-known/agent-card.json`. The text appears immediately while a fixed
+32px avatar slot stays blank until the image is ready. Missing or unusable icons
+use the built-in SVG fallback; card and image loading each have a three-second
+timeout before showing the fallback. No guest message is required to load it.
+
 ## Development
 
 Run the following from this directory, using Node.js **16.20.2** and npm
@@ -36,8 +42,16 @@ npm run dev
 Open [localhost:3000](http://localhost:3000). To exercise the local iframe UI
 with an existing assistant, open
 `http://localhost:3000/?token=-1&inbox=YOUR_ASSISTANT_PROFILE_ID&version=1.0.0`.
+Add `&shouldShowContactForm=true` to that preview URL to show the envelope
+control in the footer. Click it to open the contact form; opening or focusing the
+form does not submit it. Form fields reserve their border space so focus and
+validation do not move neighbouring fields.
+
 The legacy `token=-1` value selects the UI; it is not an authentication credential.
 Sending a message uses the remote agent service described above.
+
+Missing or invalid theme colors fall back to GoVisit blue-600 (`#465EA4`) in
+both the launcher and iframe. Valid customer colors take precedence.
 
 ## Embed on a website
 
@@ -83,7 +97,8 @@ npm start
 ```
 
 `npm run build` compiles and type-checks the Next.js application. `npm test`
-starts the production server on a temporary local port, checks the launcher,
+runs avatar/card lifecycle regression checks with mocked requests, then starts
+the production server on a temporary local port and checks the launcher,
 iframe pages, compiled JavaScript, and license files, then stops the server.
 These checks do not contact a live agent or send guest messages.
 

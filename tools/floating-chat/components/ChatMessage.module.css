@@ -1,6 +1,5 @@
 .btn_up_down {
-  margin-top: 0.7rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.25rem;
   width: 32px;
   height: 32px;
   display: inline-flex;
@@ -14,4 +13,20 @@
 .btn_up_down:hover {
   background-color: rgba(200, 200, 200, 0.2);
   border-radius: 50%;
+}
+
+.btn_up_down svg {
+  width: 20px;
+  height: 20px;
+}
+.timestamp {
+  margin-left: auto;
+  padding-left: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+.timestamp[data-mine='true'] {
+  color: rgba(255, 255, 255, 0.85);
 }

@@ -21112,11 +21112,13 @@ OD = 'https://chat.inhotel.io';
       Nj = function (e) {
         var $ilXr$$interop$default = za(Rq);
         var o = e.primary,
-          t = $ilXr$$interop$default.d(void 0 === o ? '#1890ff' : o),
+          t = $ilXr$$interop$default.d(o),
+          fallback = $ilXr$$interop$default.d('#465ea4'),
+          color = t.isValid() ? t : fallback,
           n = {
-            primary: t.toString(),
-            light: t.lighten().toString(),
-            dark: t.darken().toString(),
+            primary: color.toString(),
+            light: color.lighten().toString(),
+            dark: color.darken().toString(),
           };
         return {
           useBodyStyles: !1,
@@ -22873,7 +22875,7 @@ OD = 'https://chat.inhotel.io';
                   case 3:
                     return (
                       (T.subtitle = I.sent()),
-                      (T.primaryColor = l || a.color),
+                      (T.primaryColor = l || a.color || '#465ea4'),
                       [4, this.getDefaultGreeting(a)]
                     );
                   case 4:
