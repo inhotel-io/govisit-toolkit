@@ -168,12 +168,13 @@ const ChatMessageBody = ({
     position: 'relative',
     ...(tail
       ? {
+          borderBottomLeftRadius: 0,
           '::before': {
             content: '""',
             position: 'absolute',
-            left: '-6px',
+            left: '-8px',
             bottom: 0,
-            width: 22,
+            width: 24,
             height: 14,
             backgroundColor: 'inherit',
             clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',

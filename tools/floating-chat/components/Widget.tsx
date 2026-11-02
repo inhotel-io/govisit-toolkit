@@ -162,7 +162,7 @@ class Wrapper extends React.Component<Props, State> {
       newMessagePlaceholder = 'Start typing...',
       emailInputPlaceholder = 'Enter your email',
       newMessagesNotificationText = 'View new messages',
-      primaryColor = '1890ff',
+      primaryColor: configuredPrimaryColor,
       baseUrl = 'https://backend.inhotel.io',
       requireEmailUpfront = '0',
       showAgentAvailability = '0',
@@ -180,7 +180,8 @@ class Wrapper extends React.Component<Props, State> {
       assistantType,
     } = config;
 
-    const theme = getThemeConfig({primary: primaryColor});
+    const theme = getThemeConfig({primary: configuredPrimaryColor});
+    const primaryColor = theme.colors.primary;
     const customer = parseCustomerMetadata(metadata);
     document.documentElement.style.setProperty('--primary-color', primaryColor);
     let shouldShowCF: boolean = false;

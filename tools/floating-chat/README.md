@@ -45,6 +45,9 @@ with an existing assistant, open
 The legacy `token=-1` value selects the UI; it is not an authentication credential.
 Sending a message uses the remote agent service described above.
 
+Missing or invalid theme colors fall back to GoVisit blue-600 (`#465EA4`) in
+both the launcher and iframe. Valid customer colors take precedence.
+
 ## Embed on a website
 
 An existing inHotel-hosted integration uses this contract:

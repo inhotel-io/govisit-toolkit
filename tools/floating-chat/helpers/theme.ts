@@ -1,10 +1,13 @@
 import tinycolor from 'tinycolor2';
 
+// GoVisit brand token: blue-600.
+export const GOVISIT_BLUE_600 = '#465ea4';
+
 type ThemeSettings = {primary?: string};
 
 export const getThemeConfig = (settings: ThemeSettings) => {
-  const {primary = '#1890ff'} = settings;
-  const base = tinycolor(primary);
+  const baseColor = tinycolor(settings.primary);
+  const base = baseColor.isValid() ? baseColor : tinycolor(GOVISIT_BLUE_600);
   const overrides = {
     primary: base.toString(),
     light: base.lighten().toString(),

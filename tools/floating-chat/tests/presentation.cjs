@@ -24,6 +24,8 @@ const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const ChatWindow = require('../components/ChatWindow.tsx').default;
 const ChatMessage = require('../components/ChatMessage.tsx').default;
+const getThemeConfig = require('../helpers/theme.ts').default;
+const Widget = require('../components/Widget.tsx').default;
 for (const [ext, previous] of oldExtensions) {
   if (previous) require.extensions[ext] = previous;
   else delete require.extensions[ext];
@@ -105,6 +107,52 @@ async function runPresentationChecks() {
   );
   const tests = [];
   const test = (name, run) => tests.push({name, run});
+  test('iframe uses GoVisit blue-600 for missing or invalid colors', () => {
+    for (const primary of [undefined, null, '', 'not-a-color']) {
+      assert.equal(getThemeConfig({primary}).colors.primary, '#465ea4');
+      fixture(async () => response({}));
+      const widget = new Widget({config: {token: '-1', primaryColor: primary}});
+      const rendered = widget.render();
+      assert.equal(rendered.props.theme.colors.primary, '#465ea4');
+      assert.equal(rendered.props.children.props.primaryColor, '#465ea4');
+    }
+    assert.equal(
+      getThemeConfig({primary: '#123456'}).colors.primary,
+      '#123456'
+    );
+  });
+  test('launcher uses the same fallback and preserves configured colors', () => {
+    const source = fs.readFileSync(
+      require.resolve('../public/widget.js'),
+      'utf8'
+    );
+    const ast = ts.createSourceFile(
+      'widget.js',
+      source,
+      ts.ScriptTarget.Latest,
+      true
+    );
+    let themeFunction;
+    function visit(node) {
+      if (ts.isVariableDeclaration(node) && node.name.getText(ast) === 'Nj')
+        themeFunction = node.initializer.getText(ast);
+      ts.forEachChild(node, visit);
+    }
+    visit(ast);
+    assert.ok(themeFunction, 'launcher theme function should be present');
+    const launcherTheme = require('node:vm').runInNewContext(
+      '(' + themeFunction + ')',
+      {
+        za: () => ({d: require('tinycolor2')}),
+        Rq: {},
+        qD: Object.assign,
+        rD: {},
+      }
+    );
+    for (const primary of [undefined, null, '', 'not-a-color'])
+      assert.equal(launcherTheme({primary}).colors.primary, '#465ea4');
+    assert.equal(launcherTheme({primary: '#123456'}).colors.primary, '#123456');
+  });
   test('welcome uses the public card icon before any message is sent', async () => {
     const f = fixture(async () => response({iconUrl: icon}));
     await f.chat.componentDidMount();
