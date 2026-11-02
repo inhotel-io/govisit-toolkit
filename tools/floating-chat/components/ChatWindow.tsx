@@ -42,6 +42,11 @@ import {
 } from '../helpers/types';
 import Logger from '../helpers/logger';
 import {
+  agentEndpoint,
+  isTrustedParentMessage,
+  isValidAssistantProfileId,
+} from '../helpers/embed-security';
+import {
   isWindowHidden,
   addVisibilityEventListener,
 } from '../helpers/visibility';
@@ -84,6 +89,7 @@ type Props = {
   hotelPhone?: string;
   hotelEmail?: string;
   avatarURL?: string;
+  parentOrigin?: string | null;
 };
 
 type State = {
@@ -264,10 +270,13 @@ class ChatWindow extends React.Component<Props, State> {
     const payload = {...data, ts: this.props.ts};
     this.logger.debug('Sending event from iframe:', {event, payload});
 
-    parent.postMessage({event, payload}, '*'); // TODO: remove?
+    const {parentOrigin} = this.props;
+    if (!parentOrigin || window.parent === window) return;
+    window.parent.postMessage({event, payload}, parentOrigin);
   };
 
   postMessageHandlers = (msg: any) => {
+    if (!isTrustedParentMessage(msg, this.props.parentOrigin, window)) return;
     const {event, payload = {}} = msg.data;
     this.logger.debug('Handling in iframe:', msg.data);
 
@@ -504,6 +513,12 @@ class ChatWindow extends React.Component<Props, State> {
 
     const {body = ''} = message;
     const {inboxId, baseUrl} = this.props;
+    if (!isValidAssistantProfileId(inboxId)) {
+      this.logger.error(
+        'Refusing to send with an invalid assistant profile ID'
+      );
+      return;
+    }
     const {messages, conversationId} = this.state;
 
     if (shouldActivateGameMode(body)) {
@@ -540,7 +555,7 @@ class ChatWindow extends React.Component<Props, State> {
     }));
 
     // Build A2A endpoint URL using subdomain pattern
-    const a2aUrl = `https://${inboxId}.agents.inhotel.io/`;
+    const a2aUrl = agentEndpoint(inboxId);
 
     // Get existing contextId for session continuity
     const existingContextId = inboxId ? getContextId(inboxId) : null;

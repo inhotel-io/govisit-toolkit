@@ -22542,7 +22542,12 @@ OD = 'https://chat.inhotel.io';
               n.logger.debug('Handling in parent:', e.data);
               var t = n.getIframeUrl(),
                 r = new URL(t).origin;
-              if (e.origin !== r) return null;
+              if (
+                e.origin !== r ||
+                !n.iframeRef ||
+                e.source !== n.iframeRef.contentWindow ||
+                !e.data || typeof e.data !== 'object' || Array.isArray(e.data)
+              ) return null;
               var a = e.data,
                 i = a.event,
                 o = a.payload,
@@ -22593,7 +22598,7 @@ OD = 'https://chat.inhotel.io';
                 );
               r.contentWindow.postMessage(
                 {event: e, payload: t},
-                n.getIframeUrl()
+                new URL(n.getIframeUrl()).origin
               );
             }),
             (n.handleMessageReceived = function (e) {
@@ -22922,6 +22927,7 @@ OD = 'https://chat.inhotel.io';
                       (T.metadata = JSON.stringify(X)),
                       (T.disableAnalyticsTracking = U ? 1 : 0),
                       (T.debug = J ? 1 : 0),
+                      (T.parentOrigin = window.location.origin),
                       (T.version = '1.2.0'),
                       (T.ts = r.toString()),
                       (T.position = position),

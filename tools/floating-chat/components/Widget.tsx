@@ -5,6 +5,12 @@ import {CustomerMetadata} from '../helpers/types';
 import {loadAvatarConfig, setupPostMessageHandlers} from '../helpers/utils';
 import getThemeConfig from '../helpers/theme';
 import Logger from '../helpers/logger';
+import {
+  isRecord,
+  isTrustedParentMessage,
+  isValidAssistantProfileId,
+  resolveParentOrigin,
+} from '../helpers/embed-security';
 
 type Config = {
   token?: string;
@@ -34,6 +40,7 @@ type Config = {
   metadata?: string; // stringified CustomerMetadata JSON
   version?: string;
   ts?: string;
+  parentOrigin?: string;
   position?: string;
   shouldShowContactForm?: string;
   hotelPhone?: string;
@@ -50,7 +57,10 @@ const parseCustomerMetadata = (str: string): CustomerMetadata => {
 };
 
 const sanitizeConfigPayload = (payload: any): Config => {
-  if (!payload) {
+  if (
+    !isRecord(payload) ||
+    ('inbox' in payload && !isValidAssistantProfileId(payload.inbox))
+  ) {
     return {};
   }
 
@@ -98,10 +108,15 @@ type State = {config: Config};
 class Wrapper extends React.Component<Props, State> {
   logger: Logger;
   unsubscribe: () => void;
+  parentOrigin: string | null;
 
   constructor(props: Props) {
     super(props);
 
+    this.parentOrigin = resolveParentOrigin(
+      props.config.parentOrigin,
+      typeof document === 'undefined' ? '' : document.referrer
+    );
     this.state = {
       config: props.config,
     };
@@ -122,6 +137,7 @@ class Wrapper extends React.Component<Props, State> {
   }
 
   postMessageHandlers = (msg: any) => {
+    if (!isTrustedParentMessage(msg, this.parentOrigin, window)) return;
     this.logger.debug('Handling in wrapper:', msg.data);
     const {event, payload = {}} = msg.data;
 
@@ -143,7 +159,10 @@ class Wrapper extends React.Component<Props, State> {
   render() {
     const {config = {}} = this.state;
 
-    if (Object.keys(config).length === 0) {
+    if (
+      Object.keys(config).length === 0 ||
+      !isValidAssistantProfileId(config.inbox)
+    ) {
       return null;
     }
 
@@ -193,6 +212,8 @@ class Wrapper extends React.Component<Props, State> {
     return (
       <ThemeProvider theme={theme}>
         <ChatWindow
+          key={inbox}
+          parentOrigin={this.parentOrigin}
           accountId={token || accountId}
           inboxId={inbox}
           customerId={customerId}
