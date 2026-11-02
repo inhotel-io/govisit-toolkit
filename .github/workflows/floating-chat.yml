@@ -1,0 +1,36 @@
+name: Floating Chat
+
+on:
+  pull_request:
+    paths:
+      - 'tools/floating-chat/**'
+      - '.github/workflows/floating-chat.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/floating-chat/**'
+      - '.github/workflows/floating-chat.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tools/floating-chat
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: tools/floating-chat/.nvmrc
+          cache: npm
+          cache-dependency-path: tools/floating-chat/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - run: npm test

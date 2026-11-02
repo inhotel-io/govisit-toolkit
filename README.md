@@ -9,10 +9,20 @@ Tools and resources for using [GoVisit](https://govisit.ai) with AI agents and
 coding assistants, including Claude Code, Codex, GitHub Copilot, Cursor, and other
 Agent Skills-compatible tools.
 
-This repository contains 22 portable read skills, native Claude Code/Codex
-packages, release tooling, and implementation resources for GoVisit.
+This repository contains open-source tools, 22 portable read skills, native
+Claude Code/Codex packages, release tooling, and implementation resources for GoVisit.
 The [website documentation](https://govisit.ai/en/docs/developers/agent-skills/overview)
 explains each tool's inputs and interpretation limits.
+
+## Open-source tools
+
+| Tool | Purpose | Source and setup |
+| --- | --- | --- |
+| Floating Chat | A floating chatbot optimized for travel and hospitality websites and A2A-compatible agents | [tools/floating-chat](tools/floating-chat/README.md) |
+
+Each tool has its own dependencies, build, and deployment instructions. See
+[tools/README.md](tools/README.md) for the directory conventions. Agent skills and
+native plugins below are installed separately from these applications.
 
 ## Choose a package
 

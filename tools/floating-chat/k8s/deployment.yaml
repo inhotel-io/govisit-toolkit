@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: floating-chat
+spec:
+  # Two replicas: this host serves a script embedded on third-party hotel
+  # sites, so a single-pod restart would be a visible outage for them.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: floating-chat
+  template:
+    metadata:
+      labels:
+        app: floating-chat
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: floating-chat
+      containers:
+        - name: floating-chat
+          image: ghcr.io/your-org/floating-chat:YOUR_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet: {path: /widget.js, port: 3000}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /widget.js, port: 3000}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 1Gi}
+            limits: {cpu: 200m, memory: 512Mi, ephemeral-storage: 1Gi}
+          securityContext:
+            capabilities:
+              drop: [NET_RAW]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: floating-chat
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: floating-chat

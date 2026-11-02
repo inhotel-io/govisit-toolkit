@@ -1,0 +1,71 @@
+{
+  "name": "floating-chat",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "next dev -p ${PORT:-3000}",
+    "build": "next build",
+    "export": "next export",
+    "deploy": "npm run build && npm run export",
+    "prettier": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "start": "next start -p ${PORT:-3000}",
+    "test": "node tests/smoke.cjs"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@sentry/react": "^6.5.1",
+    "@tippyjs/react": "^4.2.6",
+    "antd": "^4.4.2",
+    "dayjs": "^1.10.6",
+    "framer-motion": "^2.3.0",
+    "next": "^9.4.4",
+    "rc-upload": "^3.3.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-emoji-render": "^1.2.4",
+    "react-markdown": "^5.0.3",
+    "react-spinners": "^0.13.8",
+    "react-syntax-highlighter": "^15.5.0",
+    "remark-breaks": "^2.0.2",
+    "remark-gfm": "^1.0.0",
+    "theme-ui": "0.3.1",
+    "tinycolor2": "^1.4.1",
+    "tippy.js": "^6.3.7",
+    "twemoji": "^14.0.2",
+    "use-composed-ref": "^1.1.0",
+    "use-latest": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.23",
+    "@types/phoenix": "^1.5.0",
+    "@types/react": "^16.9.43",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/superagent": "^4.1.8",
+    "@types/theme-ui": "^0.3.6",
+    "@types/tinycolor2": "^1.4.2",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.11",
+    "prettier": "^2.0.5",
+    "typescript": "^3.9.7"
+  },
+  "engines": {
+    "node": "16.20.2",
+    "npm": "8.19.4"
+  },
+  "private": true,
+  "description": "A floating chatbot optimized for travel and hospitality websites and A2A-compatible agents.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inhotel-io/govisit-toolkit.git",
+    "directory": "tools/floating-chat"
+  }
+}
