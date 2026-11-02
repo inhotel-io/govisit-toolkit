@@ -129,7 +129,6 @@ class ContactForm extends React.Component<Props, State> {
       primaryColor,
     } = this.props;
     const {textAreaRows, errors} = this.state;
-    // A 2px border plus 2px padding preserves the original 4px content inset.
 
     return (
       <Box
@@ -165,7 +164,8 @@ class ContactForm extends React.Component<Props, State> {
             id="firstName"
             mb={3}
             mr={3}
-            p="2px"
+            px="12px"
+            py="4px"
             sx={{
               borderStyle: 'solid',
               borderRadius: '4px',
@@ -187,7 +187,8 @@ class ContactForm extends React.Component<Props, State> {
               borderWidth: '2px',
               borderColor: !lastName && clickedSubmit ? 'red' : 'transparent',
             }}
-            p="2px"
+            px="12px"
+            py="4px"
             name="lastName"
             id="lastName"
             mb={3}
@@ -206,7 +207,8 @@ class ContactForm extends React.Component<Props, State> {
             borderWidth: '2px',
             borderColor: !email && clickedSubmit ? 'red' : 'transparent',
           }}
-          p="2px"
+          px="12px"
+          py="4px"
           name="email"
           id="email"
           mb={3}
@@ -248,7 +250,8 @@ class ContactForm extends React.Component<Props, State> {
               opacity: shouldSummarize ? 0.1 : 1, // Apply fading effect based on shouldSummarize
               pointerEvents: shouldSummarize ? 'none' : 'auto', // Prevent interaction when faded/disabled
             }}
-            p="2px"
+            px="12px"
+            py="4px"
             name="message"
             id="message"
             rows={textAreaRows}
