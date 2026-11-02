@@ -168,7 +168,7 @@ class ContactForm extends React.Component<Props, State> {
             py="4px"
             sx={{
               borderStyle: 'solid',
-              borderRadius: '4px',
+              borderRadius: '16px',
               bg: 'white',
               borderWidth: '2px',
               borderColor: !firstName && clickedSubmit ? 'red' : 'transparent',
@@ -182,7 +182,7 @@ class ContactForm extends React.Component<Props, State> {
             className="on-focus"
             sx={{
               borderStyle: 'solid',
-              borderRadius: '4px',
+              borderRadius: '16px',
               bg: 'white',
               borderWidth: '2px',
               borderColor: !lastName && clickedSubmit ? 'red' : 'transparent',
@@ -202,7 +202,7 @@ class ContactForm extends React.Component<Props, State> {
           className="on-focus"
           sx={{
             borderStyle: 'solid',
-            borderRadius: '4px',
+            borderRadius: '16px',
             bg: 'white',
             borderWidth: '2px',
             borderColor: !email && clickedSubmit ? 'red' : 'transparent',
@@ -242,7 +242,7 @@ class ContactForm extends React.Component<Props, State> {
             className="on-focus"
             sx={{
               borderStyle: 'solid',
-              borderRadius: '4px',
+              borderRadius: '16px',
               bg: 'white',
               borderWidth: '2px',
               borderColor: !message && clickedSubmit ? 'red' : 'transparent',
