@@ -1,0 +1,334 @@
+@import '~antd/dist/antd.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#__next {
+  display: flex;
+}
+
+body {
+  background: initial;
+}
+
+#__next {
+  flex: 1;
+  max-height: 100%;
+}
+
+.Mobile {
+  font-size: 16px;
+}
+
+.TextArea--transparent,
+.TextArea--transparent:hover,
+.TextArea--transparent:focus,
+.TextArea--transparent:active {
+  border: none;
+  box-shadow: none;
+  resize: none;
+}
+
+.Text--markdown {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.Text--markdown a {
+  text-decoration: underline;
+}
+
+.Text--markdown p:not(:first-child) {
+  margin-top: 4px;
+}
+
+.Text--markdown pre {
+  white-space: pre-wrap;
+}
+
+.Text--markdown h1,
+.Text--markdown h2,
+.Text--markdown h3,
+.Text--markdown h4,
+.Text--markdown h5,
+.Text--markdown h6 {
+  margin: 10px 0 6px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.Text--markdown h1 {
+  font-size: 1.5em;
+}
+.Text--markdown h2 {
+  font-size: 1.35em;
+}
+.Text--markdown h3 {
+  font-size: 1.2em;
+}
+.Text--markdown h4 {
+  font-size: 1.1em;
+}
+.Text--markdown h5 {
+  font-size: 1em;
+}
+.Text--markdown h6 {
+  font-size: 0.95em;
+  color: #6b7280;
+}
+
+.Text--markdown ul,
+.Text--markdown ol {
+  padding-left: 22px;
+}
+.Text--markdown ul ul,
+.Text--markdown ol ol,
+.Text--markdown ul ol,
+.Text--markdown ol ul {
+  margin: 2px 0;
+}
+.Text--markdown li {
+  margin: 2px 0;
+}
+.Text--markdown li > p {
+  margin: 0;
+}
+.Text--markdown-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.Text--markdown-task > input[type='checkbox'] {
+  cursor: default;
+}
+
+.Text--markdown blockquote {
+  color: rgba(60, 70, 80, 0.85);
+}
+
+.Text--markdown-hr {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  margin: 12px 0;
+}
+
+.Text--markdown-table-wrap {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.Text--markdown-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95em;
+}
+.Text--markdown-table th,
+.Text--markdown-table td {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.Text--markdown-table th {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+.Text--markdown-table tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.Text--markdown del {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.Text--markdown-inline-code,
+.Text--markdown code:not(pre code) {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+.Text--markdown-pre,
+.Text--markdown pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  line-height: 1.45;
+}
+.Text--markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Dark bubble variant (user messages) */
+.Text--white .Text--markdown-table th,
+.Text--white .Text--markdown-table td {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.Text--white .Text--markdown-table th {
+  background: rgba(255, 255, 255, 0.12);
+}
+.Text--white .Text--markdown-table tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.06);
+}
+.Text--white .Text--markdown-inline-code,
+.Text--white .Text--markdown code:not(pre code),
+.Text--white .Text--markdown-pre,
+.Text--white .Text--markdown pre {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.Text--white .Text--markdown-hr {
+  border-top-color: rgba(255, 255, 255, 0.3);
+}
+.Text--white .Text--markdown blockquote {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.Text--white {
+  color: #fff;
+}
+
+.Text--white > h1,
+.Text--white > h2,
+.Text--white > h3,
+.Text--white > h4,
+.Text--white > h5,
+.Text--white > h6,
+.Text--white a {
+  color: #fff;
+}
+
+.CloseIcon {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.CloseIcon:hover {
+  opacity: 1;
+}
+
+.CloseIconSmall {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+.CloseIconSmall:hover {
+  opacity: 1;
+}
+
+.footer-bg {
+  background-color: rgba(245, 245, 245, 0.3);
+}
+
+input::placeholder {
+  color: rgba(148, 148, 156, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+textarea::placeholder {
+  color: rgba(148, 148, 156, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.DiscardIcon {
+  fill: red;
+}
+
+.DiscardIcon:hover {
+  fill: white;
+}
+
+/* :root {
+  --primary-color: #007bff;
+}
+
+.tippy-box[data-theme~='dynamic-primary'] {
+  background-color: var(--primary-color);
+}
+
+.tippy-box[data-theme='dynamic-primary'] > .tippy-arrow:before {
+  border-color: transparent !important;
+}
+
+.tippy-box[data-theme='dynamic-primary'][data-placement^='top']
+  > .tippy-arrow:before {
+  border-top-color: var(--primary-color) !important;
+}
+
+.tippy-box[data-theme='dynamic-primary'][data-placement^='bottom']
+  > .tippy-arrow:before {
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.tippy-box[data-theme='dynamic-primary'][data-placement^='left']
+  > .tippy-arrow:before {
+  border-left-color: var(--primary-color) !important;
+}
+
+.tippy-box[data-theme='dynamic-primary'][data-placement^='right']
+  > .tippy-arrow:before {
+  border-right-color: var(--primary-color) !important;
+} */
+
+.on-focus:focus {
+  outline: none !important;
+  border: 2px solid rgba(148, 148, 156, 0.8) !important;
+}
+
+/* Targeting the scrollbar track (part the actual scrollbar moves along) */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 50%;
+}
+
+/* Targeting the scrollbar handle */
+::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  border-radius: 50%;
+  border: 3px solid #f1f1f1;
+}
+
+/* Targeting the scrollbar itself (including size) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  scroll-snap-type: x mandatory;
+  scroll-snap-align: start;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: darkgrey #f1f1f1;
+}
