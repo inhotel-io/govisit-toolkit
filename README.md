@@ -115,10 +115,21 @@ and references. A collection archive is not a universally supported skill-upload
 
 Claude Code:
 
+Install the Claude Code CLI first. Anthropic recommends the native installer for macOS, Linux, and WSL:
+
+```sh
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+```
+
+On Windows, use the [official Claude Code installation guide](https://code.claude.com/docs/en/getting-started) for the PowerShell or Command Prompt installer. Then add the marketplace and install a plugin:
+
 ```sh
 claude plugin marketplace add inhotel-io/govisit-toolkit
 claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 ```
+
+The marketplace command uses the repository's default `main` branch.
 
 Codex:
 
@@ -162,7 +173,7 @@ a public profile does not establish ownership or grant permission to update it.
 
 After installation, start a session if your host needs to refresh discovery:
 
-> Use GoVisit to find Prague, then find hotels there suitable for a quiet weekend.
+> Search GoVisit for places in Czechia where travelers can actively participate in immersive experiences such as regional festivals, traditional craft workshops, historical preservation sites, and local food traditions.
 > Read the published profiles, explain missing evidence, and link the GoVisit sources.
 
 An empty result does not prove absence, and published discovery facts do not prove
