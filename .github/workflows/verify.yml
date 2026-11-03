@@ -21,6 +21,7 @@ jobs:
       - run: npm run verify:release -- --local
       - run: |
           for plugin in plugins/*; do
+            [ -f "$plugin/.claude-plugin/plugin.json" ] || continue
             npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate "$plugin"
           done
       - run: npx --yes @anthropic-ai/claude-code@2.1.316 plugin validate .
