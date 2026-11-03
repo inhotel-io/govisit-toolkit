@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><svg x="8.6" y="0" width="30.8" height="48" viewBox="4.3 0 15.4 24" preserveAspectRatio="xMidYMid meet"><rect width="24" height="24" rx="5.5" fill="none"/><g fill="none" stroke="#7E91C8" stroke-linecap="round" stroke-linejoin="round"><g opacity=".1" stroke-width="3.2"><path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4"/><path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/></g><g stroke-width="1.45"><path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4m-12.15 2h13.5M8.5 17.85h7M12 5.35V7.6"/><path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/></g></g><circle cx="12" cy="5.35" r=".85" fill="#424242"/></svg></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><svg x="0" y="0" width="48" height="48" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet">
+  <circle cx="24" cy="24" r="23" fill="#F0F3FC"/>
+  <svg x="8.6" y="0" width="30.8" height="48" viewBox="4.3 0 15.4 24" aria-hidden="true">
+    <g fill="none" stroke="#7E91C8" stroke-linecap="round" stroke-linejoin="round">
+      <g opacity=".12" stroke-width="3.2">
+        <path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4"/>
+        <path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/>
+      </g>
+      <g stroke-width="1.45">
+        <path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4m-12.15 2h13.5M8.5 17.85h7M12 5.35V7.6"/>
+        <path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/>
+      </g>
+    </g>
+    <circle cx="12" cy="5.35" r=".85" fill="#424242"/>
+  </svg>
+</svg></svg>

@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><svg x="8.6" y="0" width="30.8" height="48" viewBox="4.3 0 15.4 24" preserveAspectRatio="xMidYMid meet"><rect width="24" height="24" rx="5.5" fill="none"/><g fill="none" stroke="#999AC7" stroke-linecap="round" stroke-linejoin="round"><g opacity=".1" stroke-width="3.2"><path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4"/><path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/></g><g stroke-width="1.45"><path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4m-12.15 2h13.5M8.5 17.85h7M12 5.35V7.6"/><path d="M8.3 11.7c.84-.94 2.03-.94 2.87 0l.83.92.83-.92c.84-.94 2.03-.94 2.87 0 .76.86.76 2.08 0 2.94-.84.94-2.03.94-2.87 0l-.83-.92-.83.92c-.84.94-2.03.94-2.87 0a2.18 2.18 0 0 1 0-2.94"/></g></g><circle cx="12" cy="5.35" r=".85" fill="#424242"/></svg></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><svg x="0" y="0" width="48" height="48" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet">
+  <rect x="3.5" y="3.5" width="41" height="41" rx="8" fill="#F8F8FB" stroke="#202124" stroke-width="1.5"/>
+  <svg x="12" y="6" width="24" height="36" viewBox="4.3 0 15.4 24" aria-hidden="true">
+    <g fill="none" stroke="#202124" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6.6 13.35c0-2.98 2.42-5.4 5.4-5.4s5.4 2.42 5.4 5.4M5.15 15.4h13.7M8.45 18h7.1M12 5.25V7.6"/>
+      <path d="M8.25 11.65c.86-.96 2.07-.96 2.93 0l.82.92.82-.92c.86-.96 2.07-.96 2.93 0 .78.88.78 2.13 0 3.01-.86.96-2.07.96-2.93 0l-.82-.92-.82.92c-.86.96-2.07.96-2.93 0-.78-.88-.78-2.13 0-3.01"/>
+    </g>
+  </svg>
+  <path d="M38 6.5c-2.7 0-4.5 1.9-4.5 4.3 0 3.2 4.5 7.2 4.5 7.2s4.5-4 4.5-7.2c0-2.4-1.8-4.3-4.5-4.3Z" fill="#7E91C8"/>
+  <circle cx="38" cy="10.7" r="1.35" fill="#fff"/>
+</svg></svg>
