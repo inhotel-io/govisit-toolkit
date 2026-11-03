@@ -99,7 +99,7 @@ export async function buildToolkit({ root, release, packs } = {}) {
   }
   const marketplace = { name: "govisit-toolkit", description: "GoVisit travel discovery skills and native agent packages.", owner: { name: "inHotel Sàrl" }, plugins: selected.map(p => ({ name: p.name, source: `./plugins/${p.name}`, description: p.description })) };
   generated[".claude-plugin/marketplace.json"] = json(marketplace);
-  generated[".agents/plugins/marketplace.json"] = json({ name: "govisit-toolkit", interface: { displayName: "GoVisit Toolkit" }, plugins: selected.map(p => ({ name: p.name, source: { source: "git-subdir", url: `https://github.com/${release.repository}.git`, path: `./plugins/${p.name}`, ref: release.tag }, policy: { installation: "AVAILABLE", authentication: "ON_USE" }, category: "Travel" })) });
+  generated[".agents/plugins/marketplace.json"] = json({ name: "govisit-toolkit", interface: { displayName: "GoVisit Toolkit" }, plugins: selected.map(p => ({ name: p.name, source: { source: "git-subdir", url: `https://github.com/${release.repository}.git`, path: `./plugins/${p.name}`, ref: "main" }, policy: { installation: "AVAILABLE", authentication: "ON_USE" }, category: "Travel" })) });
   const marketplaceIcon = await readFile(path.join(root, "config/plugin-icons/marketplace.svg"), "utf8");
   generated["plugins/assets/marketplace.svg"] = Buffer.from(squareIconSvg(marketplaceIcon));
   assets["index.json"] = Buffer.from(json(index));

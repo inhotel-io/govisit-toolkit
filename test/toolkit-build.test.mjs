@@ -28,7 +28,7 @@ test("native packages are complete, selected once, and archives match approved d
     assert.equal(portable.version, claude.version);
     const native = JSON.parse(await readFile(path.join(dir, ".agents/plugins/marketplace.json")));
     assert.equal(native.plugins[0].source.source, "git-subdir");
-    assert.equal(native.plugins[0].source.ref, JSON.parse(await readFile(path.join(dir, "config/release.json"))).tag);
+    assert.equal(native.plugins[0].source.ref, "main");
     assert.equal(native.plugins[0].source.path, "./plugins/govisit");
     const index = JSON.parse(await readFile(path.join(dir, "dist/index.json")));
     for (const entry of index.skills) {
