@@ -2,6 +2,7 @@
   {
     "name": "govisit",
     "label": "All skills",
+    "icon": "govisit.svg",
     "description": "Read published GoVisit travel information with all available toolkit skills.",
     "include": "all",
     "exclude": [],
@@ -10,6 +11,7 @@
   {
     "name": "govisit-travel-planner",
     "label": "Travel Planner",
+    "icon": "travel-planner.svg",
     "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
     "include": "all",
     "exclude": [
@@ -23,6 +25,7 @@
   {
     "name": "govisit-destination",
     "label": "Destination",
+    "icon": "destination.svg",
     "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
     "include": [
       "govisit-search-destinations",
@@ -48,6 +51,7 @@
   {
     "name": "govisit-local-business",
     "label": "Local Business",
+    "icon": "local-business.svg",
     "description": "Find and inspect business profiles and their local destination context. Place updates are planned.",
     "include": [
       "govisit-search-places",

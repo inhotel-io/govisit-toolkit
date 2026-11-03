@@ -17,7 +17,9 @@ test("native packages are complete, selected once, and archives match approved d
   const dir = await fixture();
   try {
     const result = cli(dir); assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual((await readdir(path.join(dir, "plugins"))).sort(), ["govisit", "govisit-destination", "govisit-local-business", "govisit-travel-planner"]);
+    const pluginEntries = await readdir(path.join(dir, "plugins"), { withFileTypes: true });
+    assert.deepEqual(pluginEntries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort(), ["assets", "govisit", "govisit-destination", "govisit-local-business", "govisit-travel-planner"]);
+    assert.match(await readFile(path.join(dir, "plugins/assets/marketplace.svg"), "utf8"), /^<svg\b/);
     assert.equal((await readdir(path.join(dir, "plugins/govisit/skills"))).length, 22);
     assert.equal((await readdir(path.join(dir, "plugins/govisit-travel-planner/skills"))).length, 18);
     const portable = JSON.parse(await readFile(path.join(dir, "plugins/govisit/plugin.json")));

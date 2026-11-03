@@ -96,6 +96,12 @@ claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 
 Codex:
 
+Install or upgrade Codex CLI before running these commands:
+
+```sh
+npm install -g @openai/codex@latest
+```
+
 ```sh
 codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.0
 codex plugin add govisit-travel-planner@govisit-toolkit
@@ -106,6 +112,11 @@ Use `govisit@govisit-toolkit` for All, `govisit-destination@govisit-toolkit` for
 selection, and all resources remain inside the plugin root. A native Claude skill
 is namespaced, for example `/govisit-travel-planner:govisit-search-places`; portable
 skill invocation uses the host's own skill selector.
+
+Codex reads each package's listing and composer icons from its `plugin.json`; the
+SVGs live in that package's `assets/` directory. The Codex marketplace manifest
+currently has no marketplace-level icon field. Its GoVisit Toolkit brand SVG is
+kept at `plugins/assets/marketplace.svg` for use by surfaces that support one.
 
 ## For destination and local business managers
 
