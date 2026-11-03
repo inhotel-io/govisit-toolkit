@@ -19,7 +19,9 @@
         "capabilities": [
           "Read"
         ],
-        "websiteURL": "https://govisit.ai"
+        "websiteURL": "https://govisit.ai",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/icon.svg"
       }
     }
   }
