@@ -77,7 +77,7 @@ async function main() {
     }
     assert.equal(launcher?.status, 200, 'Launcher must be served');
     assert.match(launcher.headers['content-type'], /javascript/);
-    assert.match(launcher.body, /ASSISTANT_INTERACTION_PROFILE_ID/);
+    assert.match(launcher.body, /agent_card_url/);
     assert.match(launcher.body, /InhotelChatWidget/);
 
     const iframe = await get(port, '/?token=-1&inbox=smoke-test&version=1.0.0');

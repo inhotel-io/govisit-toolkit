@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: govisit-floating-chat
+  namespace: inhtoel-agent-app
+spec:
+  # Two replicas: this host serves a script embedded on third-party hotel
+  # sites, so a single-pod restart would be a visible outage for them.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: govisit-floating-chat
+  template:
+    metadata:
+      labels:
+        app: govisit-floating-chat
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: govisit-floating-chat
+      containers:
+        - name: floating-chat
+          # The Floating Chat workflow owns the image (kubectl set image). To
+          # apply this file by hand, put the running image in its place first:
+          #   kubectl -n inhtoel-agent-app get deployment govisit-floating-chat \
+          #     -o jsonpath='{.spec.template.spec.containers[0].image}'
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet: {path: /widget.js, port: 3000}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /widget.js, port: 3000}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 1Gi}
+            limits: {cpu: 200m, memory: 512Mi, ephemeral-storage: 1Gi}
+          securityContext:
+            capabilities:
+              drop: [NET_RAW]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: govisit-floating-chat
+  namespace: inhtoel-agent-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: govisit-floating-chat
