@@ -1,5 +1,25 @@
 name: Floating Chat
 
+# Build and test every change to tools/floating-chat; deploy main to
+# floating-chat.govisit.ai.
+#
+# build   Pull requests and pushes to main that touch the tool, and manual runs.
+#         It also builds the image, so a broken Dockerfile fails a pull request
+#         rather than a deploy. It holds no credential, so a pull request from a
+#         fork has nothing to steal.
+# deploy  Pushes to main and manual runs on main, once build passes. It pushes
+#         the image tagged with the commit SHA and moves Deployment
+#         govisit-floating-chat onto it. The rest of the hosted service
+#         (tools/floating-chat/k8s/govisit) is applied by hand; only the image
+#         changes here.
+#
+# The deploy signs in to Google Cloud through Workload Identity Federation, so
+# there is no key in this repository. The provider and service account are
+# repository variables (FLOATING_CHAT_WIF_PROVIDER, FLOATING_CHAT_SERVICE_ACCOUNT),
+# not secrets: neither is confidential. The provider accepts only this file,
+# run on main by a push or by hand, and in the cluster the service account may
+# change only that Deployment.
+
 on:
   pull_request:
     paths:
@@ -34,3 +54,91 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - run: npm test
+      - name: Build the image the deploy job ships
+        run: docker build --tag floating-chat:ci .
+
+  deploy:
+    needs: build
+    # Forks and other branches skip this job. `vars` is readable in `if:` and
+    # `secrets` is not, which is one more reason the identity is variables.
+    if: >-
+      github.repository == 'inhotel-io/govisit-toolkit' &&
+      github.ref == 'refs/heads/main' &&
+      vars.FLOATING_CHAT_WIF_PROVIDER != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # One deploy at a time, and none is cancelled: a rollout stopped halfway is
+    # a state no run chose.
+    concurrency:
+      group: floating-chat-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # the OIDC token GCP federates; auth fails opaquely without it
+    env:
+      PROJECT_ID: inhotel-prod
+      GKE_CLUSTER: inhotel-agent
+      GKE_LOCATION: europe-west6
+      GKE_NAMESPACE: inhtoel-agent-app # the typo is the real name
+      DEPLOYMENT: govisit-floating-chat
+      CONTAINER: floating-chat
+      IMAGE: gcr.io/inhotel-prod/govisit-floating-chat
+    defaults:
+      run:
+        working-directory: tools/floating-chat
+    steps:
+      # This job can obtain the deploy identity, so its actions are pinned to a
+      # commit; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.FLOATING_CHAT_WIF_PROVIDER }}
+          service_account: ${{ vars.FLOATING_CHAT_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Build and push the image
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin https://gcr.io
+          docker build -t "$IMAGE:$GITHUB_SHA" .
+          docker push "$IMAGE:$GITHUB_SHA"
+
+      # Writes a kubeconfig holding a short-lived token, so kubectl needs no
+      # gke-gcloud-auth-plugin.
+      - uses: google-github-actions/get-gke-credentials@3da1e46a907576cefaa90c484278bb5b259dd395 # v3.0.0
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_LOCATION }}
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Move the Deployment onto the new image
+        run: |
+          set -euo pipefail
+          kubectl -n "$GKE_NAMESPACE" set image "deployment/$DEPLOYMENT" "$CONTAINER=$IMAGE:$GITHUB_SHA"
+          # The old pods keep serving until the new ones are ready. If the new
+          # ones never get there, put the previous image back rather than leave
+          # the rollout stuck halfway.
+          if ! kubectl -n "$GKE_NAMESPACE" rollout status "deployment/$DEPLOYMENT" --timeout=300s; then
+            kubectl -n "$GKE_NAMESPACE" rollout undo "deployment/$DEPLOYMENT"
+            echo "::error title=Rollout failed::$IMAGE:$GITHUB_SHA never became ready; the previous image was restored."
+            exit 1
+          fi
+
+      - name: Check floating-chat.govisit.ai serves this commit's launcher
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --max-time 30 \
+                --output "$RUNNER_TEMP/widget.js" https://floating-chat.govisit.ai/widget.js &&
+              cmp --silent "$RUNNER_TEMP/widget.js" public/widget.js; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=Live check failed::https://floating-chat.govisit.ai/widget.js is not this commit's public/widget.js."
+          exit 1

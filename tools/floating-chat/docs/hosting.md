@@ -2,8 +2,9 @@
 
 Status: accepted on 2026-11-02. Scope: hosting and release design for the
 GoVisit-operated service. Self-hosted installations may use their own hostname.
-The current source import does not provision DNS/TLS, deploy the service, or
-implement the release routes described here.
+Since 2026-11-04, `floating-chat.govisit.ai` has DNS and a Let's Encrypt
+certificate, and the toolkit's Floating Chat workflow deploys `main` to it (see
+the tool's README). The release routes described here are not implemented yet.
 
 ## Hostname and application boundary
 
