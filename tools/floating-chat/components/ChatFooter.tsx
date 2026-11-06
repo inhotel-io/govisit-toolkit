@@ -247,16 +247,12 @@ const ChatFooter = ({
                 width: '36px',
                 padding: 0,
                 '&:disabled, &:disabled:hover, &:disabled:active': {
-                  bg: '#d9d9d9',
+                  bg: '#f5f5f5',
                   cursor: 'default',
                 },
               }}
             >
-              <SendIcon
-                width={16}
-                height={16}
-                fill={canSend ? 'background' : 'gray'}
-              />
+              <SendIcon width={16} height={16} fill="#fff" />
             </Button>
           </Flex>
         </Flex>
