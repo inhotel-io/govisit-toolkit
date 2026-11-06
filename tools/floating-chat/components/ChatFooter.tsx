@@ -82,6 +82,9 @@ const ChatFooter = ({
 
   const hasValidEmail = email && email.length > 5 && email.indexOf('@') !== -1;
   const isDisabled = isUploading || isSending;
+  const isComposerDisabled =
+    isDisabled || (shouldRequireEmail && !hasValidEmail);
+  const canSend = !isComposerDisabled && message.trim().length > 0;
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setMessage(e.target.value);
@@ -101,7 +104,7 @@ const ChatFooter = ({
 
   const handleSendMessage = (e?: React.FormEvent<HTMLFormElement>) => {
     e && e.preventDefault();
-    console.log('isSending', isSending);
+    if (!canSend) return;
     onSendMessage({body: message}, email);
     setMessage('');
     setEmail('');
@@ -194,7 +197,7 @@ const ChatFooter = ({
               maxRows={4}
               autoFocus
               value={message}
-              disabled={isDisabled || (shouldRequireEmail && !hasValidEmail)}
+              disabled={isComposerDisabled}
               onKeyDown={handleKeyDown}
               onChange={handleMessageChange}
             />
@@ -234,7 +237,7 @@ const ChatFooter = ({
             <Button
               variant="primary"
               type="submit"
-              disabled={isDisabled}
+              disabled={!canSend}
               sx={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -243,9 +246,17 @@ const ChatFooter = ({
                 height: '36px',
                 width: '36px',
                 padding: 0,
+                '&:disabled, &:disabled:hover, &:disabled:active': {
+                  bg: '#d9d9d9',
+                  cursor: 'default',
+                },
               }}
             >
-              <SendIcon width={16} height={16} fill="background" />
+              <SendIcon
+                width={16}
+                height={16}
+                fill={canSend ? 'background' : 'gray'}
+              />
             </Button>
           </Flex>
         </Flex>
