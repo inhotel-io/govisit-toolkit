@@ -1167,7 +1167,7 @@ class ChatWindow extends React.Component<Props, State> {
           )}
 
           {this.state.isMailIconClicked && (
-            <Box sx={{flex: 1}} px={'20px'}>
+            <Box sx={{flex: 1, minHeight: 0, overflowY: 'auto'}} px={'20px'}>
               <ContactForm
                 handleChange={this.handleChangeCF}
                 handleSubmit={this.handleSubmitCF}
@@ -1253,11 +1253,7 @@ class ChatWindow extends React.Component<Props, State> {
               bg: 'rgb(239, 239, 239)',
             }}
           >
-            {shouldDisplayBranding && (
-              <InhotelBranding
-                isMailIconClicked={this.state.isMailIconClicked}
-              />
-            )}
+            {shouldDisplayBranding && <InhotelBranding />}
           </Box>
 
           <img
