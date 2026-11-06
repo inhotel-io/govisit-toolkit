@@ -247,7 +247,7 @@ export const getThemeConfig = (settings: ThemeSettings) => {
         maxHeight: ['60%', '704px'],
         boxShadow: 'rgba(0, 0, 0, 0.16) 0px 5px 40px',
         height: 'calc(100% - 120px)',
-        borderRadius: 8,
+        borderRadius: 16,
         overflow: 'hidden',
       },
       WidgetToggleContainer: {

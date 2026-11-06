@@ -129,12 +129,12 @@ const ChatFooterEmail = ({
                     width: '36px',
                     padding: '2px',
                     borderStyle: 'solid',
-                    borderColor: 'black',
+                    borderColor: '#9a9b9b',
                     borderWidth: '2px',
                     bg: '#f5f5f5',
                   }}
                 >
-                  <DiscardIcon fill={isDiscardFocused ? 'white' : 'black'} />
+                  <DiscardIcon fill={isDiscardFocused ? 'white' : '#9a9b9b'} />
                 </Button>
               </Tippy>
               {!isSubmittedCF && (
