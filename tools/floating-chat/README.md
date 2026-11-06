@@ -15,11 +15,19 @@ The host page loads `public/widget.js`, which creates the floating launcher and
 opens an iframe. The iframe renders the Next.js chat application. The client
 sends A2A `message/stream` requests using JSON-RPC and Server-Sent Events.
 
-The initial import retains the inHotel adapter: settings and contact forms use
-`backend.inhotel.io`, and an assistant profile ID resolves to
-`https://<profile-id>.agents.inhotel.io/`. Connecting another A2A deployment
-currently requires adapting these URL/settings mappings and allowing the chat
-origin in that service's CORS policy. There is no arbitrary agent URL setting yet.
+The launcher takes the agent's card URL, `agent_card_url`, and reads the
+assistant profile ID from the card's host. The initial import's inHotel adapter
+remains behind it: settings and contact forms use `backend.inhotel.io`, and the
+profile ID resolves to `https://<profile-id>.agents.inhotel.io/`. Connecting
+another A2A deployment currently requires adapting these URL/settings mappings
+and allowing the chat origin in that service's CORS policy. There is no arbitrary
+agent URL setting yet: the launcher rejects cards hosted anywhere else.
+
+The welcome message and assistant replies use the public agent card's `iconUrl`
+from `/.well-known/agent-card.json`. The text appears immediately while a fixed
+32px avatar slot stays blank until the image is ready. Missing or unusable icons
+use the built-in SVG fallback; card and image loading each have a three-second
+timeout before showing the fallback. No guest message is required to load it.
 
 ## Development
 
@@ -33,26 +41,41 @@ npm ci --ignore-scripts
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). To exercise the local iframe UI
-with an existing assistant, open
+Open [localhost:3000](http://localhost:3000) for the embed code and a live
+launcher, chatting with the example agent from the Focus Chat quick start. Add
+`?agent_card_url=` with another inHotel agent card URL to chat with that agent
+instead. To exercise the local iframe UI with an existing assistant, open
 `http://localhost:3000/?token=-1&inbox=YOUR_ASSISTANT_PROFILE_ID&version=1.0.0`.
+Add `&shouldShowContactForm=true` to that preview URL to show the envelope
+control in the footer. Click it to open the contact form; opening or focusing the
+form does not submit it. Form fields reserve their border space so focus and
+validation do not move neighbouring fields.
+
 The legacy `token=-1` value selects the UI; it is not an authentication credential.
 Sending a message uses the remote agent service described above.
 
+Missing or invalid theme colors fall back to GoVisit blue-600 (`#465EA4`) in
+both the launcher and iframe. Valid customer colors take precedence.
+
 ## Embed on a website
 
-An existing inHotel-hosted integration uses this contract:
+Name the agent by its card, the same `agent_card_url` that `<focus-chat>` takes:
 
 ```html
 <script>
-  window.ASSISTANT_INTERACTION_PROFILE_ID = 'YOUR_ASSISTANT_PROFILE_ID';
+  window.agent_card_url =
+    'https://YOUR_ASSISTANT_PROFILE_ID.agents.inhotel.io/.well-known/agent-card.json';
 </script>
-<script async defer src="https://chat.inhotel.io/widget.js"></script>
+<script async defer src="https://floating-chat.govisit.ai/widget.js"></script>
 ```
 
-The profile ID must be defined before the script loads. The existing
-`ASSISTANT_INTERACTION_PROFILE_ID` and `window.InhotelChatWindow` names are
-preserved for compatibility with installed integrations.
+`agent_card_url` must be set before the script loads, either as that global or
+as `window.InhotelChatWindow.config.agent_card_url`. It must be an inHotel agent
+card URL of exactly that form.
+
+Integrations installed with `window.ASSISTANT_INTERACTION_PROFILE_ID` and
+`https://chat.inhotel.io/widget.js` keep working unchanged: chat.inhotel.io is a
+separate deployment of the original chat window, which this tool does not change.
 
 Presentation options can be supplied before loading the script:
 
@@ -69,10 +92,9 @@ Presentation options can be supplied before loading the script:
 </script>
 ```
 
-For a self-hosted deployment, replace the script URL with your own host and
-update the iframe origins in `public/widget.js` (`OD` and `xD`). For local
-launcher development, both origins can point to `http://localhost:3000`.
-Changing the script URL alone does not change its embedded iframe origin.
+For a self-hosted deployment, replace the script URL with your own host. The
+launcher opens its iframe from the host that served the script, so a local
+`npm run dev` also loads the local iframe.
 
 The launcher supplies its page origin to the iframe. Incoming bridge messages
 are accepted only from that parent window and origin, and outgoing events target
@@ -92,7 +114,8 @@ npm start
 ```
 
 `npm run build` compiles and type-checks the Next.js application. `npm test`
-runs the security regressions, then starts the production server on a temporary local port, checks the launcher,
+runs security and presentation regressions, then starts the production server on
+a temporary local port and checks the launcher,
 iframe pages, compiled JavaScript, and license files, then stops the server.
 These checks do not contact a live agent or send guest messages.
 Run `npm run test:security` for the rendering and iframe-boundary regressions
@@ -107,30 +130,46 @@ maintenance follow-up.
 
 ## Source layout
 
-| Path                          | Responsibility                                        |
-| ----------------------------- | ----------------------------------------------------- |
-| `public/widget.js`            | Host-page launcher and iframe bridge                  |
-| `pages/index.tsx`             | Iframe application entry point                        |
-| `components/Widget.tsx`       | Configuration and theme wrapper                       |
-| `components/ChatWindow.tsx`   | Chat UI and conversation behavior                     |
-| `components/ChatMessage*.tsx` | Message rendering                                     |
-| `components/ChatFooter*.tsx`  | Composer and contact controls                         |
-| `helpers/a2a-client.ts`       | A2A JSON-RPC/SSE communication                        |
-| `helpers/storage.ts`          | Browser conversation and context persistence          |
-| `helpers/embed-security.ts`   | Parent-message validation and fixed-origin agent URLs |
-| `styles/`                     | Global and emoji styling                              |
-| `tests/`                      | Local production smoke checks                         |
-| `k8s/`                        | Kubernetes deployment examples                        |
+| Path | Responsibility |
+| --- | --- |
+| `public/widget.js` | Host-page launcher and iframe bridge |
+| `pages/index.tsx` | Iframe application entry point |
+| `components/EmbedLanding.tsx` | Embed code and live launcher, shown when `/` is opened directly |
+| `components/Widget.tsx` | Configuration and theme wrapper |
+| `components/ChatWindow.tsx` | Chat UI and conversation behavior |
+| `components/ChatMessage*.tsx` | Message rendering |
+| `components/ChatFooter*.tsx` | Composer and contact controls |
+| `helpers/a2a-client.ts` | A2A JSON-RPC/SSE communication |
+| `helpers/storage.ts` | Browser conversation and context persistence |
+| `helpers/embed-security.ts` | Parent-message validation and fixed-origin agent URLs |
+| `styles/` | Global and emoji styling |
+| `tests/` | Local production smoke checks |
+| `k8s/` | Kubernetes deployment examples |
+| `k8s/govisit/` | The GoVisit-hosted service's Kubernetes resources |
 
 ## Deploy
 
-The accepted GoVisit hosting decision is to serve the launcher and iframe app on
-`floating-chat.govisit.ai`, with independently versioned releases. See
+GoVisit runs this tool at `https://floating-chat.govisit.ai`, following
 [the hosting decision](docs/hosting.md) for URL policy, managed TLS, caching,
-rollback, and migration from `chat.inhotel.io`. This is the target deployment
-design; the import does not provision that hostname or implement version routing.
+rollback, and migration from `chat.inhotel.io`. Versioned release routes are not
+implemented yet: the host serves the latest `main` at `/widget.js` and `/`.
 
-Build from this tool directory so its Docker context contains its own files:
+The toolkit's [Floating Chat workflow](../../.github/workflows/floating-chat.yml)
+builds, tests and builds the image for every pull request that touches this
+directory. A push to `main` that touches it also deploys: the workflow pushes the
+image tagged with the commit SHA, moves Deployment `govisit-floating-chat` onto
+it, and checks that `https://floating-chat.govisit.ai/widget.js` is the commit's
+launcher. If the new pods never become ready, it restores the previous image.
+Run the workflow by hand on `main` to deploy again.
+
+The deploy signs in to Google Cloud through Workload Identity Federation, so the
+repository holds no key. Only this workflow, run on `main` by a push or by hand,
+can obtain that identity, and in the cluster it may change only that Deployment.
+[`k8s/govisit/`](k8s/govisit) holds the hosted service's resources. The workflow
+changes only the image, so apply changes to the others by hand.
+
+To run your own copy, build from this tool directory so its Docker context
+contains its own files:
 
 ```sh
 docker build -t floating-chat:local .
@@ -138,13 +177,10 @@ docker run --rm -p 3000:3000 floating-chat:local
 ```
 
 The image includes the MIT license and third-party notices. The Kubernetes
-examples use `floating-chat` resource names and the current kubectl namespace.
-Replace the image and `chat.example.com` hostname before using them. Their ingress
-example assumes an NGINX ingress controller and a cert-manager issuer named
-`letsencrypt-prod`; adapt it to your own cluster.
-
-The toolkit's Floating Chat workflow checks builds and local serving. Deploying
-the hosted inHotel service remains a separate operational action.
+examples in `k8s/` use `floating-chat` resource names and the current kubectl
+namespace. Replace the image and `chat.example.com` hostname before using them.
+Their ingress example assumes an NGINX ingress controller and a cert-manager
+issuer named `letsencrypt-prod`; adapt it to your own cluster.
 
 ## Maintenance status
 

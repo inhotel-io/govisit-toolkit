@@ -169,7 +169,8 @@ export async function streamMessage(
   request: ChatRequest,
   onToken: StreamCallback,
   onComplete: CompleteCallback,
-  onError: ErrorCallback
+  onError: ErrorCallback,
+  signal?: AbortSignal
 ): Promise<void> {
   const payload = buildJsonRpcPayload(request);
 
@@ -184,6 +185,7 @@ export async function streamMessage(
       body: JSON.stringify(payload),
       mode: 'cors',
       credentials: 'omit',
+      signal,
     });
 
     if (!response.ok) {

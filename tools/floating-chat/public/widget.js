@@ -1,4 +1,6 @@
-var inbox_id = ASSISTANT_INTERACTION_PROFILE_ID;
+// The page sets agent_card_url (a global, or InhotelChatWindow.config.agent_card_url)
+// before loading this script, the same attribute <focus-chat> takes. It is read
+// in the bootstrap at the bottom of this file.
 
 // ACCOUNT_ID no longer needed - using A2A protocol
 var ACCOUNT_ID = -1;
@@ -9,8 +11,12 @@ var Mq = 'https://backend.inhotel.io';
 // LOCAL
 // var Mq = 'http://127.0.0.1:8000';
 // ND = 'http://127.0.0.1:8000';
-OD = 'https://chat.inhotel.io';
-(xD = 'https://chat.inhotel.io'),
+// The iframe page comes from the host that served this script, so a self-hosted
+// copy or a local `npm run dev` opens its own iframe.
+OD =
+  (document.currentScript && new URL(document.currentScript.src).origin) ||
+  'https://floating-chat.govisit.ai';
+(xD = OD),
   // Initialize widget immediately (no account ID fetch needed)
   (function () {
     function za(a) {
@@ -21072,7 +21078,7 @@ OD = 'https://chat.inhotel.io';
           maxHeight: ['60%', '704px'],
           boxShadow: 'rgba(0, 0, 0, 0.16) 0px 5px 40px',
           height: 'calc(100% - 120px)',
-          borderRadius: 8,
+          borderRadius: 16,
           overflow: 'hidden',
           notifications: {
             background: 'transparent',
@@ -21112,11 +21118,13 @@ OD = 'https://chat.inhotel.io';
       Nj = function (e) {
         var $ilXr$$interop$default = za(Rq);
         var o = e.primary,
-          t = $ilXr$$interop$default.d(void 0 === o ? '#1890ff' : o),
+          t = $ilXr$$interop$default.d(o),
+          fallback = $ilXr$$interop$default.d('#465ea4'),
+          color = t.isValid() ? t : fallback,
           n = {
-            primary: t.toString(),
-            light: t.lighten().toString(),
-            dark: t.darken().toString(),
+            primary: color.toString(),
+            light: color.lighten().toString(),
+            dark: color.darken().toString(),
           };
         return {
           useBodyStyles: !1,
@@ -22638,7 +22646,8 @@ OD = 'https://chat.inhotel.io';
               return a ? i : !(!r && !t);
             }),
             (n.handleChatLoaded = function () {
-              n.setState({isLoaded: !0});
+              var wasLoaded = n.state.isLoaded;
+              n.setState({isLoaded: !0, shouldDisplayNotifications: !1});
               var e = n.state.config,
                 t = (void 0 === e ? {} : e).subscriptionPlan,
                 r = void 0 === t ? null : t,
@@ -22646,18 +22655,22 @@ OD = 'https://chat.inhotel.io';
                 i = a.popUpInitialMessage,
                 o = a.onChatLoaded,
                 s = void 0 === o ? ed : o;
-              (s &&
-                'function' == typeof s &&
+              if (s && typeof s === 'function') {
                 s({
                   open: n.handleOpenWidget,
                   close: n.handleCloseWidget,
                   identify: n.identify,
-                }),
-              n.shouldOpenByDefault() &&
+                });
+              }
+              // An assistant change remounts the chat, so preserve its visibility.
+              if (wasLoaded || n.state.isOpen) {
+                n.send('inhotel:toggle', {isOpen: n.state.isOpen});
+              } else if (n.shouldOpenByDefault()) {
                 n.setState({isOpen: !0}, function () {
                   return n.emitToggleEvent(!0);
-                }),
-              i && !n.storage.getPopupSeen()) &&
+                });
+              }
+              if (!wasLoaded && i && !n.storage.getPopupSeen()) {
                 setTimeout(
                   function () {
                     n.setState({shouldDisplayNotifications: !0}),
@@ -22668,6 +22681,7 @@ OD = 'https://chat.inhotel.io';
                   },
                   'number' == typeof i ? i : 0
                 );
+              }
               n.send('inhotel:plan', {plan: r});
             }),
             (n.formatCustomerMetadata = function (e) {
@@ -22878,7 +22892,7 @@ OD = 'https://chat.inhotel.io';
                   case 3:
                     return (
                       (T.subtitle = I.sent()),
-                      (T.primaryColor = l || a.color),
+                      (T.primaryColor = l || a.color || '#465ea4'),
                       [4, this.getDefaultGreeting(a)]
                     );
                   case 4:
@@ -23263,7 +23277,14 @@ OD = 'https://chat.inhotel.io';
       $q = window,
       ga = ($q.InhotelChatWindow && $q.InhotelChatWindow.config) || {},
       _q = ACCOUNT_ID,
-      DD = ASSISTANT_INTERACTION_PROFILE_ID || ga.inbox,
+      // Only inHotel agent cards are accepted: the backend settings, the
+      // contact form and the A2A endpoint are all keyed by the assistant
+      // profile ID that names the card's host.
+      agentCardUrl = $q.agent_card_url || ga.agent_card_url,
+      cardMatch = /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.agents\.inhotel\.io\/\.well-known\/agent-card\.json$/i.exec(
+        agentCardUrl || ''
+      ),
+      DD = cardMatch ? cardMatch[1] : '',
       ar = ga.accountId,
       ED = ga.title,
       FD = ga.subtitle,
@@ -23312,10 +23333,12 @@ OD = 'https://chat.inhotel.io';
       gE = void 0 === qr ? ye : qr,
       rr = ga.onMessageReceived,
       hE = void 0 === rr ? ye : rr;
-    // A2A mode - use inbox_id as the main identifier, account token not required
+    // A2A mode - the agent card names the assistant, account token not required
     if (!DD)
       throw new Error(
-        'ASSISTANT_INTERACTION_PROFILE_ID is required to render the InhotelChatWindow chat widget!'
+        agentCardUrl
+          ? 'agent_card_url must be an inHotel agent card: https://{assistant profile id}.agents.inhotel.io/.well-known/agent-card.json'
+          : 'agent_card_url is required to render the InhotelChatWindow chat widget!'
       );
     var sr = document.createElement('div');
     var jE = za(qs);

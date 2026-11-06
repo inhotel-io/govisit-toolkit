@@ -1,0 +1,32 @@
+# What the GitHub Actions deploy identity may do in this namespace: read and
+# patch this one Deployment, and watch rollouts. It can read, but not change,
+# inhotel-chat-window (chat.inhotel.io) or anything else here. At the project
+# level the service account holds only roles/container.clusterViewer, which is
+# enough to fetch cluster credentials.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-deploy-floating-chat
+  namespace: inhtoel-agent-app
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [govisit-floating-chat]
+    verbs: [get, patch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deploy-floating-chat
+  namespace: inhtoel-agent-app
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: github-deploy-floating-chat@inhotel-prod.iam.gserviceaccount.com
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-deploy-floating-chat

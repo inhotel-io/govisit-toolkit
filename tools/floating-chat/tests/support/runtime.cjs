@@ -22,6 +22,7 @@ function createRuntime(environment = {}, replacements = {}) {
       console,
       URL,
       TextDecoder,
+      AbortController,
       setTimeout,
       clearTimeout,
       process: {env: {}},
@@ -72,7 +73,7 @@ function synchronousState(component) {
   return component;
 }
 
-function bundledParentHandler(bridge) {
+function bundledLauncherHandler(name, bridge) {
   const source = ts.createSourceFile(
     'widget.js',
     fs.readFileSync(path.join(root, 'public/widget.js'), 'utf8'),
@@ -85,22 +86,26 @@ function bundledParentHandler(bridge) {
     if (
       ts.isBinaryExpression(node) &&
       ts.isPropertyAccessExpression(node.left) &&
-      node.left.name.text === 'postMessageHandlers' &&
+      node.left.name.text === name &&
       ts.isFunctionExpression(node.right)
     ) {
-      if (expression) throw new Error('Ambiguous parent bridge handler');
+      if (expression) throw new Error('Ambiguous launcher handler: ' + name);
       expression = node.right.getText(source);
     }
     ts.forEachChild(node, visit);
   }
   visit(source);
-  if (!expression) throw new Error('Missing parent bridge handler');
-  return vm.runInNewContext('(' + expression + ')', {n: bridge, URL});
+  if (!expression) throw new Error('Missing launcher handler: ' + name);
+  return vm.runInNewContext('(' + expression + ')', {
+    n: bridge,
+    URL,
+    ed: () => {},
+  });
 }
 
 module.exports = {
   createRuntime,
   synchronousState,
-  bundledParentHandler,
+  bundledLauncherHandler,
   projectRequire,
 };

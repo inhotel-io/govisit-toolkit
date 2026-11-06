@@ -41,6 +41,7 @@ import {
   QuickReply,
 } from '../helpers/types';
 import Logger from '../helpers/logger';
+import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
 import {
   agentEndpoint,
   isTrustedParentMessage,
@@ -125,10 +126,15 @@ type State = {
   isSummarizeGenerated: boolean;
   shouldShowMessageLoading: boolean;
   avatarURL: string;
+  agentCardAvatarURL: string | null | undefined;
+  isAvatarLoading: boolean;
 };
 
 class ChatWindow extends React.Component<Props, State> {
   scrollToEl: any = null;
+  avatarRequest: AbortController | null = null;
+  messageRequest: AbortController | null = null;
+  avatarTimeout: ReturnType<typeof setTimeout> | null = null;
   subscriptions: Array<() => void> = [];
   logger: Logger;
   // A2A mode - no legacy SDK instance
@@ -195,6 +201,8 @@ class ChatWindow extends React.Component<Props, State> {
       isSummarizeGenerated: false,
       shouldShowMessageLoading: false,
       avatarURL: props.avatarURL,
+      agentCardAvatarURL: undefined,
+      isAvatarLoading: true,
     };
   }
 
@@ -212,10 +220,11 @@ class ChatWindow extends React.Component<Props, State> {
         customer_id: m.role === 'user' ? 'customer' : undefined,
         user_id: m.role === 'assistant' ? 1 : undefined, // Use number for user_id
         created_at: m.timestamp,
-        type: (m.role === 'user' ? 'customer' : 'agent') as
-          | 'customer'
-          | 'agent'
-          | 'bot',
+        type: (m.role === 'user'
+          ? 'customer'
+          : m.type === 'bot' || (!m.type && idx === 0 && m.content === greeting)
+          ? 'bot'
+          : 'agent') as 'customer' | 'agent' | 'bot',
         // Add user object for assistant messages to preserve avatar
         user:
           m.role === 'assistant'
@@ -247,6 +256,7 @@ class ChatWindow extends React.Component<Props, State> {
       });
     }
 
+    this.loadAgentAvatar();
     this.emit('chat:loaded');
 
     if (this.isOnDeprecatedVersion()) {
@@ -257,7 +267,42 @@ class ChatWindow extends React.Component<Props, State> {
     }
   }
 
+  componentDidUpdate(previous: Props) {
+    if (previous.inboxId !== this.props.inboxId) {
+      this.setState({agentCardAvatarURL: undefined, isAvatarLoading: true});
+      this.loadAgentAvatar();
+    }
+  }
+
+  loadAgentAvatar = () => {
+    if (this.avatarRequest) this.avatarRequest.abort();
+    if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
+    const controller = new AbortController();
+    const profileId = this.props.inboxId || '';
+    this.avatarRequest = controller;
+    this.avatarTimeout = setTimeout(() => {
+      if (this.avatarRequest !== controller) return;
+      controller.abort();
+      this.avatarTimeout = null;
+      this.setState({agentCardAvatarURL: null, isAvatarLoading: false});
+    }, AVATAR_LOAD_TIMEOUT_MS);
+    fetchAgentAvatar(profileId, controller.signal).then((url) => {
+      if (
+        controller.signal.aborted ||
+        this.avatarRequest !== controller ||
+        this.props.inboxId !== profileId
+      )
+        return;
+      if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
+      this.avatarTimeout = null;
+      this.setState({agentCardAvatarURL: url, isAvatarLoading: false});
+    });
+  };
+
   componentWillUnmount() {
+    if (this.messageRequest) this.messageRequest.abort();
+    if (this.avatarRequest) this.avatarRequest.abort();
+    if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
     // A2A mode - no legacy SDK to disconnect
     this.subscriptions.forEach((unsubscribe) => {
       if (typeof unsubscribe === 'function') {
@@ -507,7 +552,7 @@ class ChatWindow extends React.Component<Props, State> {
   };
 
   handleSendMessage = async (message: Partial<Message>, email?: string) => {
-    if (this.state.isSending) {
+    if (this.state.isSending || this.messageRequest) {
       return;
     }
 
@@ -560,9 +605,9 @@ class ChatWindow extends React.Component<Props, State> {
     // Get existing contextId for session continuity
     const existingContextId = inboxId ? getContextId(inboxId) : null;
 
+    const controller = new AbortController();
+    this.messageRequest = controller;
     try {
-      let fullResponse = '';
-
       await streamMessage(
         a2aUrl,
         {
@@ -572,13 +617,11 @@ class ChatWindow extends React.Component<Props, State> {
           context_id: existingContextId || undefined, // Include contextId for session continuity
           history: a2aHistory,
         },
-        // onToken
-        (token) => {
-          fullResponse = token; // artifact-update replaces, status-update appends in client
-          // Optional: Update UI with streaming text
-        },
+        // The message bubble renders the completed response.
+        () => {},
         // onComplete
         (finalText, contextId) => {
+          if (controller.signal.aborted) return;
           // Store contextId for future messages
           if (contextId && inboxId) {
             setContextId(inboxId, contextId);
@@ -612,6 +655,7 @@ class ChatWindow extends React.Component<Props, State> {
             role: (m.customer_id ? 'user' : 'assistant') as
               | 'user'
               | 'assistant',
+            type: m.type,
             content: m.body || '',
             timestamp: m.created_at || new Date().toISOString(),
           }));
@@ -624,19 +668,24 @@ class ChatWindow extends React.Component<Props, State> {
         },
         // onError
         (error) => {
+          if (controller.signal.aborted) return;
           console.error('Failed to send message:', error);
           this.setState({
             isSending: false,
             shouldShowMessageLoading: false,
           });
-        }
+        },
+        controller.signal
       );
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error('A2A message error:', error);
       this.setState({
         isSending: false,
         shouldShowMessageLoading: false,
       });
+    } finally {
+      this.messageRequest = null;
     }
   };
 
@@ -1102,7 +1151,8 @@ class ChatWindow extends React.Component<Props, State> {
                         isLastInGroup={isLastInGroup}
                         shouldDisplayTimestamp={isLastMessage}
                         shouldShowLoader={false}
-                        avatarURL={avatarURL}
+                        avatarURL={this.state.agentCardAvatarURL}
+                        isAvatarLoading={this.state.isAvatarLoading}
                       />
                     </motion.div>
                     {isLastMessage && this.state.shouldShowMessageLoading && (
@@ -1115,7 +1165,8 @@ class ChatWindow extends React.Component<Props, State> {
                           message={{body: '', user: userBot}}
                           loader={loader}
                           shouldShowLoader={true}
-                          avatarURL={avatarURL}
+                          avatarURL={this.state.agentCardAvatarURL}
+                          isAvatarLoading={this.state.isAvatarLoading}
                         />
                         {/* <SyncLoader color={this.props.primaryColor}  size='7px'/> */}
                       </motion.div>
@@ -1136,7 +1187,7 @@ class ChatWindow extends React.Component<Props, State> {
           )}
 
           {this.state.isMailIconClicked && (
-            <Box sx={{flex: 1}} px={'20px'}>
+            <Box sx={{flex: 1, minHeight: 0, overflowY: 'auto'}} px={'20px'}>
               <ContactForm
                 handleChange={this.handleChangeCF}
                 handleSubmit={this.handleSubmitCF}
@@ -1222,11 +1273,7 @@ class ChatWindow extends React.Component<Props, State> {
               bg: 'rgb(239, 239, 239)',
             }}
           >
-            {shouldDisplayBranding && (
-              <InhotelBranding
-                isMailIconClicked={this.state.isMailIconClicked}
-              />
-            )}
+            {shouldDisplayBranding && <InhotelBranding />}
           </Box>
 
           <img

@@ -31,7 +31,11 @@ function get(port, pathname) {
         response.on('data', (chunk) => (body += chunk));
         response.on('error', reject);
         response.on('end', () =>
-          resolve({status: response.statusCode, headers: response.headers, body})
+          resolve({
+            status: response.statusCode,
+            headers: response.headers,
+            body,
+          })
         );
       }
     );
@@ -41,6 +45,7 @@ function get(port, pathname) {
 }
 
 async function main() {
+  await require('./presentation.cjs')();
   const port = await unusedPort();
   const server = spawn(
     process.execPath,
@@ -72,7 +77,7 @@ async function main() {
     }
     assert.equal(launcher?.status, 200, 'Launcher must be served');
     assert.match(launcher.headers['content-type'], /javascript/);
-    assert.match(launcher.body, /ASSISTANT_INTERACTION_PROFILE_ID/);
+    assert.match(launcher.body, /agent_card_url/);
     assert.match(launcher.body, /InhotelChatWidget/);
 
     const iframe = await get(port, '/?token=-1&inbox=smoke-test&version=1.0.0');
@@ -90,9 +95,16 @@ async function main() {
     }
 
     const widgetPage = await get(port, '/widget');
-    assert.equal(widgetPage.status, 200, 'Launcher preview page must be served');
+    assert.equal(
+      widgetPage.status,
+      200,
+      'Launcher preview page must be served'
+    );
     assert.match(widgetPage.body, /src="\/widget.js"/);
-    assert.match(await readFile(path.join(root, 'LICENSE'), 'utf8'), /MIT License/);
+    assert.match(
+      await readFile(path.join(root, 'LICENSE'), 'utf8'),
+      /MIT License/
+    );
     assert.match(
       await readFile(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8'),
       /Copyright \(c\) 2020 Papercups/

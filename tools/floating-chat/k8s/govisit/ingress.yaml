@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: govisit-floating-chat
+  namespace: inhtoel-agent-app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: floating-chat.govisit.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: govisit-floating-chat
+                port:
+                  number: 80
+  tls:
+    - hosts: [floating-chat.govisit.ai]
+      secretName: floating-chat-govisit-tls

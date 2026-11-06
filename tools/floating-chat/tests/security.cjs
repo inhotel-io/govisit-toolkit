@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const {
   createRuntime,
   synchronousState,
-  bundledParentHandler,
+  bundledLauncherHandler,
   projectRequire,
 } = require('./support/runtime.cjs');
 const React = projectRequire('react');
@@ -152,9 +152,10 @@ test('conflicting explicit origin and referrer fail closed', () => {
   assert.equal(f.wrapper.state.config.title, undefined);
 });
 
-function chatFixture(inbox = firstProfile) {
+function chatFixture(inbox = firstProfile, respond = () => {}) {
   const f = fixture();
   const requests = [];
+  const writes = [];
   const quietLogger = class {
     debug() {}
     error() {}
@@ -164,11 +165,23 @@ function chatFixture(inbox = firstProfile) {
     {window: f.window, parent: f.parent, document: f.document},
     {
       '../helpers/a2a-client': {
-        streamMessage: async (url, request) => {
+        streamMessage: async (
+          url,
+          request,
+          onToken,
+          onComplete,
+          onError,
+          signal
+        ) => {
           requests.push({url, request});
+          await respond({onComplete, onError, signal});
         },
       },
-      '../helpers/storage': {getContextId: () => null},
+      '../helpers/storage': {
+        getContextId: () => null,
+        setContextId: (...args) => writes.push(args),
+        saveChatHistory: (...args) => writes.push(args),
+      },
       '../helpers/visibility': {addVisibilityEventListener: () => () => {}},
       '../helpers/logger': quietLogger,
     }
@@ -182,7 +195,7 @@ function chatFixture(inbox = firstProfile) {
       disableAnalyticsTracking: true,
     })
   );
-  return {...f, chat, requests};
+  return {...f, chat, requests, writes};
 }
 test('the send boundary rejects a malicious profile without leaking history', async () => {
   const f = chatFixture('attacker.example/');
@@ -197,14 +210,39 @@ test('the send boundary rejects a malicious profile without leaking history', as
   );
 });
 test('valid profile requests retain their fixed agent origin', async () => {
-  const f = chatFixture();
+  const f = chatFixture(firstProfile, ({onComplete}) =>
+    onComplete('At 3 p.m.', 'current-context')
+  );
   await f.chat.handleSendMessage({body: 'Check-in time?'});
   assert.equal(f.requests.length, 1);
   assert.equal(
     f.requests[0].url,
     'https://f1a4e101-533a-8355-80f0-f448ed950b76.agents.inhotel.io/'
   );
+  assert.equal(f.writes.length, 2);
+  assert.equal(f.sent[0][0].event, 'message:received');
 });
+test('late replies after an assistant unmount cannot write history or emit events', async () => {
+  let finish;
+  let requestSignal;
+  const f = chatFixture(firstProfile, ({onComplete, signal}) => {
+    requestSignal = signal;
+    return new Promise((resolve) => {
+      finish = () => {
+        onComplete('Reply from the old instance', 'stale-context');
+        resolve();
+      };
+    });
+  });
+  const pending = f.chat.handleSendMessage({body: 'Original question'});
+  f.chat.componentWillUnmount();
+  finish();
+  await pending;
+  assert.equal(f.writes.length, 0);
+  assert.equal(f.sent.length, 0);
+  assert.equal(requestSignal.aborted, true);
+});
+
 test('chat state messages reject unrelated sender windows', () => {
   const f = chatFixture();
   f.chat.state.customerId = 'original';
@@ -232,7 +270,11 @@ function parentBridge() {
     hasValidPayloadIdentity: () => true,
     handleMessageReceived: (payload) => received.push(payload),
   };
-  return {handler: bundledParentHandler(bridge), received, iframeWindow};
+  return {
+    handler: bundledLauncherHandler('postMessageHandlers', bridge),
+    received,
+    iframeWindow,
+  };
 }
 test('the bundled parent bridge accepts only its actual iframe', () => {
   const f = parentBridge();
@@ -241,6 +283,55 @@ test('the bundled parent bridge accepts only its actual iframe', () => {
   assert.equal(f.received.length, 0);
   f.handler({source: f.iframeWindow, origin: 'https://chat.example', data});
   assert.equal(f.received.length, 1);
+});
+
+test('a remounted iframe keeps an already open launcher visible', () => {
+  const sent = [];
+  const bridge = {
+    state: {isLoaded: true, isOpen: true, config: {subscriptionPlan: 'team'}},
+    setState(change) {
+      Object.assign(this.state, change);
+    },
+    props: {},
+    shouldOpenByDefault: () => false,
+    send: (...args) => sent.push(args),
+  };
+  bundledLauncherHandler('handleChatLoaded', bridge)();
+  assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
+    ['inhotel:toggle', {isOpen: true}],
+    ['inhotel:plan', {plan: 'team'}],
+  ]);
+});
+
+test('a remounted iframe stays closed after the guest closes it', () => {
+  const sent = [];
+  let reopened = false;
+  const bridge = {
+    state: {
+      isLoaded: true,
+      isOpen: false,
+      shouldDisplayNotifications: true,
+      config: {},
+    },
+    setState(change, callback) {
+      Object.assign(this.state, change);
+      if (callback) callback();
+    },
+    props: {},
+    shouldOpenByDefault: () => true,
+    emitToggleEvent: () => {
+      reopened = true;
+    },
+    send: (...args) => sent.push(args),
+  };
+  bundledLauncherHandler('handleChatLoaded', bridge)();
+  assert.equal(bridge.state.isOpen, false);
+  assert.equal(bridge.state.shouldDisplayNotifications, false);
+  assert.equal(reopened, false);
+  assert.deepEqual(JSON.parse(JSON.stringify(sent[0])), [
+    'inhotel:toggle',
+    {isOpen: false},
+  ]);
 });
 
 (async () => {

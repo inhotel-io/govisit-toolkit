@@ -44,6 +44,9 @@ For a three-step setup with one choice of AI assistant, follow the
 [Installation guide](https://govisit.ai/en/docs/developers/agent-skills/installation).
 Install once, then use any included skill.
 
+The `npx skills` installer requires Node.js 22.20 or later and npm. Its GitHub
+shorthand commands use the repository's default branch, `main`.
+
 Run in your project and choose the target agent and installation scope:
 
 ```sh
@@ -57,6 +60,29 @@ explicit target, install all 22 skills for GitHub Copilot or Cursor:
 npx skills add inhotel-io/govisit-toolkit --skill '*' --agent github-copilot
 npx skills add inhotel-io/govisit-toolkit --skill '*' --agent cursor
 ```
+
+Install the matching CLI before using those assistants from a terminal.
+
+**GitHub Copilot CLI** (Node.js 22 or later):
+
+```sh
+npm install -g @github/copilot
+```
+
+Start it with `copilot`; on first launch, sign in with `/login`. Run
+`copilot update` to update it. GitHub also documents Homebrew, WinGet, and an
+install script in its [Copilot CLI installation guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli).
+
+**Cursor CLI** (macOS, Linux, or Windows Subsystem for Linux):
+
+```sh
+curl https://cursor.com/install -fsS | bash
+agent --version
+```
+
+On native Windows, run `irm 'https://cursor.com/install?win32=true' | iex` in
+PowerShell. Cursor updates automatically; run `agent update` to update it
+manually. See [Cursor CLI installation](https://cursor.com/docs/cli/installation).
 
 Choose the command for your assistant; you do not need to install twice. See
 [GitHub's skills guide](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills)
@@ -89,15 +115,32 @@ and references. A collection archive is not a universally supported skill-upload
 
 Claude Code:
 
+Install the Claude Code CLI first. Anthropic recommends the native installer for macOS, Linux, and WSL:
+
+```sh
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+```
+
+On Windows, use the [official Claude Code installation guide](https://code.claude.com/docs/en/getting-started) for the PowerShell or Command Prompt installer. Then add the marketplace and install a plugin:
+
 ```sh
 claude plugin marketplace add inhotel-io/govisit-toolkit
 claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 ```
 
+The marketplace command uses the repository's default `main` branch.
+
 Codex:
 
+Install or upgrade Codex CLI with Node.js and npm before running these commands:
+
 ```sh
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.0
+npm install -g @openai/codex@latest
+```
+
+```sh
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref main
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
@@ -106,6 +149,11 @@ Use `govisit@govisit-toolkit` for All, `govisit-destination@govisit-toolkit` for
 selection, and all resources remain inside the plugin root. A native Claude skill
 is namespaced, for example `/govisit-travel-planner:govisit-search-places`; portable
 skill invocation uses the host's own skill selector.
+
+Codex reads each package's listing and composer icons from its `plugin.json`; the
+SVGs live in that package's `assets/` directory. The Codex marketplace manifest
+currently has no marketplace-level icon field. Its GoVisit Toolkit brand SVG is
+kept at `plugins/assets/marketplace.svg` for use by surfaces that support one.
 
 ## For destination and local business managers
 
@@ -125,7 +173,7 @@ a public profile does not establish ownership or grant permission to update it.
 
 After installation, start a session if your host needs to refresh discovery:
 
-> Use GoVisit to find Prague, then find hotels there suitable for a quiet weekend.
+> Search GoVisit for places in Czechia where travelers can actively participate in immersive experiences such as regional festivals, traditional craft workshops, historical preservation sites, and local food traditions.
 > Read the published profiles, explain missing evidence, and link the GoVisit sources.
 
 An empty result does not prove absence, and published discovery facts do not prove
@@ -133,19 +181,20 @@ live prices or availability. The example performs reads and makes no reservation
 
 ## Updates and diagnostics
 
-For a Codex marketplace pinned to an older release, review the new release,
-remove and re-add that marketplace at its new tag, then install the selected
-package again. Existing plugin snapshots are updated by the final command:
+To move a Codex marketplace from a version tag to the current GoVisit source,
+remove and re-add it at `main`, then install the selected package again. Existing
+plugin snapshots are updated by the final command:
 
 ```sh
 codex plugin marketplace remove govisit-toolkit
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.0
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref main
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
-Use your audience package name in the last command. This path was tested from
-v0.1.0 to v0.2.0. Re-adding an existing marketplace with a different `--ref`
-requires removing its old marketplace declaration first.
+Use your audience package name in the last command. Re-adding an existing
+marketplace with a different `--ref` requires removing its old marketplace
+declaration first. `main` tracks ongoing changes; use a reviewed release tag
+when a stable, reproducible version is required.
 
 Installed copies are snapshots. For portable skills, use `npx skills check` and
 `npx skills update`, or reinstall the selected complete package through your
