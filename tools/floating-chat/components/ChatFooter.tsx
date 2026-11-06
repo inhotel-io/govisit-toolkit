@@ -247,7 +247,7 @@ const ChatFooter = ({
                 width: '36px',
                 padding: 0,
                 '&:disabled, &:disabled:hover, &:disabled:active': {
-                  bg: '#f5f5f5',
+                  bg: '#ebebeb',
                   cursor: 'default',
                 },
               }}
