@@ -70,40 +70,35 @@ inHotel Solutions Specialist:
 ></script>
 ```
 
-The existing two-script method is also supported:
+For additional configuration, set `window.FloatingChatWindow.config` before
+loading the launcher. The agent card can also be supplied here:
 
 ```html
 <script>
-  window.agent_card_url =
-    'https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json';
-</script>
-<script async defer src="https://floating-chat.govisit.ai/widget.js"></script>
-```
-
-The first nonempty value wins, in this order: the script's `data-agent-card-url`,
-`window.agent_card_url`, then `window.InhotelChatWindow.config.agent_card_url`.
-Global configuration must be set before the launcher runs. The selected value
-must be an inHotel agent card URL of exactly the form shown above; an invalid
-value is rejected.
-
-Integrations installed with `window.ASSISTANT_INTERACTION_PROFILE_ID` and
-`https://chat.inhotel.io/widget.js` keep working unchanged: chat.inhotel.io is a
-separate deployment of the original chat window, which this tool does not change.
-
-Presentation options can be supplied before loading the script:
-
-```html
-<script>
-  window.InhotelChatWindow = {
+  window.FloatingChatWindow = {
     config: {
+      agent_card_url:
+        'https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json',
       title: 'Ask our team',
       subtitle: 'How can we help with your visit?',
-      primaryColor: '#1890ff',
+      primaryColor: '#465EA4',
       position: 'right',
     },
   };
 </script>
+<script defer src="https://floating-chat.govisit.ai/widget.js"></script>
 ```
+
+The script's `data-agent-card-url` takes precedence over
+`window.FloatingChatWindow.config.agent_card_url`. The selected value must be an
+inHotel agent card URL of exactly the form shown above; an invalid value is rejected.
+
+Existing embeds using `window.agent_card_url` or `window.InhotelChatWindow.config`
+are supported for compatibility. Use the script attribute or
+`window.FloatingChatWindow.config` for new integrations. Agent card selection falls
+back to the legacy global, then the legacy nested configuration. Presentation
+options from `FloatingChatWindow.config` override matching legacy options while
+preserving other legacy options and callbacks.
 
 For a self-hosted deployment, replace the script URL with your own host. The
 launcher opens its iframe from the host that served the script, so a local
