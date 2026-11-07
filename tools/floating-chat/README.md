@@ -86,8 +86,8 @@ Presentation options can be supplied before loading the script:
       title: 'Ask our team',
       subtitle: 'How can we help with your visit?',
       primaryColor: '#1890ff',
-      position: 'right'
-    }
+      position: 'right',
+    },
   };
 </script>
 ```
@@ -95,6 +95,15 @@ Presentation options can be supplied before loading the script:
 For a self-hosted deployment, replace the script URL with your own host. The
 launcher opens its iframe from the host that served the script, so a local
 `npm run dev` also loads the local iframe.
+
+The launcher supplies its page origin to the iframe. Incoming bridge messages
+are accepted only from that parent window and origin, and outgoing events target
+that exact origin. Older loaders can use the iframe's `document.referrer` as a
+fallback. With a referrer-suppressing policy, use the updated launcher so the
+explicit origin is supplied; an iframe with no established parent origin ignores
+bridge messages. Profile IDs must fit one DNS label (UUID profile IDs are
+supported), and switching assistants creates a fresh chat component instead of
+reusing the previous conversation state.
 
 ## Build and check
 
@@ -105,10 +114,12 @@ npm start
 ```
 
 `npm run build` compiles and type-checks the Next.js application. `npm test`
-runs avatar/card lifecycle regression checks with mocked requests, then starts
-the production server on a temporary local port and checks the launcher,
+runs security and presentation regressions, then starts the production server on
+a temporary local port and checks the launcher,
 iframe pages, compiled JavaScript, and license files, then stops the server.
 These checks do not contact a live agent or send guest messages.
+Run `npm run test:security` for the rendering and iframe-boundary regressions
+without requiring a production build.
 
 The committed `public/widget.js` is a separate launcher bundle. The imported
 project does not contain its original bundle source/build configuration, so
@@ -130,6 +141,7 @@ maintenance follow-up.
 | `components/ChatFooter*.tsx` | Composer and contact controls |
 | `helpers/a2a-client.ts` | A2A JSON-RPC/SSE communication |
 | `helpers/storage.ts` | Browser conversation and context persistence |
+| `helpers/embed-security.ts` | Parent-message validation and fixed-origin agent URLs |
 | `styles/` | Global and emoji styling |
 | `tests/` | Local production smoke checks |
 | `k8s/` | Kubernetes deployment examples |

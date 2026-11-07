@@ -1,11 +1,12 @@
+import {isValidAssistantProfileId} from './embed-security';
+
 export const AVATAR_LOAD_TIMEOUT_MS = 3000;
 
 export async function fetchAgentAvatar(
   profileId: string,
   signal?: AbortSignal
 ): Promise<string | null> {
-  // The profile occupies one DNS label; never accept a URL fragment as an ID.
-  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(profileId)) return null;
+  if (!isValidAssistantProfileId(profileId)) return null;
   const cardUrl = `https://${profileId}.agents.inhotel.io/.well-known/agent-card.json`;
   try {
     const response = await fetch(cardUrl, {credentials: 'omit', signal});

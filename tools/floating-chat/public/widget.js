@@ -22550,7 +22550,12 @@ OD =
               n.logger.debug('Handling in parent:', e.data);
               var t = n.getIframeUrl(),
                 r = new URL(t).origin;
-              if (e.origin !== r) return null;
+              if (
+                e.origin !== r ||
+                !n.iframeRef ||
+                e.source !== n.iframeRef.contentWindow ||
+                !e.data || typeof e.data !== 'object' || Array.isArray(e.data)
+              ) return null;
               var a = e.data,
                 i = a.event,
                 o = a.payload,
@@ -22564,7 +22569,7 @@ OD =
                 );
               switch (i) {
                 case 'chat:loaded':
-                  return n.handleChatLoaded();
+                  return n.handleChatLoaded(s);
                 case 'customer:created':
                 case 'customer:updated':
                   return n.handleCacheCustomerId(s);
@@ -22601,7 +22606,7 @@ OD =
                 );
               r.contentWindow.postMessage(
                 {event: e, payload: t},
-                n.getIframeUrl()
+                new URL(n.getIframeUrl()).origin
               );
             }),
             (n.handleMessageReceived = function (e) {
@@ -22640,8 +22645,10 @@ OD =
               var i = n.storage.getOpenState();
               return a ? i : !(!r && !t);
             }),
-            (n.handleChatLoaded = function () {
-              n.setState({isLoaded: !0});
+            (n.handleChatLoaded = function (payload) {
+              var assistantRemount =
+                n.state.isLoaded && !!payload && payload.assistantRemount === true;
+              n.setState({isLoaded: !0, shouldDisplayNotifications: !1});
               var e = n.state.config,
                 t = (void 0 === e ? {} : e).subscriptionPlan,
                 r = void 0 === t ? null : t,
@@ -22649,18 +22656,22 @@ OD =
                 i = a.popUpInitialMessage,
                 o = a.onChatLoaded,
                 s = void 0 === o ? ed : o;
-              (s &&
-                'function' == typeof s &&
+              if (!assistantRemount && s && typeof s === 'function') {
                 s({
                   open: n.handleOpenWidget,
                   close: n.handleCloseWidget,
                   identify: n.identify,
-                }),
-              n.shouldOpenByDefault() &&
+                });
+              }
+              // An assistant change remounts the chat, so preserve its visibility.
+              if (assistantRemount || n.state.isOpen) {
+                n.send('inhotel:toggle', {isOpen: n.state.isOpen});
+              } else if (n.shouldOpenByDefault()) {
                 n.setState({isOpen: !0}, function () {
                   return n.emitToggleEvent(!0);
-                }),
-              i && !n.storage.getPopupSeen()) &&
+                });
+              }
+              if (!assistantRemount && i && !n.storage.getPopupSeen()) {
                 setTimeout(
                   function () {
                     n.setState({shouldDisplayNotifications: !0}),
@@ -22671,6 +22682,7 @@ OD =
                   },
                   'number' == typeof i ? i : 0
                 );
+              }
               n.send('inhotel:plan', {plan: r});
             }),
             (n.formatCustomerMetadata = function (e) {
@@ -22930,6 +22942,7 @@ OD =
                       (T.metadata = JSON.stringify(X)),
                       (T.disableAnalyticsTracking = U ? 1 : 0),
                       (T.debug = J ? 1 : 0),
+                      (T.parentOrigin = window.location.origin),
                       (T.version = '1.2.0'),
                       (T.ts = r.toString()),
                       (T.position = position),

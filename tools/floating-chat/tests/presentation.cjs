@@ -155,7 +155,9 @@ async function runPresentationChecks() {
     for (const primary of [undefined, null, '', 'not-a-color']) {
       assert.equal(getThemeConfig({primary}).colors.primary, '#465ea4');
       fixture(async () => response({}));
-      const widget = new Widget({config: {token: '-1', primaryColor: primary}});
+      const widget = new Widget({
+        config: {token: '-1', inbox: first, primaryColor: primary},
+      });
       const rendered = widget.render();
       assert.equal(rendered.props.theme.colors.primary, '#465ea4');
       assert.equal(rendered.props.children.props.primaryColor, '#465ea4');

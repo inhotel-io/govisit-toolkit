@@ -43,6 +43,11 @@ import {
 import Logger from '../helpers/logger';
 import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
 import {
+  agentEndpoint,
+  isTrustedParentMessage,
+  isValidAssistantProfileId,
+} from '../helpers/embed-security';
+import {
   isWindowHidden,
   addVisibilityEventListener,
 } from '../helpers/visibility';
@@ -85,6 +90,8 @@ type Props = {
   hotelPhone?: string;
   hotelEmail?: string;
   avatarURL?: string;
+  parentOrigin?: string | null;
+  assistantRemount?: boolean;
 };
 
 type State = {
@@ -127,6 +134,7 @@ type State = {
 class ChatWindow extends React.Component<Props, State> {
   scrollToEl: any = null;
   avatarRequest: AbortController | null = null;
+  messageRequest: AbortController | null = null;
   avatarTimeout: ReturnType<typeof setTimeout> | null = null;
   subscriptions: Array<() => void> = [];
   logger: Logger;
@@ -250,7 +258,7 @@ class ChatWindow extends React.Component<Props, State> {
     }
 
     this.loadAgentAvatar();
-    this.emit('chat:loaded');
+    this.emit('chat:loaded', {assistantRemount: this.props.assistantRemount});
 
     if (this.isOnDeprecatedVersion()) {
       console.warn(
@@ -293,6 +301,7 @@ class ChatWindow extends React.Component<Props, State> {
   };
 
   componentWillUnmount() {
+    if (this.messageRequest) this.messageRequest.abort();
     if (this.avatarRequest) this.avatarRequest.abort();
     if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
     // A2A mode - no legacy SDK to disconnect
@@ -307,10 +316,13 @@ class ChatWindow extends React.Component<Props, State> {
     const payload = {...data, ts: this.props.ts};
     this.logger.debug('Sending event from iframe:', {event, payload});
 
-    parent.postMessage({event, payload}, '*'); // TODO: remove?
+    const {parentOrigin} = this.props;
+    if (!parentOrigin || window.parent === window) return;
+    window.parent.postMessage({event, payload}, parentOrigin);
   };
 
   postMessageHandlers = (msg: any) => {
+    if (!isTrustedParentMessage(msg, this.props.parentOrigin, window)) return;
     const {event, payload = {}} = msg.data;
     this.logger.debug('Handling in iframe:', msg.data);
 
@@ -541,12 +553,18 @@ class ChatWindow extends React.Component<Props, State> {
   };
 
   handleSendMessage = async (message: Partial<Message>, email?: string) => {
-    if (this.state.isSending) {
+    if (this.state.isSending || this.messageRequest) {
       return;
     }
 
     const {body = ''} = message;
     const {inboxId, baseUrl} = this.props;
+    if (!isValidAssistantProfileId(inboxId)) {
+      this.logger.error(
+        'Refusing to send with an invalid assistant profile ID'
+      );
+      return;
+    }
     const {messages, conversationId} = this.state;
 
     if (shouldActivateGameMode(body)) {
@@ -583,14 +601,14 @@ class ChatWindow extends React.Component<Props, State> {
     }));
 
     // Build A2A endpoint URL using subdomain pattern
-    const a2aUrl = `https://${inboxId}.agents.inhotel.io/`;
+    const a2aUrl = agentEndpoint(inboxId);
 
     // Get existing contextId for session continuity
     const existingContextId = inboxId ? getContextId(inboxId) : null;
 
+    const controller = new AbortController();
+    this.messageRequest = controller;
     try {
-      let fullResponse = '';
-
       await streamMessage(
         a2aUrl,
         {
@@ -600,13 +618,11 @@ class ChatWindow extends React.Component<Props, State> {
           context_id: existingContextId || undefined, // Include contextId for session continuity
           history: a2aHistory,
         },
-        // onToken
-        (token) => {
-          fullResponse = token; // artifact-update replaces, status-update appends in client
-          // Optional: Update UI with streaming text
-        },
+        // The message bubble renders the completed response.
+        () => {},
         // onComplete
         (finalText, contextId) => {
+          if (controller.signal.aborted) return;
           // Store contextId for future messages
           if (contextId && inboxId) {
             setContextId(inboxId, contextId);
@@ -653,19 +669,24 @@ class ChatWindow extends React.Component<Props, State> {
         },
         // onError
         (error) => {
+          if (controller.signal.aborted) return;
           console.error('Failed to send message:', error);
           this.setState({
             isSending: false,
             shouldShowMessageLoading: false,
           });
-        }
+        },
+        controller.signal
       );
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error('A2A message error:', error);
       this.setState({
         isSending: false,
         shouldShowMessageLoading: false,
       });
+    } finally {
+      this.messageRequest = null;
     }
   };
 
