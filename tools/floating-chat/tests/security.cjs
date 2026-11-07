@@ -13,6 +13,120 @@ const secondProfile = 'f1a4e101-0000-8000-8000-000000000002';
 const tests = [];
 const test = (name, run) => tests.push({name, run});
 
+// Exercise the shipped launcher's bootstrap, including its URL validation.
+const launcher = require('node:fs').readFileSync(
+  require('node:path').join(__dirname, '../public/widget.js'),
+  'utf8'
+);
+const bootstrap = launcher.slice(
+  launcher.indexOf('    var ye = function () {},'),
+  launcher.indexOf('    var sr = document.createElement')
+);
+assert.ok(bootstrap, 'Launcher bootstrap must be available for testing');
+function bootstrapConfiguration({
+  attribute,
+  globalUrl,
+  legacyConfig,
+  floatingConfig,
+  noCurrentScript = false,
+} = {}) {
+  return require('node:vm').runInNewContext(
+    bootstrap + '\n({profile: DD, config: ga});',
+    {
+      window: {
+        FloatingChatWindow: {config: floatingConfig},
+        agent_card_url: globalUrl,
+        InhotelChatWindow: {config: legacyConfig},
+      },
+      document: {
+        currentScript: noCurrentScript
+          ? null
+          : {
+              getAttribute: (name) =>
+                name === 'data-agent-card-url' ? attribute : null,
+            },
+      },
+      ACCOUNT_ID: -1,
+    }
+  );
+}
+const cardUrl = (profile) =>
+  `https://${profile}.agents.inhotel.io/.well-known/agent-card.json`;
+test('a single script attribute selects its assistant', () => {
+  assert.equal(
+    bootstrapConfiguration({attribute: cardUrl(firstProfile)}).profile,
+    firstProfile
+  );
+});
+test('the script attribute takes precedence over Floating Chat configuration', () => {
+  assert.equal(
+    bootstrapConfiguration({
+      attribute: cardUrl(firstProfile),
+      floatingConfig: {agent_card_url: cardUrl(secondProfile)},
+    }).profile,
+    firstProfile
+  );
+});
+test('Floating Chat configuration selects the assistant without a script attribute', () => {
+  const floatingConfig = {agent_card_url: cardUrl(firstProfile)};
+  for (const options of [{}, {attribute: ''}, {noCurrentScript: true}]) {
+    assert.equal(
+      bootstrapConfiguration({...options, floatingConfig}).profile,
+      firstProfile
+    );
+  }
+});
+test('legacy configuration cannot select an assistant', () => {
+  for (const options of [
+    {globalUrl: cardUrl(firstProfile)},
+    {legacyConfig: {agent_card_url: cardUrl(firstProfile)}},
+  ]) {
+    assert.throws(
+      () => bootstrapConfiguration(options),
+      /Set data-agent-card-url/
+    );
+  }
+});
+test('Floating Chat configuration supplies presentation options and callbacks', () => {
+  const onChatLoaded = () => {};
+  const result = bootstrapConfiguration({
+    attribute: cardUrl(firstProfile),
+    floatingConfig: {title: 'Floating Chat title', onChatLoaded},
+    legacyConfig: {subtitle: 'Legacy subtitle'},
+  });
+  assert.equal(result.config.title, 'Floating Chat title');
+  assert.equal(result.config.subtitle, undefined);
+  assert.equal(result.config.onChatLoaded, onChatLoaded);
+});
+test('an invalid Floating Chat card is rejected', () => {
+  assert.throws(
+    () =>
+      bootstrapConfiguration({
+        floatingConfig: {
+          agent_card_url:
+            'https://attacker.example/.well-known/agent-card.json',
+        },
+      }),
+    /must be an inHotel agent card/
+  );
+});
+test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
+  for (const url of [
+    'https://attacker.example/.well-known/agent-card.json',
+    cardUrl(firstProfile) + '?override=1',
+    'http://' + firstProfile + '.agents.inhotel.io/.well-known/agent-card.json',
+  ]) {
+    assert.throws(
+      () =>
+        bootstrapConfiguration({
+          attribute: url,
+          floatingConfig: {agent_card_url: cardUrl(firstProfile)},
+        }),
+      /must be an inHotel agent card/
+    );
+  }
+});
+
 const MessageBody = createRuntime().load('components/ChatMessageBody.tsx')
   .default;
 for (const content of [

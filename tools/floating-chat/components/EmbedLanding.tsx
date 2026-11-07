@@ -2,18 +2,19 @@ import React, {useEffect, useState} from 'react';
 import Head from 'next/head';
 
 // The agent this page chats with when no ?agent_card_url= is given: the
-// example agent from the Focus Chat quick start.
+// inHotel Solutions Specialist.
 const EXAMPLE_AGENT_CARD_URL =
-  'https://a44b44de-d6cb-409e-a1ff-3bc28aa95b4e.agents.inhotel.io/.well-known/agent-card.json';
+  'https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json';
 
 // The same check the launcher makes. It also means a link to this page cannot
 // put someone else's agent behind a govisit.ai address.
 const INHOTEL_AGENT_CARD = /^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.agents\.inhotel\.io\/\.well-known\/agent-card\.json$/i;
 
-const embedSnippet = (agentCardUrl: string) => `<script>
-  window.agent_card_url = '${agentCardUrl}';
-</script>
-<script async defer src="https://floating-chat.govisit.ai/widget.js"></script>`;
+const embedSnippet = (agentCardUrl: string) => `<script
+  defer
+  src="https://floating-chat.govisit.ai/widget.js"
+  data-agent-card-url="${agentCardUrl}"
+></script>`;
 
 // What the root URL shows when opened directly rather than as the launcher's
 // iframe: the embed code, and the launcher itself.
@@ -30,9 +31,9 @@ export default function EmbedLanding() {
         : EXAMPLE_AGENT_CARD_URL;
 
     setAgentCardUrl(url);
-    (window as any).agent_card_url = url;
     const script = document.createElement('script');
     script.src = '/widget.js';
+    script.setAttribute('data-agent-card-url', url);
     script.async = true;
     document.body.appendChild(script);
   }, []);
