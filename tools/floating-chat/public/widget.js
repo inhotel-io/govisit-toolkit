@@ -22569,7 +22569,7 @@ OD =
                 );
               switch (i) {
                 case 'chat:loaded':
-                  return n.handleChatLoaded();
+                  return n.handleChatLoaded(s);
                 case 'customer:created':
                 case 'customer:updated':
                   return n.handleCacheCustomerId(s);
@@ -22645,8 +22645,9 @@ OD =
               var i = n.storage.getOpenState();
               return a ? i : !(!r && !t);
             }),
-            (n.handleChatLoaded = function () {
-              var wasLoaded = n.state.isLoaded;
+            (n.handleChatLoaded = function (payload) {
+              var assistantRemount =
+                n.state.isLoaded && !!payload && payload.assistantRemount === true;
               n.setState({isLoaded: !0, shouldDisplayNotifications: !1});
               var e = n.state.config,
                 t = (void 0 === e ? {} : e).subscriptionPlan,
@@ -22655,7 +22656,7 @@ OD =
                 i = a.popUpInitialMessage,
                 o = a.onChatLoaded,
                 s = void 0 === o ? ed : o;
-              if (s && typeof s === 'function') {
+              if (!assistantRemount && s && typeof s === 'function') {
                 s({
                   open: n.handleOpenWidget,
                   close: n.handleCloseWidget,
@@ -22663,14 +22664,14 @@ OD =
                 });
               }
               // An assistant change remounts the chat, so preserve its visibility.
-              if (wasLoaded || n.state.isOpen) {
+              if (assistantRemount || n.state.isOpen) {
                 n.send('inhotel:toggle', {isOpen: n.state.isOpen});
               } else if (n.shouldOpenByDefault()) {
                 n.setState({isOpen: !0}, function () {
                   return n.emitToggleEvent(!0);
                 });
               }
-              if (!wasLoaded && i && !n.storage.getPopupSeen()) {
+              if (!assistantRemount && i && !n.storage.getPopupSeen()) {
                 setTimeout(
                   function () {
                     n.setState({shouldDisplayNotifications: !0}),

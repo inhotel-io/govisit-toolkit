@@ -103,7 +103,7 @@ const sanitizeConfigPayload = (payload: any): Config => {
 };
 
 type Props = {config: Config};
-type State = {config: Config};
+type State = {config: Config; assistantRemount: boolean};
 
 class Wrapper extends React.Component<Props, State> {
   logger: Logger;
@@ -119,6 +119,7 @@ class Wrapper extends React.Component<Props, State> {
     );
     this.state = {
       config: props.config,
+      assistantRemount: false,
     };
   }
 
@@ -153,7 +154,13 @@ class Wrapper extends React.Component<Props, State> {
     const updates = sanitizeConfigPayload(payload);
     this.logger.debug('Updating widget config:', updates);
 
-    this.setState({config: {...this.state.config, ...updates}});
+    this.setState(({config, assistantRemount}) => {
+      const nextConfig = {...config, ...updates};
+      return {
+        config: nextConfig,
+        assistantRemount: assistantRemount || config.inbox !== nextConfig.inbox,
+      };
+    });
   };
 
   render() {
@@ -214,6 +221,7 @@ class Wrapper extends React.Component<Props, State> {
       <ThemeProvider theme={theme}>
         <ChatWindow
           key={inbox}
+          assistantRemount={this.state.assistantRemount}
           parentOrigin={this.parentOrigin}
           accountId={token || accountId}
           inboxId={inbox}

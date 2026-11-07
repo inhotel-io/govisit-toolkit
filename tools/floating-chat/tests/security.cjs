@@ -130,6 +130,8 @@ test('a legitimate assistant switch remounts conversation state', () => {
   f.wrapper.postMessageHandlers(f.event({inbox: secondProfile}));
   const after = f.wrapper.render().props.children;
   assert.equal(after.props.inboxId, secondProfile);
+  assert.equal(before.props.assistantRemount, false);
+  assert.equal(after.props.assistantRemount, true);
   assert.notEqual(
     after.key,
     before.key,
@@ -296,19 +298,19 @@ test('a remounted iframe keeps an already open launcher visible', () => {
     shouldOpenByDefault: () => false,
     send: (...args) => sent.push(args),
   };
-  bundledLauncherHandler('handleChatLoaded', bridge)();
+  bundledLauncherHandler('handleChatLoaded', bridge)({assistantRemount: true});
   assert.deepEqual(JSON.parse(JSON.stringify(sent)), [
     ['inhotel:toggle', {isOpen: true}],
     ['inhotel:plan', {plan: 'team'}],
   ]);
 });
 
-test('a remounted iframe stays closed after the guest closes it', () => {
+test('a remounted iframe stays closed when onChatLoaded initially opens it', () => {
   const sent = [];
-  let reopened = false;
+  let opened = 0;
   const bridge = {
     state: {
-      isLoaded: true,
+      isLoaded: false,
       isOpen: false,
       shouldDisplayNotifications: true,
       config: {},
@@ -317,21 +319,41 @@ test('a remounted iframe stays closed after the guest closes it', () => {
       Object.assign(this.state, change);
       if (callback) callback();
     },
-    props: {},
+    props: {onChatLoaded: ({open}) => open()},
+    handleOpenWidget: () => {
+      opened++;
+      bridge.state.isOpen = true;
+    },
     shouldOpenByDefault: () => true,
     emitToggleEvent: () => {
-      reopened = true;
+      opened++;
     },
     send: (...args) => sent.push(args),
   };
-  bundledLauncherHandler('handleChatLoaded', bridge)();
+  const loaded = bundledLauncherHandler('handleChatLoaded', bridge);
+  loaded();
+  assert.equal(bridge.state.isOpen, true);
+  assert.equal(opened, 1);
+
+  bridge.state.isOpen = false;
+  bridge.state.shouldDisplayNotifications = true;
+  sent.length = 0;
+  loaded({assistantRemount: true});
+
   assert.equal(bridge.state.isOpen, false);
   assert.equal(bridge.state.shouldDisplayNotifications, false);
-  assert.equal(reopened, false);
+  assert.equal(opened, 1);
   assert.deepEqual(JSON.parse(JSON.stringify(sent[0])), [
     'inhotel:toggle',
     {isOpen: false},
   ]);
+  loaded();
+  assert.equal(
+    bridge.state.isOpen,
+    true,
+    'a document reload runs onChatLoaded'
+  );
+  assert.equal(opened, 2);
 });
 
 (async () => {

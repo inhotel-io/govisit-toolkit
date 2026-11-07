@@ -91,6 +91,7 @@ type Props = {
   hotelEmail?: string;
   avatarURL?: string;
   parentOrigin?: string | null;
+  assistantRemount?: boolean;
 };
 
 type State = {
@@ -257,7 +258,7 @@ class ChatWindow extends React.Component<Props, State> {
     }
 
     this.loadAgentAvatar();
-    this.emit('chat:loaded');
+    this.emit('chat:loaded', {assistantRemount: this.props.assistantRemount});
 
     if (this.isOnDeprecatedVersion()) {
       console.warn(
