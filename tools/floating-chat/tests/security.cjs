@@ -13,6 +13,81 @@ const secondProfile = 'f1a4e101-0000-8000-8000-000000000002';
 const tests = [];
 const test = (name, run) => tests.push({name, run});
 
+// Exercise the shipped launcher's bootstrap, including its URL validation.
+const launcher = require('node:fs').readFileSync(
+  require('node:path').join(__dirname, '../public/widget.js'),
+  'utf8'
+);
+const bootstrap = launcher.slice(
+  launcher.indexOf('    var ye = function () {},'),
+  launcher.indexOf('    var sr = document.createElement')
+);
+assert.ok(bootstrap, 'Launcher bootstrap must be available for testing');
+function bootstrapProfile(
+  attribute,
+  globalUrl,
+  configUrl,
+  noCurrentScript = false
+) {
+  return require('node:vm').runInNewContext(bootstrap + '\nDD;', {
+    window: {
+      agent_card_url: globalUrl,
+      InhotelChatWindow: {config: {agent_card_url: configUrl}},
+    },
+    document: {
+      currentScript: noCurrentScript
+        ? null
+        : {
+            getAttribute: (name) =>
+              name === 'data-agent-card-url' ? attribute : null,
+          },
+    },
+    ACCOUNT_ID: -1,
+  });
+}
+const cardUrl = (profile) =>
+  `https://${profile}.agents.inhotel.io/.well-known/agent-card.json`;
+test('a single script attribute selects its assistant', () => {
+  assert.equal(bootstrapProfile(cardUrl(firstProfile)), firstProfile);
+});
+test('the script attribute takes precedence over both legacy settings', () => {
+  assert.equal(
+    bootstrapProfile(
+      cardUrl(firstProfile),
+      cardUrl(secondProfile),
+      cardUrl(secondProfile)
+    ),
+    firstProfile
+  );
+});
+test('legacy global and nested configuration still select their assistants', () => {
+  assert.equal(
+    bootstrapProfile(null, cardUrl(firstProfile), cardUrl(secondProfile)),
+    firstProfile
+  );
+  assert.equal(
+    bootstrapProfile(null, undefined, cardUrl(secondProfile)),
+    secondProfile
+  );
+  assert.equal(bootstrapProfile('', cardUrl(firstProfile)), firstProfile);
+  assert.equal(
+    bootstrapProfile(null, cardUrl(firstProfile), undefined, true),
+    firstProfile
+  );
+});
+test('an invalid explicit attribute is rejected even with a valid legacy setting', () => {
+  for (const url of [
+    'https://attacker.example/.well-known/agent-card.json',
+    cardUrl(firstProfile) + '?override=1',
+    'http://' + firstProfile + '.agents.inhotel.io/.well-known/agent-card.json',
+  ]) {
+    assert.throws(
+      () => bootstrapProfile(url, cardUrl(firstProfile)),
+      /must be an inHotel agent card/
+    );
+  }
+});
+
 const MessageBody = createRuntime().load('components/ChatMessageBody.tsx')
   .default;
 for (const content of [

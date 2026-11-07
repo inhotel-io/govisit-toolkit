@@ -42,7 +42,7 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000) for the embed code and a live
-launcher, chatting with the example agent from the Focus Chat quick start. Add
+launcher, chatting with the inHotel Solutions Specialist. Add
 `?agent_card_url=` with another inHotel agent card URL to chat with that agent
 instead. To exercise the local iframe UI with an existing assistant, open
 `http://localhost:3000/?token=-1&inbox=YOUR_ASSISTANT_PROFILE_ID&version=1.0.0`.
@@ -59,19 +59,32 @@ both the launcher and iframe. Valid customer colors take precedence.
 
 ## Embed on a website
 
-Name the agent by its card, the same `agent_card_url` that `<focus-chat>` takes:
+Set `data-agent-card-url` on the launcher script. This example opens the
+inHotel Solutions Specialist:
+
+```html
+<script
+  defer
+  src="https://floating-chat.govisit.ai/widget.js"
+  data-agent-card-url="https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json"
+></script>
+```
+
+The existing two-script method is also supported:
 
 ```html
 <script>
   window.agent_card_url =
-    'https://YOUR_ASSISTANT_PROFILE_ID.agents.inhotel.io/.well-known/agent-card.json';
+    'https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json';
 </script>
 <script async defer src="https://floating-chat.govisit.ai/widget.js"></script>
 ```
 
-`agent_card_url` must be set before the script loads, either as that global or
-as `window.InhotelChatWindow.config.agent_card_url`. It must be an inHotel agent
-card URL of exactly that form.
+The first nonempty value wins, in this order: the script's `data-agent-card-url`,
+`window.agent_card_url`, then `window.InhotelChatWindow.config.agent_card_url`.
+Global configuration must be set before the launcher runs. The selected value
+must be an inHotel agent card URL of exactly the form shown above; an invalid
+value is rejected.
 
 Integrations installed with `window.ASSISTANT_INTERACTION_PROFILE_ID` and
 `https://chat.inhotel.io/widget.js` keep working unchanged: chat.inhotel.io is a

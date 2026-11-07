@@ -1,6 +1,6 @@
-// The page sets agent_card_url (a global, or InhotelChatWindow.config.agent_card_url)
-// before loading this script, the same attribute <focus-chat> takes. It is read
-// in the bootstrap at the bottom of this file.
+// Set data-agent-card-url on this script, or set agent_card_url on window or
+// InhotelChatWindow.config before loading it. The script attribute takes precedence.
+// Configuration is read synchronously in the bootstrap at the bottom of this file.
 
 // ACCOUNT_ID no longer needed - using A2A protocol
 var ACCOUNT_ID = -1;
@@ -23281,7 +23281,11 @@ OD =
       // Only inHotel agent cards are accepted: the backend settings, the
       // contact form and the A2A endpoint are all keyed by the assistant
       // profile ID that names the card's host.
-      agentCardUrl = $q.agent_card_url || ga.agent_card_url,
+      agentCardUrl =
+        (document.currentScript &&
+          document.currentScript.getAttribute('data-agent-card-url')) ||
+        $q.agent_card_url ||
+        ga.agent_card_url,
       cardMatch = /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.agents\.inhotel\.io\/\.well-known\/agent-card\.json$/i.exec(
         agentCardUrl || ''
       ),
