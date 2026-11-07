@@ -58,75 +58,50 @@ test('a single script attribute selects its assistant', () => {
     firstProfile
   );
 });
-test('the script attribute takes precedence over every configuration namespace', () => {
+test('the script attribute takes precedence over Floating Chat configuration', () => {
   assert.equal(
     bootstrapConfiguration({
       attribute: cardUrl(firstProfile),
       floatingConfig: {agent_card_url: cardUrl(secondProfile)},
-      globalUrl: cardUrl(secondProfile),
-      legacyConfig: {agent_card_url: cardUrl(secondProfile)},
     }).profile,
     firstProfile
   );
 });
-test('legacy global and nested configuration still select their assistants', () => {
-  for (const options of [
-    {
-      globalUrl: cardUrl(firstProfile),
-      legacyConfig: {agent_card_url: cardUrl(secondProfile)},
-    },
-    {legacyConfig: {agent_card_url: cardUrl(firstProfile)}},
-    {attribute: '', globalUrl: cardUrl(firstProfile)},
-    {noCurrentScript: true, globalUrl: cardUrl(firstProfile)},
-  ]) {
-    assert.equal(bootstrapConfiguration(options).profile, firstProfile);
+test('Floating Chat configuration selects the assistant without a script attribute', () => {
+  const floatingConfig = {agent_card_url: cardUrl(firstProfile)};
+  for (const options of [{}, {attribute: ''}, {noCurrentScript: true}]) {
+    assert.equal(
+      bootstrapConfiguration({...options, floatingConfig}).profile,
+      firstProfile
+    );
   }
 });
-test('Floating Chat configuration selects its assistant ahead of legacy settings', () => {
-  assert.equal(
-    bootstrapConfiguration({
-      floatingConfig: {agent_card_url: cardUrl(firstProfile)},
-      globalUrl: cardUrl(secondProfile),
-      legacyConfig: {agent_card_url: cardUrl(secondProfile)},
-    }).profile,
-    firstProfile
-  );
+test('legacy configuration cannot select an assistant', () => {
+  for (const options of [
+    {globalUrl: cardUrl(firstProfile)},
+    {legacyConfig: {agent_card_url: cardUrl(firstProfile)}},
+  ]) {
+    assert.throws(
+      () => bootstrapConfiguration(options),
+      /Set data-agent-card-url/
+    );
+  }
 });
-test('Floating Chat configuration works without any legacy settings', () => {
-  assert.equal(
-    bootstrapConfiguration({
-      floatingConfig: {agent_card_url: cardUrl(firstProfile)},
-    }).profile,
-    firstProfile
-  );
-});
-test('Floating Chat presentation options override legacy options and preserve callbacks', () => {
+test('Floating Chat configuration supplies presentation options and callbacks', () => {
   const onChatLoaded = () => {};
-  const legacyConfig = {
-    title: 'Legacy title',
-    subtitle: 'Legacy subtitle',
-    onChatLoaded,
-  };
-  const floatingConfig = {
-    title: 'Floating Chat title',
-    primaryColor: '#465EA4',
-  };
   const result = bootstrapConfiguration({
     attribute: cardUrl(firstProfile),
-    legacyConfig,
-    floatingConfig,
+    floatingConfig: {title: 'Floating Chat title', onChatLoaded},
+    legacyConfig: {subtitle: 'Legacy subtitle'},
   });
   assert.equal(result.config.title, 'Floating Chat title');
-  assert.equal(result.config.subtitle, 'Legacy subtitle');
-  assert.equal(result.config.primaryColor, '#465EA4');
+  assert.equal(result.config.subtitle, undefined);
   assert.equal(result.config.onChatLoaded, onChatLoaded);
-  assert.equal(legacyConfig.title, 'Legacy title');
 });
-test('an invalid Floating Chat card is rejected instead of using a legacy assistant', () => {
+test('an invalid Floating Chat card is rejected', () => {
   assert.throws(
     () =>
       bootstrapConfiguration({
-        globalUrl: cardUrl(firstProfile),
         floatingConfig: {
           agent_card_url:
             'https://attacker.example/.well-known/agent-card.json',
@@ -135,7 +110,7 @@ test('an invalid Floating Chat card is rejected instead of using a legacy assist
     /must be an inHotel agent card/
   );
 });
-test('an invalid explicit attribute is rejected even with a valid legacy setting', () => {
+test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
   for (const url of [
     'https://attacker.example/.well-known/agent-card.json',
     cardUrl(firstProfile) + '?override=1',
@@ -145,7 +120,7 @@ test('an invalid explicit attribute is rejected even with a valid legacy setting
       () =>
         bootstrapConfiguration({
           attribute: url,
-          globalUrl: cardUrl(firstProfile),
+          floatingConfig: {agent_card_url: cardUrl(firstProfile)},
         }),
       /must be an inHotel agent card/
     );

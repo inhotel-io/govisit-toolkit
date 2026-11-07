@@ -1,5 +1,4 @@
 // Set data-agent-card-url on this script or use FloatingChatWindow.config.
-// Existing window.agent_card_url and InhotelChatWindow.config embeds are supported.
 // Configuration is read synchronously in the bootstrap at the bottom of this file.
 
 // ACCOUNT_ID no longer needed - using A2A protocol
@@ -23275,10 +23274,7 @@ OD =
     Ka();
 
     var ye = function () {},
-      $q = window,
-      legacyConfig = ($q.InhotelChatWindow && $q.InhotelChatWindow.config) || {},
-      floatingConfig = ($q.FloatingChatWindow && $q.FloatingChatWindow.config) || {},
-      ga = Object.assign({}, legacyConfig, floatingConfig),
+      ga = (window.FloatingChatWindow && window.FloatingChatWindow.config) || {},
       _q = ACCOUNT_ID,
       // Only inHotel agent cards are accepted: the backend settings, the
       // contact form and the A2A endpoint are all keyed by the assistant
@@ -23286,9 +23282,7 @@ OD =
       agentCardUrl =
         (document.currentScript &&
           document.currentScript.getAttribute('data-agent-card-url')) ||
-        floatingConfig.agent_card_url ||
-        $q.agent_card_url ||
-        legacyConfig.agent_card_url,
+        ga.agent_card_url,
       cardMatch = /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.agents\.inhotel\.io\/\.well-known\/agent-card\.json$/i.exec(
         agentCardUrl || ''
       ),
@@ -23346,7 +23340,7 @@ OD =
       throw new Error(
         agentCardUrl
           ? 'agent_card_url must be an inHotel agent card: https://{assistant profile id}.agents.inhotel.io/.well-known/agent-card.json'
-          : 'agent_card_url is required to render the InhotelChatWindow chat widget!'
+          : 'Set data-agent-card-url on the launcher script or set window.FloatingChatWindow.config.agent_card_url.'
       );
     var sr = document.createElement('div');
     var jE = za(qs);

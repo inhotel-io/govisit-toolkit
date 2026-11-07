@@ -60,7 +60,7 @@ both the launcher and iframe. Valid customer colors take precedence.
 ## Embed on a website
 
 Set `data-agent-card-url` on the launcher script. This example opens the
-inHotel Solutions Specialist:
+inHotel Solutions Specialist.
 
 ```html
 <script
@@ -71,7 +71,7 @@ inHotel Solutions Specialist:
 ```
 
 For additional configuration, set `window.FloatingChatWindow.config` before
-loading the launcher. The agent card can also be supplied here:
+loading the launcher. You can also supply the agent card in this configuration.
 
 ```html
 <script>
@@ -91,14 +91,7 @@ loading the launcher. The agent card can also be supplied here:
 
 The script's `data-agent-card-url` takes precedence over
 `window.FloatingChatWindow.config.agent_card_url`. The selected value must be an
-inHotel agent card URL of exactly the form shown above; an invalid value is rejected.
-
-Existing embeds using `window.agent_card_url` or `window.InhotelChatWindow.config`
-are supported for compatibility. Use the script attribute or
-`window.FloatingChatWindow.config` for new integrations. Agent card selection falls
-back to the legacy global, then the legacy nested configuration. Presentation
-options from `FloatingChatWindow.config` override matching legacy options while
-preserving other legacy options and callbacks.
+inHotel agent card URL in the form shown above.
 
 For a self-hosted deployment, replace the script URL with your own host. The
 launcher opens its iframe from the host that served the script, so a local
