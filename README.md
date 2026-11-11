@@ -5,6 +5,8 @@
 [![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg)](https://neuronto.com/ard-publishers/govisit.ai)
 [![Listed on CurlShip](https://curlship.com/badge.svg)](https://curlship.com)
+[![Reviewed on skillemall](https://skillemall.ai/badge/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)](https://skillemall.ai/s/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)
+[![AgentVerus](https://agentverus.ai/api/v1/skill/35b354a7-e330-4896-bc1f-6082cd5cb674/badge)](https://agentverus.ai/skill/35b354a7-e330-4896-bc1f-6082cd5cb674)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
