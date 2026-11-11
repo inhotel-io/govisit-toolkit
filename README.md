@@ -1,5 +1,7 @@
 # GoVisit Toolkit
 
+[![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
+
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
 published destination and business profiles so travelers can explore what places
