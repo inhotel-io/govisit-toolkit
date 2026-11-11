@@ -1,5 +1,6 @@
 # GoVisit Toolkit
 
+[![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
 
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg?theme=dark)](https://neuronto.com/ard-publishers/govisit.ai)
@@ -14,9 +15,8 @@
 [![Listed in Awesome Agent Skills](https://sagargupta.online/awesome-skills/badge.svg)](https://github.com/Sagargupta16/awesome-skills)
 [![GoVisit on mcp.tc](https://mcp.tc/i/govisit/badge.svg)](https://mcp.tc/i/govisit)
 [![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
-[![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
 [![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
-[![GoVisit Toolkit on HOL Registry (Trust Score)](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dfor-the-badge%26label%3DGoVisit+Toolkit)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
+[![GoVisit Toolkit trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
