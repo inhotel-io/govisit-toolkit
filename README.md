@@ -12,6 +12,7 @@
 [![Listed in Awesome Agent Skills](https://sagargupta.online/awesome-skills/badge.svg)](https://github.com/Sagargupta16/awesome-skills)
 [![GoVisit on mcp.tc](https://mcp.tc/i/govisit/badge.svg)](https://mcp.tc/i/govisit)
 [![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
+[![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
