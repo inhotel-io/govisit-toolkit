@@ -7,6 +7,8 @@
 [![Listed on CurlShip](https://curlship.com/badge.svg)](https://curlship.com)
 [![Reviewed on skillemall](https://skillemall.ai/badge/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)](https://skillemall.ai/s/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)
 [![AgentVerus](https://agentverus.ai/api/v1/skill/35b354a7-e330-4896-bc1f-6082cd5cb674/badge)](https://agentverus.ai/skill/35b354a7-e330-4896-bc1f-6082cd5cb674)
+[![GoVisit on mcp.tc](https://mcp.tc/i/govisit/badge.svg)](https://mcp.tc/i/govisit)
+[![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
