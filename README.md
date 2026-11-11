@@ -2,6 +2,7 @@
 
 [![MCP security](https://gateturbo.com/badge/scan/14b3623a-6c16-45c6-8bea-9b56a44e30aa)](https://gateturbo.com/report/14b3623a-6c16-45c6-8bea-9b56a44e30aa)
 [![QAmcp score](https://api.qamcp.dev/badge/zKo3lhH9.svg)](https://qamcp.dev/?from=badge)
+[![skillscan.io](https://skillscan.io/badge/inhotel-io-govisit-list-category-places.svg)
 [![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg)](https://neuronto.com/ard-publishers/govisit.ai)
 [![Listed on CurlShip](https://curlship.com/badge.svg)](https://curlship.com)
