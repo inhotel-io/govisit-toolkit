@@ -1,5 +1,7 @@
 # GoVisit Toolkit
 
+[![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
+
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg?theme=dark)](https://neuronto.com/ard-publishers/govisit.ai)
 [![MCP security](https://gateturbo.com/badge/scan/14b3623a-6c16-45c6-8bea-9b56a44e30aa)](https://gateturbo.com/report/14b3623a-6c16-45c6-8bea-9b56a44e30aa)
 [![QAmcp score](https://api.qamcp.dev/badge/zKo3lhH9.svg)](https://qamcp.dev/?from=badge)
@@ -12,8 +14,6 @@
 [![Listed in Awesome Agent Skills](https://sagargupta.online/awesome-skills/badge.svg)](https://github.com/Sagargupta16/awesome-skills)
 [![GoVisit on mcp.tc](https://mcp.tc/i/govisit/badge.svg)](https://mcp.tc/i/govisit)
 [![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
-[![Indexed on TensorBlock MCP Index](https://mcp-index.tensorblock.co/v1/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9/badge.svg)](https://www.tensorblock.co/mcp/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9)
-
 [![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
