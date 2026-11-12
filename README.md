@@ -7,6 +7,7 @@
 [![MCP security](https://gateturbo.com/badge/scan/14b3623a-6c16-45c6-8bea-9b56a44e30aa)](https://gateturbo.com/report/14b3623a-6c16-45c6-8bea-9b56a44e30aa)
 [![QAmcp score](https://api.qamcp.dev/badge/zKo3lhH9.svg)](https://qamcp.dev/?from=badge)
 [![skillscan.io](https://skillscan.io/badge/inhotel-io-govisit-list-category-places.svg)
+[![Security grade on Skills Directory](https://www.skillsdirectory.com/api/skills/inhotel-io-govisit-search-places/badge)](https://www.skillsdirectory.com/skills/inhotel-io-govisit-search-places)
 [![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
 [![Listed on CurlShip](https://curlship.com/badge.svg)](https://curlship.com)
 [![Reviewed on skillemall](https://skillemall.ai/badge/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)](https://skillemall.ai/s/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)
