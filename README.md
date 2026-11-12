@@ -1,13 +1,15 @@
 # GoVisit Toolkit
 
-[![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
+[![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit+Tools)](https://weverlabs.com/directory/verify?name=GoVisit+Tools)
+
+[![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
+
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
 
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg?theme=dark)](https://neuronto.com/ard-publishers/govisit.ai)
 [![MCP security](https://gateturbo.com/badge/scan/14b3623a-6c16-45c6-8bea-9b56a44e30aa)](https://gateturbo.com/report/14b3623a-6c16-45c6-8bea-9b56a44e30aa)
 [![QAmcp score](https://api.qamcp.dev/badge/zKo3lhH9.svg)](https://qamcp.dev/?from=badge)
 [![skillscan.io](https://skillscan.io/badge/inhotel-io-govisit-list-category-places.svg)
-[![Security grade on Skills Directory](https://www.skillsdirectory.com/api/skills/inhotel-io-govisit-search-places/badge)](https://www.skillsdirectory.com/skills/inhotel-io-govisit-search-places)
 [![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
 [![Listed on CurlShip](https://curlship.com/badge.svg)](https://curlship.com)
 [![Reviewed on skillemall](https://skillemall.ai/badge/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)](https://skillemall.ai/s/inhotel-io%2Fgovisit-toolkit/inhotel-io/govisit-toolkit/skills/govisit-search-places)
@@ -16,10 +18,8 @@
 [![Listed in Awesome Agent Skills](https://sagargupta.online/awesome-skills/badge.svg)](https://github.com/Sagargupta16/awesome-skills)
 [![GoVisit on mcp.tc](https://mcp.tc/i/govisit/badge.svg)](https://mcp.tc/i/govisit)
 [![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
-[![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
-[![GoVisit Toolkit trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
-[![Listed on SkillFoxx](https://img.shields.io/endpoint?url=https%3A%2F%2Fskillfoxx.ru%2Fbadges%2Fmcp%2Fgovisit-tools.json%3Flang%3Den)](https://skillfoxx.ru/en/mcp/govisit-tools?utm_source=github&utm_medium=badge&utm_campaign=readme)
-[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/inhotel-io/govisit-toolkit)
+[![Listed on KeelTools](https://keeltools.com/badge/keeltools-listed.svg)](https://keeltools.com/)
+[![GoVisit Toolkit on HOL Registry (Trust Score)](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dfor-the-badge%26label%3DGoVisit+Toolkit)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
