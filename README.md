@@ -1,5 +1,7 @@
 # GoVisit Toolkit
 
+[![skills.sh](https://skills.sh/b/inhotel-io/govisit-toolkit)](https://skills.sh/inhotel-io/govisit-toolkit)
+
 [![Suede Skill Check: 80/100](https://suedeai.directory/inhotel-io/govisit-toolkit/govisit-search-places/score.svg)](https://suedeai.directory/inhotel-io/govisit-toolkit/#govisit-search-places)
 
 [![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit+Tools)](https://weverlabs.com/directory/verify?name=GoVisit+Tools)
