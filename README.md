@@ -18,6 +18,7 @@
 [![Listed on mcpHQ](https://img.shields.io/badge/Listed%20on-mcpHQ-8A2BE2)](https://github.com/mcpHQ/awesome-mcp-servers)
 [![GoVisit Toolkit trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
 [![skills.sh](https://skills.sh/b/inhotel-io/govisit-toolkit)](https://skills.sh/inhotel-io/govisit-toolkit)
+[![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit+Tools+MCP)](https://weverlabs.com/directory/verify?name=GoVisit+Tools+MCP)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
