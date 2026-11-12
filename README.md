@@ -18,6 +18,7 @@
 [![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
 [![GoVisit Toolkit trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
 [![Listed on SkillFoxx](https://img.shields.io/endpoint?url=https%3A%2F%2Fskillfoxx.ru%2Fbadges%2Fmcp%2Fgovisit-tools.json%3Flang%3Den)](https://skillfoxx.ru/en/mcp/govisit-tools?utm_source=github&utm_medium=badge&utm_campaign=readme)
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/inhotel-io/govisit-toolkit)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
