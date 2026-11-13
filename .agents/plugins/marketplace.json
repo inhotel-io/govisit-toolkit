@@ -7,10 +7,8 @@
     {
       "name": "govisit",
       "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
-        "path": "./plugins/govisit",
-        "ref": "main"
+        "source": "local",
+        "path": "./plugins/govisit"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -21,10 +19,8 @@
     {
       "name": "govisit-travel-planner",
       "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
-        "path": "./plugins/govisit-travel-planner",
-        "ref": "main"
+        "source": "local",
+        "path": "./plugins/govisit-travel-planner"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -35,10 +31,8 @@
     {
       "name": "govisit-destination",
       "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
-        "path": "./plugins/govisit-destination",
-        "ref": "main"
+        "source": "local",
+        "path": "./plugins/govisit-destination"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -49,10 +43,8 @@
     {
       "name": "govisit-local-business",
       "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/inhotel-io/govisit-toolkit.git",
-        "path": "./plugins/govisit-local-business",
-        "ref": "main"
+        "source": "local",
+        "path": "./plugins/govisit-local-business"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,18 +1,22 @@
-# GoVisit Toolkit v0.2.0
+# GoVisit Toolkit v0.2.1
 
-Adds installable Destination (13 skills) and Local Business (10 skills) packs
-alongside All (22) and Travel Planner (18). Audience selections intentionally
-overlap and reuse the same canonical skill resources.
+Completes marketplace listing metadata for all four native packages, with concise
+subtitles, audience-specific descriptions, usage limitations, and support links.
+Every native archive now includes its declared square SVG listing and composer icon.
 
-Destination managers can find their entry and read its published profile and
-inventory. Local businesses can find their place and inspect its profile, visit
-facts, related places, and destination context. Update destination and Update
-place remain planned; this release grants no write permissions.
+Native marketplaces resolve plugins inside the selected repository checkout.
+The README pins native installation to v0.2.1 and documents exact-commit selection,
+upgrades from older marketplace sources, and the optional main development channel.
+Pinning a marketplace no longer fetches plugin contents separately from main.
 
-Includes 22 portable skills, four self-contained Claude Code/Codex native
-packages, individual and audience bundle archives, pinned discovery metadata,
-checksums, and source provenance. MIT covers toolkit files; hosted services and
+Release metadata records the toolkit build commit in addition to the existing
+upstream web revision. SHA256SUMS covers the release manifest and all payload
+archives; release verification checks the complete public asset inventory.
+
+Includes the same 22 public read skills and audience selections as v0.2.0:
+All (22), Travel Planner (18), Destination (13), and Local Business (10).
+Portable skill bytes, HTTP contracts, and their digests are unchanged. Destination
+and place editing remain planned; no write permissions or booking workflows are added.
+
+v0.1.0 and v0.2.0 remain immutable. MIT covers toolkit files; hosted services and
 returned data retain the separate GoVisit Data Use License.
-
-v0.1.0 remains immutable. v0.2.0 adds audience selections without changing the
-underlying read-only HTTP API versions.

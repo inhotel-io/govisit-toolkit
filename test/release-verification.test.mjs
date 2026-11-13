@@ -42,3 +42,12 @@ test("release verification checks both public metadata assets against reviewed b
     }
   }
 });
+
+test("release verification rejects a non-immutable toolkit revision", async () => {
+  const { verifyRelease } = await import("../scripts/verify-release.mjs");
+  const output = await buildToolkit({ root, revision: "1234567890abcdef1234567890abcdef12345678" });
+  const manifest = JSON.parse(output.assets["release-manifest.json"]);
+  assert.equal(manifest.release.revision, "1234567890abcdef1234567890abcdef12345678");
+  manifest.release.revision = "main";
+  await assert.rejects(verifyRelease({ manifest, index: output.index, fetchAsset: async url => output.assets[new URL(url).pathname.split("/").pop()] }), /revision/i);
+});

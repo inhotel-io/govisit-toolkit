@@ -145,11 +145,11 @@ claude --version
 On Windows, use the [official Claude Code installation guide](https://code.claude.com/docs/en/getting-started) for the PowerShell or Command Prompt installer. Then add the marketplace and install a plugin:
 
 ```sh
-claude plugin marketplace add inhotel-io/govisit-toolkit
+claude plugin marketplace add inhotel-io/govisit-toolkit#v0.2.1
 claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 ```
 
-The marketplace command uses the repository's default `main` branch.
+The marketplace command selects the immutable `v0.2.1` release tag.
 
 Codex:
 
@@ -160,12 +160,13 @@ npm install -g @openai/codex@latest
 ```
 
 ```sh
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref main
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.1
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
 Use `govisit@govisit-toolkit` for All, `govisit-destination@govisit-toolkit` for Destination, or `govisit-local-business@govisit-toolkit` for Local Business. Native packages live under
-`plugins/`; their included skill files are generated from the canonical `skills/`
+`plugins/`; marketplace paths resolve inside the selected checkout. Their included
+skill files are generated from the canonical `skills/`
 selection, and all resources remain inside the plugin root. A native Claude skill
 is namespaced, for example `/govisit-travel-planner:govisit-search-places`; portable
 skill invocation uses the host's own skill selector.
@@ -201,20 +202,27 @@ live prices or availability. The example performs reads and makes no reservation
 
 ## Updates and diagnostics
 
-To move a Codex marketplace from a version tag to the current GoVisit source,
-remove and re-add it at `main`, then install the selected package again. Existing
-plugin snapshots are updated by the final command:
+To upgrade an existing Codex marketplace to release `v0.2.1`, remove and re-add
+it at the release tag, then install the selected package again. Existing plugin
+snapshots are updated by the final command:
 
 ```sh
 codex plugin marketplace remove govisit-toolkit
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref main
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.1
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
 Use your audience package name in the last command. Re-adding an existing
 marketplace with a different `--ref` requires removing its old marketplace
-declaration first. `main` tracks ongoing changes; use a reviewed release tag
-when a stable, reproducible version is required.
+declaration first. Each marketplace entry reads its plugin from that checkout,
+so selecting a release tag also selects the plugin contents. For an exact commit,
+replace `v0.2.1` with the full reviewed commit SHA. Include `plugins/` if you use
+`--sparse`. To follow development changes explicitly, use `--ref main` for Codex
+or omit `#v0.2.1` from the Claude marketplace source.
+
+For an existing Claude marketplace, run `claude plugin marketplace remove govisit-toolkit`,
+re-add the tagged source shown above, and reinstall the selected
+plugin with the same scope.
 
 Installed copies are snapshots. For portable skills, use `npx skills check` and
 `npx skills update`, or reinstall the selected complete package through your

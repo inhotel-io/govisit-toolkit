@@ -4,6 +4,8 @@
     "label": "All skills",
     "icon": "govisit.svg",
     "description": "Read published GoVisit travel information with all available toolkit skills.",
+    "shortDescription": "Explore GoVisit travel data",
+    "longDescription": "Discover destinations and places, inspect published profiles and visit facts, and read GoVisit documentation and catalog statistics. Includes all 22 public read skills and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
     "include": "all",
     "exclude": [],
     "requires": []
@@ -13,6 +15,8 @@
     "label": "Travel Planner",
     "icon": "travel-planner.svg",
     "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
+    "shortDescription": "Research trips with GoVisit",
+    "longDescription": "Research travel ideas using GoVisit destination and place profiles, categories, collections, activities, and visit facts. Includes 18 public read skills for travel planners and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
     "include": "all",
     "exclude": [
       "govisit-get-statistics",
@@ -27,6 +31,8 @@
     "label": "Destination",
     "icon": "destination.svg",
     "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
+    "shortDescription": "Explore destination profiles",
+    "longDescription": "Find a destination and inspect its published GoVisit profile, places, activities, categories, highlights, and catalog statistics. Includes 13 public read skills for destination managers and requires no GoVisit API key. Reading a profile does not establish ownership. Destination updates are planned; this package cannot publish edits or make reservations.",
     "include": [
       "govisit-search-destinations",
       "govisit-get-destination-overview",
@@ -53,6 +59,8 @@
     "label": "Local Business",
     "icon": "local-business.svg",
     "description": "Find and inspect business profiles and their local destination context. Place updates are planned.",
+    "shortDescription": "Explore business profiles",
+    "longDescription": "Find a business and inspect its published GoVisit profile, visit facts, related places, and destination context. Includes 10 public read skills for local businesses and requires no GoVisit API key. Reading a profile does not establish ownership or live availability. Place updates are planned; this package cannot publish edits or make reservations.",
     "include": [
       "govisit-search-places",
       "govisit-get-place-overview",

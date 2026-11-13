@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "govisit-destination",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
   "author": {
     "name": "inHotel Sàrl"
@@ -13,13 +13,15 @@
     "com.openai": {
       "interface": {
         "displayName": "GoVisit — Destination",
-        "shortDescription": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
+        "shortDescription": "Explore destination profiles",
+        "longDescription": "Find a destination and inspect its published GoVisit profile, places, activities, categories, highlights, and catalog statistics. Includes 13 public read skills for destination managers and requires no GoVisit API key. Reading a profile does not establish ownership. Destination updates are planned; this package cannot publish edits or make reservations.",
         "developerName": "inHotel Sàrl",
         "category": "Travel",
         "capabilities": [
           "Read"
         ],
         "websiteURL": "https://govisit.ai",
+        "supportURL": "https://github.com/inhotel-io/govisit-toolkit/issues",
         "composerIcon": "./assets/icon.svg",
         "logo": "./assets/icon.svg"
       }
