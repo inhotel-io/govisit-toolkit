@@ -1,5 +1,26 @@
 # Verification record
 
+## v0.2.1 packaging checks
+
+Checked on 2026-11-13 before publication, from release branch commit
+`f66eeab` (packaging changes; subsequent documentation changes do not alter plugin contents).
+
+| Component | Version | Observed result |
+|---|---|---|
+| Toolkit | 0.2.1 | All 11 tests, build, generated-output checks and local verification of all 33 release assets pass |
+| Native archives | 0.2.1 | All four archives contain valid listing descriptions and their referenced square SVG icons; portable skill bytes and digests are unchanged |
+| Codex CLI | 0.166.0 | All four plugins install from the remote marketplace pinned to the full release-branch commit; every installed resource matches the candidate; clean local marketplace installs also pass |
+| Claude Code | 2.1.316 | All four plugins install at project scope from the remote release-branch marketplace; every installed resource matches the candidate; all manifests and the marketplace validate |
+| skills installer | 1.7.4 | Local discovery lists all 22 canonical portable skills |
+| Release settings | GitHub | Immutable releases are enabled; public release verification follows publication as documented in releasing.md |
+
+Native install checks used isolated temporary client configurations, which were
+removed afterward. They verify packaging and installation, not a new model
+conversation or every live API operation. Website discovery was not promoted
+as part of this toolkit packaging patch; the website record below applies to v0.2.0.
+
+## Previous v0.2.0 verification
+
 Published release: [v0.2.0](https://github.com/inhotel-io/govisit-toolkit/releases/tag/v0.2.0).
 Checked on 2026-11-01. v0.1.0 remains immutable.
 
