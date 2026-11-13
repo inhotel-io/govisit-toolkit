@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { buildToolkit, listFiles, json } from "./lib/toolkit-build.mjs";
 const args = process.argv.slice(2);
 let root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."), check = false;
@@ -9,7 +10,8 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === "--root" && args[i + 1]) root = path.resolve(args[++i]);
   else throw new Error(`Unknown build option: ${args[i]}`);
 }
-const output = await buildToolkit({ root });
+const revision = execFileSync("git", ["rev-parse", "HEAD"], { cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."), encoding: "utf8" }).trim();
+const output = await buildToolkit({ root, revision });
 if (check) {
   const actual = (await listFiles(path.join(root, "plugins"))).map(p => `plugins/${p}`);
   const expected = Object.keys(output.generated).filter(p => p.startsWith("plugins/")).sort();

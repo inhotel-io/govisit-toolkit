@@ -1,6 +1,7 @@
 # Releasing the toolkit
 
-The reviewed read-tool contracts and package generator live in `inhotel-io/govisit-web`.
+The reviewed read-tool contracts and portable-skill exporter live in `inhotel-io/govisit-web`.
+Native packaging and listing metadata are maintained in this toolkit repository.
 From that checkout, export into an isolated toolkit checkout:
 
 ```sh
@@ -9,6 +10,8 @@ node scripts/export-toolkit.mjs --target /absolute/path/to/govisit-toolkit
 
 Inspect `upstream.json`, the canonical skill diff, and the public file inventory.
 Generated plugin packages are derived from `skills/` and `config/packs.json`.
+After export, select the intended toolkit release in `config/release.json` and
+`config/discovery-index.json`; keep the discovery schema version unchanged.
 They are never edited independently. Audience packages share canonical readers. Destination and Local Business
 packages are useful before authoring ships; add the appropriate update skill to
 the existing selection when its secure workflow is implemented.
@@ -21,7 +24,7 @@ the existing selection when its secure workflow is implemented.
 2. Run `npm ci --ignore-scripts`, `npm test`, `npm run build`, `npm run check`, and
    `npm run verify:release -- --local`.
 3. Review the candidate assets, SHA256SUMS, source revision, native packages, and
-   matching website discovery/docs changes. Run supported native/portable clients;
+   matching website discovery/docs changes when promoting the website to this release. Run supported native/portable clients;
    schema/manifest validation alone does not prove an end-to-end task succeeded.
 4. Merge the reviewed toolkit change before publishing its release. Keep website
    discovery and documentation changes pending until public asset verification.
@@ -35,11 +38,11 @@ draft and deliberately stops before public publication. Existing releases cause
 creation to fail; an existing tag must resolve to the exact build commit. There is no clobber/update path.
 
 After reviewing the draft and immutable-release setting, publish it using GitHub
-or `gh release edit v0.2.0 --draft=false --repo inhotel-io/govisit-toolkit`.
+or `gh release edit v0.2.1 --draft=false --repo inhotel-io/govisit-toolkit`.
 Then run:
 
 ```sh
-gh release verify v0.2.0 --repo inhotel-io/govisit-toolkit
+gh release verify v0.2.1 --repo inhotel-io/govisit-toolkit
 npm run verify:release
 ```
 
@@ -54,7 +57,7 @@ this file and cannot recalculate release checksums from changing runtime sources
 
 Only after these checks pass should the matching GoVisit discovery projection
 and all public installation/reference pages be deployed. Verify public index
-entries, native Git subdirectory sources, clean installs, and representative live
+entries, marketplace-relative native sources, clean installs, and representative live
 documentation after deployment.
 
 ## Integrity, capacity, and rollback
@@ -69,3 +72,11 @@ website packages.
 MIT applies to toolkit files. Service access and returned data are governed by
 the separate [GoVisit Data Use License](https://govisit.ai/en/docs/general/data-use-license).
 Coordinate license changes using the internal licensing maintenance standard.
+
+Native marketplace sources use paths inside the selected repository checkout.
+Use the immutable release tag or exact commit for reproducible native installs;
+`main` is an explicit development channel. When using sparse checkout, include
+`plugins/` as well as the marketplace manifest. Release builds record the toolkit
+build commit as `release.revision` in `release-manifest.json`, separately from
+the upstream web revision. Rebuild from the exact reviewed commit before comparing
+public release metadata.

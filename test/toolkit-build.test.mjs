@@ -27,9 +27,10 @@ test("native packages are complete, selected once, and archives match approved d
     assert.equal(portable.name, claude.name); assert.equal(portable.version, JSON.parse(await readFile(path.join(dir, "config/release.json"))).tag.slice(1));
     assert.equal(portable.version, claude.version);
     const native = JSON.parse(await readFile(path.join(dir, ".agents/plugins/marketplace.json")));
-    assert.equal(native.plugins[0].source.source, "git-subdir");
-    assert.equal(native.plugins[0].source.ref, "main");
-    assert.equal(native.plugins[0].source.path, "./plugins/govisit");
+    for (const plugin of native.plugins) {
+      assert.deepEqual(plugin.source, { source: "local", path: `./plugins/${plugin.name}` });
+      assert.ok((await readdir(path.join(dir, plugin.source.path))).includes("plugin.json"));
+    }
     const index = JSON.parse(await readFile(path.join(dir, "dist/index.json")));
     for (const entry of index.skills) {
       const bytes = await readFile(path.join(dir, "dist", path.basename(new URL(entry.url).pathname)));
@@ -42,6 +43,40 @@ test("native packages are complete, selected once, and archives match approved d
     assert.equal(cli(dir, true).status, 0);
     await writeFile(path.join(dir, "plugins/govisit/skills/govisit-search-places/SKILL.md"), "drift");
     const stale = cli(dir, true); assert.notEqual(stale.status, 0); assert.match(stale.stderr, /drift|stale/i);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+test("every native archive includes valid listing text and its referenced icons", async () => {
+  const dir = await fixture();
+  try {
+    const result = cli(dir); assert.equal(result.status, 0, result.stderr);
+    for (const file of (await readdir(path.join(dir, "dist"))).filter(name => name.startsWith("govisit-plugin-"))) {
+      const archive = path.join(dir, "dist", file);
+      const listing = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).split("\n");
+      const manifest = JSON.parse(execFileSync("tar", ["-xOzf", archive, "plugin.json"], { encoding: "utf8" }));
+      const ui = manifest.extensions["com.openai"].interface;
+      assert.ok(ui.displayName.length <= 30);
+      assert.ok(ui.shortDescription.trim().length > 0 && ui.shortDescription.length <= 30, file);
+      assert.ok(ui.longDescription.trim().length > 0 && ui.longDescription.length <= 4000, file);
+      for (const icon of [ui.logo, ui.composerIcon]) {
+        assert.match(icon, /^\.\/assets\/[^/]+\.svg$/);
+        assert.ok(listing.includes(icon.slice(2)), `${file}: ${icon}`);
+        const svg = execFileSync("tar", ["-xOzf", archive, icon.slice(2)], { encoding: "utf8" });
+        assert.match(svg, /viewBox="0 0 48 48"/);
+      }
+    }
+    const manifest = JSON.parse(await readFile(path.join(dir, "dist/release-manifest.json")));
+    assert.equal(manifest.release.revision, execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim());
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+test("invalid public listing descriptions fail the build", async () => {
+  const dir = await fixture();
+  try {
+    const packs = JSON.parse(await readFile(path.join(dir, "config/packs.json")));
+    for (const changes of [{ shortDescription: "x".repeat(31) }, { longDescription: "" }, { longDescription: "x".repeat(4001) }]) {
+      const bad = structuredClone(packs); Object.assign(bad[0], changes);
+      await writeFile(path.join(dir, "config/packs.json"), JSON.stringify(bad));
+      const result = cli(dir); assert.notEqual(result.status, 0); assert.match(result.stderr, /listing/i);
+    }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 test("tampered canonical packages fail before generated outputs are replaced", async () => {

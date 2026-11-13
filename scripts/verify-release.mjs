@@ -21,6 +21,7 @@ async function download(url, limit) {
 export async function verifyRelease({ manifest, index, fetchAsset = download }) {
   const release = manifest?.release;
   if (release?.repository !== "inhotel-io/govisit-toolkit" || !/^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(release.tag || "")) throw new Error("Invalid pinned release");
+  if (release.revision !== undefined && !/^[a-f0-9]{40}$/.test(release.revision)) throw new Error("Invalid toolkit build revision");
   const base = `https://github.com/${release.repository}/releases/download/${release.tag}/`;
   if (!Array.isArray(manifest.assets) || !manifest.assets.length || !Array.isArray(index?.skills) || !index.skills.length) throw new Error("Missing release inventory");
   const inventory = new Map();

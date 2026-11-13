@@ -34,11 +34,12 @@ export async function listFiles(root, prefix = "") {
   return files.sort();
 }
 
-export async function buildToolkit({ root, release, packs } = {}) {
+export async function buildToolkit({ root, release, packs, revision } = {}) {
   if (!root) throw new Error("Toolkit root is required");
   release ||= JSON.parse(await readFile(path.join(root, "config/release.json")));
   packs ||= JSON.parse(await readFile(path.join(root, "config/packs.json")));
   if (release.repository !== "inhotel-io/govisit-toolkit" || !/^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(release.tag || "")) throw new Error("Invalid pinned release identity");
+  if (revision !== undefined && !/^[a-f0-9]{40}$/.test(revision)) throw new Error("Invalid toolkit build revision");
   const version = release.tag.slice(1);
   const upstream = JSON.parse(await readFile(path.join(root, "upstream.json")));
   const index = JSON.parse(await readFile(path.join(root, "config/discovery-index.json")));
@@ -81,12 +82,15 @@ export async function buildToolkit({ root, release, packs } = {}) {
     if (pack.requires.some(name => !packageFiles.has(name))) continue;
     const members = (pack.include === "all" ? names : pack.include).filter(name => !pack.exclude.includes(name));
     if (!members.length || new Set(members).size !== members.length || members.some(name => !packageFiles.has(name))) throw new Error(`Invalid package selection: ${pack.name}`);
+    for (const [field, max] of [["shortDescription", 30], ["longDescription", 4000]]) {
+      if (typeof pack[field] !== "string" || !pack[field].trim() || pack[field].length > max) throw new Error(`Invalid listing ${field} for ${pack.name}`);
+    }
     if (typeof pack.icon !== "string" || path.basename(pack.icon) !== pack.icon || !pack.icon.endsWith(".svg")) throw new Error(`Invalid icon source for ${pack.name}`);
     const iconSource = await readFile(path.join(root, "config/plugin-icons", pack.icon), "utf8");
     const icon = squareIconSvg(iconSource);
     const identity = { name: pack.name, version, description: pack.description, author: { name: "inHotel Sàrl" }, homepage: "https://govisit.ai/en/docs/developers/agent-skills/overview", repository: `https://github.com/${release.repository}`, license: "MIT" };
     const portable = { $schema: "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", ...identity,
-      extensions: { "com.openai": { interface: { displayName: `GoVisit — ${pack.label}`, shortDescription: pack.description, developerName: "inHotel Sàrl", category: "Travel", capabilities: ["Read"], websiteURL: "https://govisit.ai", composerIcon: "./assets/icon.svg", logo: "./assets/icon.svg" } } } };
+      extensions: { "com.openai": { interface: { displayName: `GoVisit — ${pack.label}`, shortDescription: pack.shortDescription, longDescription: pack.longDescription, developerName: "inHotel Sàrl", category: "Travel", capabilities: ["Read"], websiteURL: "https://govisit.ai", supportURL: `https://github.com/${release.repository}/issues`, composerIcon: "./assets/icon.svg", logo: "./assets/icon.svg" } } } };
     const pluginFiles = { "plugin.json": json(portable), ".claude-plugin/plugin.json": json(identity), "LICENSE": license, "SERVICE_TERMS.md": serviceTerms, "assets/icon.svg": icon };
     for (const name of members) for (const [file, contents] of Object.entries(packageFiles.get(name))) pluginFiles[`skills/${name}/${file}`] = contents;
     for (const [file, contents] of Object.entries(pluginFiles)) generated[`plugins/${pack.name}/${file}`] = contents;
@@ -99,12 +103,12 @@ export async function buildToolkit({ root, release, packs } = {}) {
   }
   const marketplace = { name: "govisit-toolkit", description: "GoVisit travel discovery skills and native agent packages.", owner: { name: "inHotel Sàrl" }, plugins: selected.map(p => ({ name: p.name, source: `./plugins/${p.name}`, description: p.description })) };
   generated[".claude-plugin/marketplace.json"] = json(marketplace);
-  generated[".agents/plugins/marketplace.json"] = json({ name: "govisit-toolkit", interface: { displayName: "GoVisit Toolkit" }, plugins: selected.map(p => ({ name: p.name, source: { source: "git-subdir", url: `https://github.com/${release.repository}.git`, path: `./plugins/${p.name}`, ref: "main" }, policy: { installation: "AVAILABLE", authentication: "ON_USE" }, category: "Travel" })) });
+  generated[".agents/plugins/marketplace.json"] = json({ name: "govisit-toolkit", interface: { displayName: "GoVisit Toolkit" }, plugins: selected.map(p => ({ name: p.name, source: { source: "local", path: `./plugins/${p.name}` }, policy: { installation: "AVAILABLE", authentication: "ON_USE" }, category: "Travel" })) });
   const marketplaceIcon = await readFile(path.join(root, "config/plugin-icons/marketplace.svg"), "utf8");
   generated["plugins/assets/marketplace.svg"] = Buffer.from(squareIconSvg(marketplaceIcon));
   assets["index.json"] = Buffer.from(json(index));
   const assetInventory = Object.entries(assets).sort(([a], [b]) => a.localeCompare(b)).map(([filename, bytes]) => ({ filename, url: base + filename, digest: digest(bytes), size: bytes.length }));
-  assets["release-manifest.json"] = Buffer.from(json({ formatVersion: 1, release, source: upstream.source, sourceDigest: upstream.sourceDigest, assets: assetInventory, plugins: selected.map(({ name, members }) => ({ name, skills: members })) }));
+  assets["release-manifest.json"] = Buffer.from(json({ formatVersion: 1, release: { ...release, ...(revision ? { revision } : {}) }, source: upstream.source, sourceDigest: upstream.sourceDigest, assets: assetInventory, plugins: selected.map(({ name, members }) => ({ name, skills: members })) }));
   assets["SHA256SUMS"] = Buffer.from(Object.entries(assets).sort(([a], [b]) => a.localeCompare(b)).map(([file, bytes]) => `${digest(bytes).slice(7)}  ${file}\n`).join(""));
   return { index, assets, generated, plugins: selected.map(p => p.name) };
 }
