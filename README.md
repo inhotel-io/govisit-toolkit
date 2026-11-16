@@ -22,6 +22,7 @@
 [![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Tested on ToolPassed](https://toolpassed.com/badge/skills/govisit-search-places.svg)](https://toolpassed.com/skills/govisit-search-places/)
 [![Listed on OpenAgentSkill](https://www.openagentskill.com/api/badge/inhotel-io-govisit-toolkit-govisit-search-places?metric=listed&label=Listed)](https://www.openagentskill.com/skills/inhotel-io-govisit-toolkit-govisit-search-places)
+[![ToolSDK MCP Registry](https://badges.toolsdk.ai/badge/@toolsdk-remote/govisit-tools)](https://toolsdk-ai.github.io/toolsdk-mcp-registry/#%40toolsdk-remote%2Fgovisit-tools)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
