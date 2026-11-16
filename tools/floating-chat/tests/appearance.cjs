@@ -2,7 +2,10 @@
 // the blocks and the launcher. Nothing here contacts a hosted service.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const ts = require('typescript');
+const {bundledLauncherHandler} = require('./support/runtime.cjs');
 const oldExtensions = new Map();
 for (const ext of ['.ts', '.tsx']) {
   oldExtensions.set(ext, require.extensions[ext]);
@@ -941,6 +944,214 @@ test('a read that does not answer in time leaves the chat as it is', async () =>
       }
     }
   );
+});
+
+// The launcher, `public/widget.js`: a committed bundle, so its functions are
+// taken out of the served file itself.
+const launcher = fs.readFileSync(
+  path.join(__dirname, '../public/widget.js'),
+  'utf8'
+);
+// A page of the read with a second profile, `govisit`, green and on the left.
+const twoProfiles = () => {
+  const both = page();
+  const named = page().items[0];
+  named.code = 'govisit';
+  named.is_default = false;
+  named.elements[0].values.accent_color = '#0B6E4F';
+  named.elements[0].values.screen_side = 'left';
+  both.items.push(named);
+  return both;
+};
+
+test('the launcher takes its colour and side from the profile', () => {
+  const overlay = bundledLauncherHandler('appearanceOverlay', {});
+  const of = (...args) => ({...overlay(...args)});
+  assert.deepEqual(of(page()), {color: '#465EA4', position: 'right'});
+  assert.deepEqual(of(twoProfiles(), 'govisit'), {
+    color: '#0B6E4F',
+    position: 'left',
+  });
+  assert.deepEqual(of(twoProfiles(), 'gone'), {
+    color: '#465EA4',
+    position: 'right',
+  });
+
+  // A value the launcher cannot draw is left to the settings.
+  const odd = page();
+  odd.items[0].elements[0].values.accent_color = 'url(//evil)';
+  assert.deepEqual(of(odd), {position: 'right'});
+  odd.items[0].elements[0].values.screen_side = 'top';
+  assert.deepEqual(of(odd), {});
+
+  const anotherUi = page();
+  anotherUi.items[0].ui = 'guest_directory';
+  const noRoot = page();
+  noRoot.items[0].elements.shift();
+  const noDefault = page();
+  noDefault.items[0].is_default = false;
+  for (const nothing of [
+    null,
+    undefined,
+    {},
+    {items: 'none'},
+    {items: []},
+    anotherUi,
+    noRoot,
+    noDefault,
+  ]) {
+    assert.deepEqual(of(nothing), {});
+  }
+});
+
+test('the launcher reads the profile for an Assistant ID only, and waits three seconds at most', async () => {
+  const calls = [];
+  const timers = [];
+  const reader = (fetcher) =>
+    bundledLauncherHandler(
+      'fetchAppearanceOverlay',
+      {},
+      {
+        fetch: (url, options) => {
+          calls.push({url, options});
+          return fetcher(url, options);
+        },
+        AbortController,
+        setTimeout: (run, ms) => {
+          timers.push({run, ms});
+          return timers.length;
+        },
+        clearTimeout: () => {},
+        Mq: 'https://backend.inhotel.io',
+        cd: {
+          appearanceOverlay: bundledLauncherHandler('appearanceOverlay', {}),
+        },
+      }
+    );
+  const answer = async (fetcher, ...args) => ({
+    ...(await reader(fetcher)(...args)),
+  });
+  const profiles = async () => ({ok: true, json: async () => twoProfiles()});
+
+  assert.deepEqual(await answer(profiles, 'hotel-paris'), {});
+  assert.deepEqual(await answer(profiles, undefined), {});
+  assert.equal(calls.length, 0);
+
+  assert.deepEqual(await answer(profiles, ASSISTANT.toUpperCase()), {
+    color: '#465EA4',
+    position: 'right',
+  });
+  assert.equal(
+    calls[0].url,
+    `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat`
+  );
+  assert.equal(calls[0].options.credentials, 'omit');
+  assert.deepEqual(await answer(profiles, ASSISTANT, 'govisit'), {
+    color: '#0B6E4F',
+    position: 'left',
+  });
+
+  for (const failing of [
+    async () => ({ok: false, json: async () => twoProfiles()}),
+    async () => {
+      throw new Error('offline');
+    },
+    async () => ({
+      ok: true,
+      json: async () => {
+        throw new Error('not JSON');
+      },
+    }),
+  ]) {
+    assert.deepEqual(await answer(failing, ASSISTANT), {});
+  }
+
+  timers.length = 0;
+  calls.length = 0;
+  const slow = reader(() => new Promise(() => {}))(ASSISTANT);
+  assert.deepEqual(
+    timers.map((timer) => timer.ms),
+    [3000]
+  );
+  timers[0].run();
+  assert.deepEqual({...(await slow)}, {});
+  assert.equal(calls[0].options.signal.aborted, true);
+});
+
+test('the launcher tells the iframe the page language and what the embed set itself', () => {
+  const language = bundledLauncherHandler('pageLanguage', {});
+  assert.equal(
+    language({documentElement: {lang: 'cs'}}, {language: 'en-US'}),
+    'cs'
+  );
+  assert.equal(
+    language({documentElement: {lang: ''}}, {language: 'en-US'}),
+    'en-US'
+  );
+  assert.equal(language({}, {}), '');
+  assert.equal(language({documentElement: {lang: '"><script>'}}, {}), '');
+
+  const keys = bundledLauncherHandler('embedKeysOf', {});
+  assert.equal(
+    keys({
+      title: 'Ask our team',
+      subtitle: '',
+      primaryColor: '#465EA4',
+      position: 'left',
+      greeting: undefined,
+      newMessagePlaceholder: null,
+    }),
+    'title,primaryColor'
+  );
+  assert.equal(keys({}), '');
+});
+
+test('the embed can name the profile to draw', () => {
+  const bootstrap = launcher.slice(
+    launcher.indexOf('    var ye = function () {},'),
+    launcher.indexOf('    var sr = document.createElement')
+  );
+  const named = ({attribute, config} = {}) =>
+    vm.runInNewContext(bootstrap + '\n({code: appearanceProfile});', {
+      window: {
+        FloatingChatWindow: {
+          config: {
+            agent_card_url: `https://${ASSISTANT}.agents.inhotel.io/.well-known/agent-card.json`,
+            ...config,
+          },
+        },
+      },
+      document: {
+        currentScript: {
+          getAttribute: (name) =>
+            name === 'data-appearance-profile' ? attribute : null,
+        },
+      },
+      ACCOUNT_ID: -1,
+    }).code;
+  assert.equal(named({attribute: 'govisit'}), 'govisit');
+  assert.equal(named({config: {appearance_profile: 'summer'}}), 'summer');
+  assert.equal(
+    named({attribute: 'govisit', config: {appearance_profile: 'summer'}}),
+    'govisit'
+  );
+  assert.equal(named(), undefined);
+});
+
+test('the launcher wires the profile into its settings and the iframe configuration', () => {
+  for (const wiring of [
+    // The bootstrap hands the named profile to the launcher component,
+    /appearanceProfile: appearanceProfile,/,
+    // which asks for it together with the legacy settings,
+    /appearance_profile: e\.appearanceProfile/,
+    /cd\.fetchAppearanceOverlay\(t\.inbox_id, t\.appearance_profile\)/,
+    // and tells the iframe what it needs to read the profile itself.
+    /T\.appearanceProfile = this\.props\.appearanceProfile/,
+    /T\.locale = cd\.pageLanguage\(document, navigator\)/,
+    /T\.embedKeys = cd\.embedKeysOf\(this\.props\)/,
+  ]) {
+    assert.match(launcher, wiring);
+  }
 });
 
 (async () => {

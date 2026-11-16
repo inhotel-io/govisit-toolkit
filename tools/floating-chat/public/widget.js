@@ -1,4 +1,6 @@
 // Set data-agent-card-url on this script or use FloatingChatWindow.config.
+// data-appearance-profile, or appearance_profile in that config, names the
+// appearance profile to draw; without one the assistant's default is drawn.
 // Configuration is read synchronously in the bootstrap at the bottom of this file.
 
 // ACCOUNT_ID no longer needed - using A2A protocol
@@ -20119,6 +20121,10 @@ OD =
             };
           }
         },
+      // The assistant's legacy widget settings, with the two values of its
+      // appearance profile that the launcher itself draws laid over them: the
+      // accent colour and the side of the screen. A failed read of either
+      // leaves the other, so this never rejects.
       Pq = function (t, e) {
         return (
           void 0 === e && (e = Mq),
@@ -20127,18 +20133,145 @@ OD =
               var $jn4M$$interop$default = za(Jj);
               return [
                 2,
-                $jn4M$$interop$default.d
-                  .get(Mq + '/public/get_widget_settings')
-                  .query(t)
-                  .then(function (t) {
-                    return t.body.data;
-                  }),
+                Promise.all([
+                  $jn4M$$interop$default.d
+                    .get(Mq + '/public/get_widget_settings')
+                    .query({account_id: t.account_id, inbox_id: t.inbox_id})
+                    .then(function (t) {
+                      return t.body.data;
+                    })
+                    .catch(function () {
+                      return null;
+                    }),
+                  cd.fetchAppearanceOverlay(t.inbox_id, t.appearance_profile),
+                ]).then(function (r) {
+                  var settings = r[0] || {},
+                    overlay = r[1] || {},
+                    key;
+                  for (key in overlay)
+                    Object.prototype.hasOwnProperty.call(overlay, key) &&
+                      (settings[key] = overlay[key]);
+                  return settings;
+                }),
               ];
             });
           })
         );
       };
     cd.fetchWidgetSettings = Pq;
+    // An assistant's appearance profile for this UI, as the public read of the
+    // v2 API answers it. The iframe application reads the profile itself for
+    // everything it draws; the launcher takes only what it draws.
+    //
+    // The profile is the one the embed names by code, else the assistant's
+    // default. Its `root` element is a `FloatingChat`.
+    cd.appearanceOverlay = function (page, code) {
+      var items = page && Array.isArray(page.items) ? page.items : [],
+        named = null,
+        byDefault = null,
+        out = {},
+        i,
+        item,
+        element,
+        values;
+      for (i = 0; i < items.length; i++) {
+        item = items[i];
+        if (
+          !item ||
+          'floating_chat' !== item.ui ||
+          !Array.isArray(item.elements)
+        )
+          continue;
+        code && item.code === code && !named && (named = item);
+        !0 === item.is_default && !byDefault && (byDefault = item);
+      }
+      item = named || byDefault;
+      if (!item) return out;
+      for (i = 0; i < item.elements.length; i++) {
+        element = item.elements[i];
+        if (
+          !element ||
+          'root' !== element.name ||
+          'FloatingChat' !== element.component
+        )
+          continue;
+        values = element.values || {};
+        'string' == typeof values.accent_color &&
+          /^#[0-9a-f]{6}$/i.test(values.accent_color) &&
+          (out.color = values.accent_color);
+        ('left' === values.screen_side || 'right' === values.screen_side) &&
+          (out.position = values.screen_side);
+        break;
+      }
+      return out;
+    };
+    // Only a UUID is an Assistant ID the read knows. It has three seconds;
+    // without an answer the launcher is drawn from the settings alone.
+    cd.fetchAppearanceOverlay = function (assistantId, code) {
+      if (
+        'function' != typeof fetch ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          assistantId || ''
+        )
+      )
+        return Promise.resolve({});
+      var controller =
+          'function' == typeof AbortController ? new AbortController() : null,
+        timer,
+        late = new Promise(function (resolve) {
+          timer = setTimeout(function () {
+            controller && controller.abort();
+            resolve({});
+          }, 3000);
+        }),
+        read = fetch(
+          Mq +
+            '/api/v2/assistants/' +
+            String(assistantId).toLowerCase() +
+            '/appearance-profiles?ui=floating_chat',
+          {credentials: 'omit', signal: controller ? controller.signal : void 0}
+        )
+          .then(function (response) {
+            return response.ok ? response.json() : null;
+          })
+          .then(function (page) {
+            return cd.appearanceOverlay(page, code);
+          })
+          .catch(function () {
+            return {};
+          });
+      return Promise.race([read, late]).then(function (overlay) {
+        clearTimeout(timer);
+        return overlay;
+      });
+    };
+    // The page's language, for the texts of the profile.
+    cd.pageLanguage = function (doc, nav) {
+      var tag =
+        (doc && doc.documentElement && doc.documentElement.lang) ||
+        (nav && nav.language) ||
+        '';
+      return /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,3}$/i.test(tag) ? tag : '';
+    };
+    // Which of the settings a profile also gives the page set in its own
+    // embed. Those stand in front of the profile in the iframe.
+    cd.embedKeysOf = function (props) {
+      var keys = [
+          'title',
+          'subtitle',
+          'greeting',
+          'newMessagePlaceholder',
+          'primaryColor',
+        ],
+        set = [],
+        i,
+        value;
+      for (i = 0; i < keys.length; i++) {
+        value = props ? props[keys[i]] : void 0;
+        void 0 !== value && null !== value && '' !== value && set.push(keys[i]);
+      }
+      return set.join(',');
+    };
     // STUB: Removed Papercups metadata update - using A2A protocol instead
     var Qq = function (t, e) {
       return Promise.resolve({});
@@ -22480,7 +22613,14 @@ OD =
                     (i = {}),
                     [
                       2,
-                      Pq({account_id: r || t, inbox_id: n}, a)
+                      Pq(
+                        {
+                          account_id: r || t,
+                          inbox_id: n,
+                          appearance_profile: e.appearanceProfile,
+                        },
+                        a
+                      )
                         .then(function (e) {
                           return e || i;
                         })
@@ -22951,6 +23091,12 @@ OD =
                       (T.hotelEmail = a.hotel_email),
                       (T.hotelPhone = a.hotel_phone),
                       (T.assistantType = a.assistant_type),
+                      // What the iframe needs to read the appearance profile
+                      // itself: the profile the embed names, the page's
+                      // language, and which settings the embed set itself.
+                      (T.appearanceProfile = this.props.appearanceProfile),
+                      (T.locale = cd.pageLanguage(document, navigator)),
+                      (T.embedKeys = cd.embedKeysOf(this.props)),
                       (O = T),
                       (x = $FvpG$$interop$default.d.stringify(O, {
                         skipEmptyString: !0,
@@ -23287,6 +23433,11 @@ OD =
         agentCardUrl || ''
       ),
       DD = cardMatch ? cardMatch[1] : '',
+      // The appearance profile to draw, by its code, when the page names one.
+      appearanceProfile =
+        (document.currentScript &&
+          document.currentScript.getAttribute('data-appearance-profile')) ||
+        ga.appearance_profile,
       ar = ga.accountId,
       ED = ga.title,
       FD = ga.subtitle,
@@ -23350,6 +23501,7 @@ OD =
         Q.d.createElement(Zq, {
           token: _q,
           inbox: DD,
+          appearanceProfile: appearanceProfile,
           accountId: ar,
           title: ED,
           subtitle: FD,
