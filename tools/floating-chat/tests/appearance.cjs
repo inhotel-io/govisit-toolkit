@@ -32,6 +32,7 @@ const {
   localeTag,
   embedKeys,
 } = require('../helpers/appearance.ts');
+const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
 for (const [ext, previous] of oldExtensions) {
   if (previous) require.extensions[ext] = previous;
   else delete require.extensions[ext];
@@ -127,6 +128,19 @@ const profile = (change) => {
 
 const tests = [];
 const test = (name, run) => tests.push({name, run});
+// Node has no `fetch` of its own here: each test supplies the network.
+async function withFetch(fetcher, run) {
+  const calls = [];
+  global.fetch = (url, options) => {
+    calls.push({url, options});
+    return fetcher(url, options);
+  };
+  try {
+    return await run(calls);
+  } finally {
+    delete global.fetch;
+  }
+}
 
 test('without a profile the chat is as it is today', () => {
   assert.deepEqual(settingsAppearance({}), {
@@ -374,6 +388,91 @@ test('only what the read can take is sent to it', () => {
     'primaryColor',
   ]);
   assert.deepEqual(embedKeys(undefined), []);
+});
+
+test('a profile ID the read does not know is not asked for', async () => {
+  await withFetch(
+    async () => {
+      throw new Error('no request expected');
+    },
+    async (calls) => {
+      for (const assistantId of ['hotel-paris', '', undefined, 42]) {
+        assert.equal(await fetchAppearanceProfile({assistantId}), null);
+      }
+      assert.equal(calls.length, 0);
+    }
+  );
+});
+
+test('the profile is read from the fixed service, for this UI and language', async () => {
+  await withFetch(
+    async () => ({ok: true, json: async () => page()}),
+    async (calls) => {
+      const controller = new AbortController();
+      const found = await fetchAppearanceProfile({
+        assistantId: ASSISTANT.toUpperCase(),
+        locale: 'cs',
+        signal: controller.signal,
+      });
+      assert.equal(found.code, 'default');
+      assert.equal(calls.length, 1);
+      assert.equal(
+        calls[0].url,
+        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&locale=cs`
+      );
+      assert.equal(calls[0].options.credentials, 'omit');
+      assert.equal(calls[0].options.signal, controller.signal);
+
+      // A language the read cannot take is left out; its own default applies.
+      await fetchAppearanceProfile({
+        assistantId: ASSISTANT,
+        locale: '<script>',
+      });
+      assert.equal(
+        calls[1].url,
+        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat`
+      );
+    }
+  );
+});
+
+test('the profile the embed names is the one read', async () => {
+  const both = page();
+  both.items.push({...page().items[0], code: 'govisit', is_default: false});
+  await withFetch(
+    async () => ({ok: true, json: async () => both}),
+    async () => {
+      const named = await fetchAppearanceProfile({
+        assistantId: ASSISTANT,
+        code: 'govisit',
+      });
+      assert.equal(named.code, 'govisit');
+    }
+  );
+});
+
+test('a read that fails leaves the chat as it is', async () => {
+  for (const fetcher of [
+    async () => ({ok: false, json: async () => page()}),
+    async () => {
+      throw new Error('offline');
+    },
+    async () => ({
+      ok: true,
+      json: async () => {
+        throw new Error('not JSON');
+      },
+    }),
+    async () => ({ok: true, json: async () => ({items: []})}),
+  ]) {
+    await withFetch(fetcher, async (calls) => {
+      assert.equal(
+        await fetchAppearanceProfile({assistantId: ASSISTANT}),
+        null
+      );
+      assert.equal(calls.length, 1);
+    });
+  }
 });
 
 (async () => {
