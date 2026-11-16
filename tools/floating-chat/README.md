@@ -106,6 +106,47 @@ bridge messages. Profile IDs must fit one DNS label (UUID profile IDs are
 supported), and switching assistants creates a fresh chat component instead of
 reusing the previous conversation state.
 
+## Appearance profiles
+
+An assistant can carry an appearance profile for this UI, `floating_chat`, in
+the inHotel v2 API. When it has one, the chat is drawn from the profile instead
+of the legacy widget settings. The launcher and the iframe both read
+`GET /api/v2/assistants/{assistant ID}/appearance-profiles?ui=floating_chat`,
+which answers any origin and fills in the defaults of the UI's library.
+
+A profile lists the blocks the chat has. A block it leaves out is not drawn.
+
+| Component | What it is | What a profile sets |
+| --- | --- | --- |
+| `FloatingChat` | The chat as a whole, with its button and its message list | `accent_color`, `screen_side`, and the blocks below |
+| `Header` | The bar at the top | `titles`, `subtitles` |
+| `Greeting` | The first message | `greetings` |
+| `Composer` | The field the guest writes in | `input_placeholders` |
+| `Contact` | The line with the phone, the e-mail and the contact form | `has_form`, `form_titles`, `form_confirmations` |
+| `Branding` | The "Powered by" line | nothing |
+| `Messages` | How the message list looks: a group of values, not a block | `assistant_bubble_color`, `guest_bubble_color`, `has_avatars`, `has_feedback`, `has_timestamps` |
+
+Each block the iframe draws carries its component's name as `data-component`.
+
+- **Which profile.** The assistant's default profile. To draw another, name its
+  code on the script, `data-appearance-profile="govisit"`, or as
+  `appearance_profile` in `window.FloatingChatWindow.config`. That is also how a
+  profile is tried on a page before it becomes the default.
+- **Language.** Texts come in the host page's `<html lang>`, else in the
+  browser's language. The read falls back when a text has no translation.
+- **The embed still wins** for what a page sets in its own
+  `FloatingChatWindow.config`: `title`, `subtitle`, `greeting`,
+  `newMessagePlaceholder` and `primaryColor`.
+- **Without a profile** the chat is drawn from the legacy settings, as before.
+  The same holds when the read fails or takes more than three seconds. A profile
+  ID that is not a UUID is never asked for.
+- The phone and the e-mail of the contact line are the assistant's contact
+  details. They still come from the legacy settings.
+
+To see one assistant's profile locally, open
+`http://localhost:3000/?token=-1&inbox=ASSISTANT_ID&version=1.0.0&locale=cs`.
+Add `&appearanceProfile=CODE` for a profile that is not the default.
+
 ## Build and check
 
 ```sh
@@ -115,8 +156,8 @@ npm start
 ```
 
 `npm run build` compiles and type-checks the Next.js application. `npm test`
-runs security and presentation regressions, then starts the production server on
-a temporary local port and checks the launcher,
+runs security, appearance and presentation regressions, then starts the
+production server on a temporary local port and checks the launcher,
 iframe pages, compiled JavaScript, and license files, then stops the server.
 These checks do not contact a live agent or send guest messages.
 Run `npm run test:security` for the rendering and iframe-boundary regressions
@@ -136,11 +177,14 @@ maintenance follow-up.
 | `public/widget.js` | Host-page launcher and iframe bridge |
 | `pages/index.tsx` | Iframe application entry point |
 | `components/EmbedLanding.tsx` | Embed code and live launcher, shown when `/` is opened directly |
-| `components/Widget.tsx` | Configuration and theme wrapper |
-| `components/ChatWindow.tsx` | Chat UI and conversation behavior |
+| `components/Widget.tsx` | Configuration and theme wrapper; reads the appearance profile |
+| `components/ChatWindow.tsx` | Conversation behavior; places the blocks the look lists |
+| `components/ChatHeader.tsx`, `components/ChatMessages.tsx` | The header and the message list |
 | `components/ChatMessage*.tsx` | Message rendering |
 | `components/ChatFooter*.tsx` | Composer and contact controls |
 | `helpers/a2a-client.ts` | A2A JSON-RPC/SSE communication |
+| `helpers/appearance.ts` | The look the chat draws from, built from a profile or from the settings |
+| `helpers/appearance-api.ts` | Reads the assistant's appearance profile |
 | `helpers/storage.ts` | Browser conversation and context persistence |
 | `helpers/embed-security.ts` | Parent-message validation and fixed-origin agent URLs |
 | `styles/` | Global and emoji styling |
