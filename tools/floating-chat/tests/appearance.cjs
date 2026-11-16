@@ -36,6 +36,7 @@ const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const ChatWindow = require('../components/ChatWindow.tsx').default;
+const Widget = require('../components/Widget.tsx').default;
 for (const [ext, previous] of oldExtensions) {
   if (previous) require.extensions[ext] = previous;
   else delete require.extensions[ext];
@@ -754,6 +755,189 @@ test('the chat opens with the greeting of its look and follows it until the gues
         assert.deepEqual(bodies(), ['Dobrý den, jak vám mohu pomoci?', 'Hi']);
       } finally {
         instance.componentWillUnmount();
+      }
+    }
+  );
+});
+
+// The wrapper around the chat window: it reads the configuration, and now the
+// assistant's profile, and hands the window the look it resolves.
+function widget(config) {
+  chat(); // the page's globals
+  const wrapper = new Widget({config: {token: '-1', ...config}});
+  wrapper.setState = (change, callback) => {
+    wrapper.state = {
+      ...wrapper.state,
+      ...(typeof change === 'function'
+        ? change(wrapper.state, wrapper.props)
+        : change),
+    };
+    if (callback) callback();
+  };
+  return wrapper;
+}
+// The look the wrapper hands the chat window.
+const shown = (wrapper) =>
+  quietly(() => wrapper.render()).props.children.props.appearance;
+const settle = async () => {
+  for (let i = 0; i < 5; i++) await new Promise(setImmediate);
+};
+const OTHER = 'f1a4e101-0000-8000-8000-000000000002';
+
+test('the chat is drawn from the profile of its assistant', async () => {
+  await withFetch(
+    async () => ({ok: true, json: async () => page()}),
+    async (calls) => {
+      const wrapper = widget({
+        inbox: ASSISTANT,
+        locale: 'cs',
+        title: 'From the settings',
+      });
+      // Until the read answers, the chat is what its settings say.
+      assert.equal(shown(wrapper).source, 'settings');
+      assert.equal(shown(wrapper).header.title, 'From the settings');
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        assert.equal(calls.length, 1);
+        assert.equal(
+          calls[0].url,
+          `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&locale=cs`
+        );
+        assert.equal(shown(wrapper).source, 'profile');
+        assert.equal(shown(wrapper).header.title, 'Zeptejte se nÃ¡s');
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('the profile the embed names, and what the embed sets itself, reach the look', async () => {
+  const both = page();
+  const named = page().items[0];
+  named.code = 'govisit';
+  named.is_default = false;
+  named.elements[0].values.accent_color = '#0B6E4F';
+  both.items.push(named);
+  await withFetch(
+    async () => ({ok: true, json: async () => both}),
+    async () => {
+      const wrapper = widget({
+        inbox: ASSISTANT,
+        appearanceProfile: 'govisit',
+        embedKeys: 'title',
+        title: 'Embed title',
+        subtitle: 'Settings subtitle',
+      });
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        const look = shown(wrapper);
+        assert.equal(look.accentColor, '#0B6E4F');
+        assert.equal(look.header.title, 'Embed title');
+        assert.equal(look.header.subtitle, 'Hotel Example');
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('a profile ID that is not an Assistant ID is drawn from its settings, with no read', async () => {
+  await withFetch(
+    async () => {
+      throw new Error('no request expected');
+    },
+    async (calls) => {
+      const wrapper = widget({inbox: 'hotel-paris', title: 'Ask us'});
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        assert.equal(calls.length, 0);
+        assert.equal(shown(wrapper).source, 'settings');
+        assert.equal(shown(wrapper).header.title, 'Ask us');
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('one assistant is never shown in the look of another', async () => {
+  const answers = [];
+  await withFetch(
+    () => new Promise((resolve) => answers.push(resolve)),
+    async (calls) => {
+      const wrapper = widget({inbox: ASSISTANT});
+      const answer = (index, body) =>
+        answers[index]({ok: true, json: async () => body});
+      try {
+        wrapper.componentDidMount();
+        answer(0, page());
+        await settle();
+        assert.equal(shown(wrapper).source, 'profile');
+
+        // The page switches the launcher to another assistant.
+        const previous = wrapper.state;
+        wrapper.handleConfigUpdate({inbox: OTHER});
+        assert.equal(shown(wrapper).source, 'settings');
+        wrapper.componentDidUpdate(wrapper.props, previous);
+        assert.equal(calls.length, 2);
+        assert.match(calls[1].url, new RegExp(`/assistants/${OTHER}/`));
+
+        // And back, before the second read has answered: its late answer is
+        // not the current assistant's.
+        const between = wrapper.state;
+        wrapper.handleConfigUpdate({inbox: ASSISTANT});
+        wrapper.componentDidUpdate(wrapper.props, between);
+        assert.equal(calls.length, 3);
+        assert.equal(calls[1].options.signal.aborted, true);
+        const late = page();
+        late.items[0].elements[1].values.titles = 'The other assistant';
+        answer(1, late);
+        await settle();
+        assert.equal(shown(wrapper).source, 'settings');
+
+        answer(2, page());
+        await settle();
+        assert.equal(shown(wrapper).header.title, 'Zeptejte se nÃ¡s');
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('a read that does not answer in time leaves the chat as it is', async () => {
+  const realSetTimeout = global.setTimeout;
+  const timers = [];
+  await withFetch(
+    () => new Promise(() => {}),
+    async (calls) => {
+      const wrapper = widget({inbox: ASSISTANT, title: 'Ask us'});
+      global.setTimeout = (run, ms) => {
+        timers.push({run, ms});
+        return timers.length;
+      };
+      try {
+        wrapper.componentDidMount();
+      } finally {
+        global.setTimeout = realSetTimeout;
+      }
+      try {
+        assert.equal(calls.length, 1);
+        assert.deepEqual(
+          timers.map((timer) => timer.ms),
+          [3000]
+        );
+        timers[0].run();
+        assert.equal(calls[0].options.signal.aborted, true);
+        await settle();
+        assert.equal(shown(wrapper).source, 'settings');
+        assert.equal(shown(wrapper).header.title, 'Ask us');
+      } finally {
+        wrapper.componentWillUnmount();
       }
     }
   );

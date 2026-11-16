@@ -6,6 +6,14 @@ import {loadAvatarConfig, setupPostMessageHandlers} from '../helpers/utils';
 import getThemeConfig from '../helpers/theme';
 import Logger from '../helpers/logger';
 import {
+  APPEARANCE_LOAD_TIMEOUT_MS,
+  AppearanceProfile,
+  embedKeys,
+  isAssistantId,
+  resolveAppearance,
+} from '../helpers/appearance';
+import {fetchAppearanceProfile} from '../helpers/appearance-api';
+import {
   isRecord,
   isTrustedParentMessage,
   isValidAssistantProfileId,
@@ -46,6 +54,14 @@ type Config = {
   hotelPhone?: string;
   hotelEmail?: string;
   assistantType?: string;
+  // The page's language, for the texts of the appearance profile.
+  locale?: string;
+  // The code of the appearance profile the embed names, when it names one.
+  appearanceProfile?: string;
+  // Which of title, subtitle, greeting, newMessagePlaceholder and
+  // primaryColor the page set in its own embed, comma-separated. Those stand
+  // in front of the profile.
+  embedKeys?: string;
 };
 
 const parseCustomerMetadata = (str: string): CustomerMetadata => {
@@ -91,6 +107,9 @@ const sanitizeConfigPayload = (payload: any): Config => {
     'hotelPhone',
     'hotelEmail',
     'assistantType',
+    'locale',
+    'appearanceProfile',
+    'embedKeys',
   ];
 
   return valid.reduce((acc, key) => {
@@ -103,12 +122,19 @@ const sanitizeConfigPayload = (payload: any): Config => {
 };
 
 type Props = {config: Config};
-type State = {config: Config; assistantRemount: boolean};
+type State = {
+  config: Config;
+  assistantRemount: boolean;
+  // The appearance profile of the assistant in `config.inbox`, once read.
+  profile: AppearanceProfile | null;
+};
 
 class Wrapper extends React.Component<Props, State> {
   logger: Logger;
   unsubscribe: () => void;
   parentOrigin: string | null;
+  appearanceRequest: AbortController | null = null;
+  appearanceTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -120,6 +146,7 @@ class Wrapper extends React.Component<Props, State> {
     this.state = {
       config: props.config,
       assistantRemount: false,
+      profile: null,
     };
   }
 
@@ -131,11 +158,61 @@ class Wrapper extends React.Component<Props, State> {
       window,
       this.postMessageHandlers
     );
+    this.loadAppearance();
+  }
+
+  componentDidUpdate(_: Props, previous: State) {
+    const {inbox, appearanceProfile, locale} = this.state.config;
+    const before = previous.config;
+
+    if (
+      before.inbox !== inbox ||
+      before.appearanceProfile !== appearanceProfile ||
+      before.locale !== locale
+    ) {
+      this.loadAppearance();
+    }
   }
 
   componentWillUnmount() {
     this.unsubscribe && this.unsubscribe();
+    this.cancelAppearance();
   }
+
+  cancelAppearance = () => {
+    if (this.appearanceRequest) this.appearanceRequest.abort();
+    if (this.appearanceTimeout) clearTimeout(this.appearanceTimeout);
+    this.appearanceRequest = null;
+    this.appearanceTimeout = null;
+  };
+
+  // Read the assistant's appearance profile for this UI. Until it answers the
+  // chat is drawn from its settings, and it stays so when the assistant has no
+  // profile or the read does not answer in time.
+  loadAppearance = () => {
+    this.cancelAppearance();
+    const {inbox, appearanceProfile, locale} = this.state.config;
+    if (!isAssistantId(inbox)) return;
+
+    const controller = new AbortController();
+    this.appearanceRequest = controller;
+    this.appearanceTimeout = setTimeout(
+      () => controller.abort(),
+      APPEARANCE_LOAD_TIMEOUT_MS
+    );
+    fetchAppearanceProfile({
+      assistantId: inbox,
+      code: appearanceProfile,
+      locale,
+      signal: controller.signal,
+    }).then((profile) => {
+      // An answer for an assistant the chat has left is not this one's.
+      if (this.appearanceRequest !== controller || controller.signal.aborted)
+        return;
+      this.cancelAppearance();
+      this.setState({profile});
+    });
+  };
 
   postMessageHandlers = (msg: any) => {
     if (!isTrustedParentMessage(msg, this.parentOrigin, window)) return;
@@ -154,11 +231,14 @@ class Wrapper extends React.Component<Props, State> {
     const updates = sanitizeConfigPayload(payload);
     this.logger.debug('Updating widget config:', updates);
 
-    this.setState(({config, assistantRemount}) => {
+    this.setState(({config, assistantRemount, profile}) => {
       const nextConfig = {...config, ...updates};
+      const isAnotherAssistant = config.inbox !== nextConfig.inbox;
       return {
         config: nextConfig,
-        assistantRemount: assistantRemount || config.inbox !== nextConfig.inbox,
+        assistantRemount: assistantRemount || isAnotherAssistant,
+        // One assistant is never drawn in the look of another.
+        profile: isAnotherAssistant ? null : profile,
       };
     });
   };
@@ -183,9 +263,9 @@ class Wrapper extends React.Component<Props, State> {
       companyName,
       agentAvailableText,
       agentUnavailableText,
-      title = 'Welcome!',
-      subtitle = 'How can we help you?',
-      newMessagePlaceholder = 'Start typing...',
+      title,
+      subtitle,
+      newMessagePlaceholder,
       emailInputPlaceholder = 'Enter your email',
       newMessagesNotificationText = 'View new messages',
       primaryColor: configuredPrimaryColor,
@@ -206,16 +286,30 @@ class Wrapper extends React.Component<Props, State> {
       assistantType,
     } = config;
 
-    const theme = getThemeConfig({primary: configuredPrimaryColor});
-    const primaryColor = theme.colors.primary;
-    const customer = parseCustomerMetadata(metadata);
-    document.documentElement.style.setProperty('--primary-color', primaryColor);
     let shouldShowCF: boolean = false;
     if (shouldShowContactForm === 'true') {
       shouldShowCF = true;
     } else {
       shouldShowCF = false;
     }
+    // What the chat looks like: the assistant's appearance profile when it has
+    // one, and otherwise the settings above, as it has always been drawn.
+    const appearance = resolveAppearance(
+      this.state.profile,
+      {
+        title,
+        subtitle,
+        greeting,
+        newMessagePlaceholder,
+        primaryColor: configuredPrimaryColor,
+        shouldShowContactForm: shouldShowCF,
+      },
+      embedKeys(config.embedKeys)
+    );
+    const theme = getThemeConfig({primary: appearance.accentColor});
+    const primaryColor = theme.colors.primary;
+    const customer = parseCustomerMetadata(metadata);
+    document.documentElement.style.setProperty('--primary-color', primaryColor);
     const avatarURL = loadAvatarConfig(assistantType || 'default');
     return (
       <ThemeProvider theme={theme}>
@@ -226,12 +320,9 @@ class Wrapper extends React.Component<Props, State> {
           accountId={token || accountId}
           inboxId={inbox}
           customerId={customerId}
-          title={title}
-          subtitle={subtitle}
-          greeting={greeting}
+          appearance={appearance}
           awayMessage={awayMessage}
           companyName={companyName}
-          newMessagePlaceholder={newMessagePlaceholder}
           emailInputPlaceholder={emailInputPlaceholder}
           newMessagesNotificationText={newMessagesNotificationText}
           agentAvailableText={agentAvailableText}
@@ -248,7 +339,6 @@ class Wrapper extends React.Component<Props, State> {
           ts={ts}
           primaryColor={primaryColor}
           position={position}
-          shouldShowContactForm={shouldShowCF}
           hotelPhone={hotelPhone}
           hotelEmail={hotelEmail}
           avatarURL={avatarURL}
