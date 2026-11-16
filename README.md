@@ -1,5 +1,6 @@
 # GoVisit Toolkit
 
+[![Listed on AgentSkillsHub](https://agentskillshub.dev/badges/listed-on-agentskillshub.svg)](https://agentskillshub.dev/skills/govisit-toolkit/)
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
 
 [![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
