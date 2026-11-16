@@ -5,24 +5,48 @@
 // how the chat has always been drawn.
 //
 // A profile is a list of elements. `root` is a `FloatingChat`, and each of its
-// slots names another element. A slot the profile leaves empty is a block the
-// chat does not draw. The `Messages` values are a plain group, not a block:
-// what a profile leaves out of it keeps its default.
+// slots names another element, which may have slots of its own. A slot the
+// profile leaves empty is a part the chat does not draw. `Messages` is a plain
+// group of values, not a part: what a profile leaves out of it keeps its
+// default.
+//
+// What a profile can hold is the UI's library, `appearance-library.json`:
+// every component, what it takes, and each default. A profile is read against
+// it here, so every value is checked for the shape its prop has before the
+// chat draws it.
+import library from '../appearance-library.json';
 import {isRecord} from './embed-security';
 
-export const FLOATING_CHAT_UI = 'floating_chat';
+type LibraryProp = {
+  name: string;
+  type: string;
+  child_component?: string | null;
+  options?: string[];
+  length_max?: number | null;
+  default?: unknown;
+};
+
+type LibraryComponent = {
+  name: string;
+  kind: string;
+  is_root?: boolean;
+  props: LibraryProp[];
+};
+
+const COMPONENTS: LibraryComponent[] = library.components;
+const componentNamed = (name: string) =>
+  COMPONENTS.find((component) => component.name === name);
+
+export const FLOATING_CHAT_UI: string = library.ui;
 const ROOT_ELEMENT = 'root';
-const ROOT_COMPONENT = 'FloatingChat';
+const ROOT_COMPONENT = COMPONENTS.find((component) => component.is_root).name;
 
 export const APPEARANCE_LOAD_TIMEOUT_MS = 3000;
 
-export const DEFAULT_TITLE = 'Welcome!';
-export const DEFAULT_SUBTITLE = 'How can we help you?';
-export const DEFAULT_PLACEHOLDER = 'Start typing...';
-export const DEFAULT_FORM_TITLE = 'Contact Us';
-export const DEFAULT_FORM_CONFIRMATION =
-  'Thank you for your message! Please expect our reply within 1 working day.';
-export const DEFAULT_ASSISTANT_BUBBLE_COLOR = '#F5F5F5';
+// The most characters of a text the chat draws, when its prop sets no limit.
+const TEXT_MAX = 1000;
+// The most elements taken from a profile a page gives in its own embed.
+const EMBED_ELEMENTS_MAX = 50;
 
 export type MessagesAppearance = {
   assistantBubbleColor: string;
@@ -33,20 +57,65 @@ export type MessagesAppearance = {
   hasTimestamps: boolean;
 };
 
+export type FormFieldAppearance = {label: string; isRequired: boolean};
+
+export type ContactFormAppearance = {
+  // Whether the contact line offers the form.
+  isOffered: boolean;
+  title: string;
+  // Each field is null when the form does not have it.
+  firstName: FormFieldAppearance | null;
+  lastName: FormFieldAppearance | null;
+  email: FormFieldAppearance | null;
+  message: FormFieldAppearance | null;
+  sendLabel: string;
+  sendingLabel: string;
+  discardLabel: string;
+  // What the three controls of the form say on hover.
+  openHint: string;
+  sendHint: string;
+  discardHint: string;
+  confirmation: string;
+};
+
+export type ContactAppearance = {
+  // null: the assistant's own, from its settings.
+  phone: string | null;
+  email: string | null;
+  // What the phone and the e-mail say on hover, before a copy and after one.
+  firstCopyHint: string;
+  copyHint: string;
+  copiedNote: string;
+  copyFailedNote: string;
+  form: ContactFormAppearance | null;
+};
+
+export type BrandingAppearance = {
+  text: string;
+  name: string;
+  // null: the name is not a link.
+  linkUrl: string | null;
+};
+
 export type Appearance = {
   source: 'profile' | 'settings';
   accentColor?: string;
-  // Each block is null, or false, when the chat does not draw it.
+  // Each part is null when the chat does not draw it.
   header: {title: string; subtitle: string} | null;
   greeting: {text: string} | null;
   composer: {placeholder: string} | null;
-  contact: {
-    hasForm: boolean;
-    formTitle: string;
-    formConfirmation: string;
-  } | null;
-  branding: boolean;
+  contact: ContactAppearance | null;
+  branding: BrandingAppearance | null;
   messages: MessagesAppearance;
+};
+
+// What the launcher draws of a profile. The launcher reads this in its own
+// bundle; it is here for a page of this app that stands in for the launcher.
+export type LauncherAppearance = {
+  accentColor: string | null;
+  side: 'left' | 'right';
+  // null: the profile has no round button.
+  button: {icon: 'outlined' | 'filled'; hasGreetingPreview: boolean} | null;
 };
 
 // The flat settings, as the launcher resolves them from the embed's own
@@ -72,14 +141,6 @@ export type AppearanceProfile = {
   code: string;
   is_default: boolean;
   elements: ProfileElement[];
-};
-
-const DEFAULT_MESSAGES: MessagesAppearance = {
-  assistantBubbleColor: DEFAULT_ASSISTANT_BUBBLE_COLOR,
-  guestBubbleColor: null,
-  hasAvatars: true,
-  hasFeedback: true,
-  hasTimestamps: true,
 };
 
 // An Assistant ID is a UUID. Older profile IDs are plain labels, and the read
@@ -119,16 +180,88 @@ export const embedKeys = (value: unknown): string[] =>
     ? value.split(',').filter((key) => EMBED_KEYS.includes(key))
     : [];
 
-// Every value of a profile comes over the network, so each is checked for the
-// shape its prop has before the chat draws it.
+// Every value of a profile comes over the network, or from a page, so each is
+// checked for the shape its prop has before the chat draws it.
 const color = (value: unknown): string | null =>
   typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 
-const text = (value: unknown): string | null =>
-  typeof value === 'string' && value.trim() ? value.slice(0, 1000) : null;
+const text = (value: unknown, max?: number | null): string | null =>
+  typeof value === 'string' && value.trim()
+    ? value.slice(0, max || TEXT_MAX)
+    : null;
 
-const flag = (value: unknown, fallback: boolean): boolean =>
-  typeof value === 'boolean' ? value : fallback;
+// Only an address of the web is a link, so no value can make the chat run a
+// script when the guest follows it.
+const webAddress = (value: unknown): string | null => {
+  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return null;
+  try {
+    return /^https?:$/.test(new URL(value).protocol) ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+// The value a prop takes of what it is given, or null when that has not the
+// shape of the prop's type.
+const checked = (prop: LibraryProp, value: unknown): any => {
+  switch (prop.type) {
+    case 'text':
+    case 'texts':
+      return text(value, prop.length_max);
+    case 'color':
+      return color(value);
+    case 'boolean':
+      return typeof value === 'boolean' ? value : null;
+    case 'option':
+      return typeof value === 'string' && (prop.options || []).includes(value)
+        ? value
+        : null;
+    default:
+      return null;
+  }
+};
+
+// The library's default for a prop. A default text is the English one.
+const defaultOf = (prop: LibraryProp): any =>
+  checked(
+    prop,
+    prop.type === 'texts' && isRecord(prop.default)
+      ? prop.default.en
+      : prop.default
+  );
+
+// The defaults of one component, by prop name. A slot has none.
+const defaults = (name: string): {[prop: string]: any} =>
+  componentNamed(name).props.reduce(
+    (values, prop) => ({
+      ...values,
+      [prop.name]: prop.type === 'element' ? null : defaultOf(prop),
+    }),
+    {}
+  );
+
+const HEADER = defaults('Header');
+const CONTACT = defaults('Contact');
+const FORM = defaults('ContactForm');
+const BRANDING = defaults('Branding');
+
+export const DEFAULT_TITLE: string = HEADER.titles;
+export const DEFAULT_SUBTITLE: string = HEADER.subtitles;
+export const DEFAULT_PLACEHOLDER: string = defaults('Composer')
+  .input_placeholders;
+export const DEFAULT_FORM_TITLE: string = FORM.titles;
+export const DEFAULT_FORM_CONFIRMATION: string = FORM.confirmations;
+export const DEFAULT_ASSISTANT_BUBBLE_COLOR: string = defaults('Messages')
+  .assistant_bubble_color;
+
+// What a field of the contact form says when its element gives it no words:
+// the field's own name, by the slot of the form it sits in.
+const FIELD_NAMES = {
+  first_name: 'First Name',
+  last_name: 'Last Name',
+  email: 'Email',
+  message: 'Message',
+};
 
 const elementsOf = (profile: unknown): ProfileElement[] =>
   isRecord(profile) && Array.isArray(profile.elements)
@@ -146,12 +279,83 @@ const elementsOf = (profile: unknown): ProfileElement[] =>
         }))
     : [];
 
+// One element as the chat reads it. `values` holds every prop of its
+// component: what the profile gives when it has the prop's shape, else the
+// library's default, else null. A slot holds the element it names, read the
+// same way, or null. `given` holds only what the profile itself gave.
+type Read = {
+  component: string;
+  values: {[prop: string]: any};
+  given: {[prop: string]: any};
+};
+
+// The `root` of a profile read against the library, or null when the chat
+// cannot start from it: no `root`, or a root that is not this UI's.
+function readProfile(profile: unknown): Read | null {
+  const elements = elementsOf(profile);
+  const named = (name: unknown) =>
+    typeof name === 'string'
+      ? elements.find((element) => element.name === name)
+      : undefined;
+
+  // `above` lists the elements this one sits in: none holds itself.
+  const read = (element: ProfileElement, above: string[]): Read | null => {
+    const component = componentNamed(element.component);
+    if (!component) return null;
+    const values = {};
+    const given = {};
+
+    component.props.forEach((prop) => {
+      if (prop.type !== 'element') {
+        given[prop.name] = checked(prop, element.values[prop.name]);
+        values[prop.name] =
+          given[prop.name] === null ? defaultOf(prop) : given[prop.name];
+        return;
+      }
+      // A slot takes one component; an element of another is not what it
+      // names.
+      const child = named(element.values[prop.name]);
+      const fits =
+        child &&
+        above.indexOf(child.name) < 0 &&
+        (!prop.child_component || child.component === prop.child_component);
+      given[prop.name] = fits ? read(child, above.concat(child.name)) : null;
+      values[prop.name] = given[prop.name];
+    });
+
+    return {component: component.name, values, given};
+  };
+
+  const root = named(ROOT_ELEMENT);
+  return root && root.component === ROOT_COMPONENT
+    ? read(root, [ROOT_ELEMENT])
+    : null;
+}
+
+const messagesOf = (values: {[prop: string]: any}): MessagesAppearance => ({
+  assistantBubbleColor: values.assistant_bubble_color,
+  guestBubbleColor: values.guest_bubble_color,
+  hasAvatars: values.has_avatars,
+  hasFeedback: values.has_feedback,
+  hasTimestamps: values.has_timestamps,
+});
+
+const brandingOf = (values: {[prop: string]: any}): BrandingAppearance => ({
+  text: values.texts,
+  name: values.name,
+  linkUrl: webAddress(values.link_url),
+});
+
 export function settingsAppearance(settings: AppearanceSettings): Appearance {
   const {
     title = DEFAULT_TITLE,
     subtitle = DEFAULT_SUBTITLE,
     newMessagePlaceholder = DEFAULT_PLACEHOLDER,
   } = settings;
+  const field = (label: string): FormFieldAppearance => ({
+    label,
+    isRequired: true,
+  });
 
   return {
     source: 'settings',
@@ -160,15 +364,74 @@ export function settingsAppearance(settings: AppearanceSettings): Appearance {
     greeting: settings.greeting ? {text: settings.greeting} : null,
     composer: {placeholder: newMessagePlaceholder},
     contact: {
-      hasForm: !!settings.shouldShowContactForm,
-      formTitle: DEFAULT_FORM_TITLE,
-      formConfirmation: DEFAULT_FORM_CONFIRMATION,
+      phone: null,
+      email: null,
+      // The line's first hint has always differed from the one after a copy,
+      // and two of the form's hints from the words beside their buttons.
+      firstCopyHint: 'Copy to clipboard',
+      copyHint: CONTACT.copy_hints,
+      copiedNote: CONTACT.copied_notes,
+      copyFailedNote: CONTACT.copy_failed_notes,
+      form: {
+        isOffered: !!settings.shouldShowContactForm,
+        title: DEFAULT_FORM_TITLE,
+        firstName: field(FIELD_NAMES.first_name),
+        lastName: field(FIELD_NAMES.last_name),
+        email: field(FIELD_NAMES.email),
+        message: field(FIELD_NAMES.message),
+        sendLabel: FORM.send_labels,
+        sendingLabel: FORM.sending_labels,
+        discardLabel: FORM.discard_labels,
+        openHint: DEFAULT_FORM_TITLE,
+        sendHint: 'Send as email',
+        discardHint: 'Discard message',
+        confirmation: DEFAULT_FORM_CONFIRMATION,
+      },
     },
     // Whether it shows is still the subscription plan's word.
-    branding: true,
-    messages: {...DEFAULT_MESSAGES},
+    branding: brandingOf(BRANDING),
+    messages: messagesOf(defaults('Messages')),
   };
 }
+
+// The contact form a profile describes, or null when it has no field: there
+// would be nothing to send.
+const formOf = (form: Read | null): ContactFormAppearance | null => {
+  if (!form) return null;
+  const field = (
+    slot: keyof typeof FIELD_NAMES
+  ): FormFieldAppearance | null => {
+    const element: Read | null = form.values[slot];
+    return (
+      element && {
+        label: element.values.labels || FIELD_NAMES[slot],
+        isRequired: element.values.is_required,
+      }
+    );
+  };
+  const firstName = field('first_name');
+  const lastName = field('last_name');
+  const email = field('email');
+  const message = field('message');
+  if (!firstName && !lastName && !email && !message) return null;
+
+  return {
+    isOffered: true,
+    title: form.values.titles,
+    firstName,
+    lastName,
+    email,
+    message,
+    sendLabel: form.values.send_labels,
+    sendingLabel: form.values.sending_labels,
+    discardLabel: form.values.discard_labels,
+    // What a control says on hover follows the words the profile gives it.
+    openHint: form.values.titles,
+    sendHint: form.values.send_labels,
+    discardHint: form.values.discard_labels,
+    confirmation: form.values.confirmations,
+  };
+};
 
 // The model a profile describes, or null when the chat cannot start from it:
 // no `root`, or a root that is not this UI's.
@@ -177,19 +440,9 @@ export function profileAppearance(
   settings: AppearanceSettings,
   explicit: string[]
 ): Appearance | null {
-  const elements = elementsOf(profile);
-  const named = (name: unknown) =>
-    typeof name === 'string'
-      ? elements.find((element) => element.name === name)
-      : undefined;
-  const root = named(ROOT_ELEMENT);
-  if (!root || root.component !== ROOT_COMPONENT) return null;
+  const root = readProfile(profile);
+  if (!root) return null;
 
-  // A slot takes one component; an element of another is not what it names.
-  const slot = (prop: string, component: string) => {
-    const element = named(root.values[prop]);
-    return element && element.component === component ? element : null;
-  };
   // What the page set in its own embed, when the launcher says it did.
   const own = (key: keyof AppearanceSettings): string | null => {
     const value = settings[key];
@@ -197,50 +450,59 @@ export function profileAppearance(
       ? value
       : null;
   };
-
-  const header = slot('header', 'Header');
-  const greeting = slot('greeting', 'Greeting');
-  const composer = slot('composer', 'Composer');
-  const contact = slot('contact', 'Contact');
-  const messages = slot('messages', 'Messages');
-  const look = messages ? messages.values : {};
+  const header: Read | null = root.values.header;
+  const greeting: Read | null = root.values.greeting;
+  const composer: Read | null = root.values.composer;
+  const contact: Read | null = root.values.contact;
+  const branding: Read | null = root.values.branding;
+  const messages: Read | null = root.values.messages;
   const greetingText =
-    greeting && (own('greeting') || text(greeting.values.greetings));
+    greeting && (own('greeting') || greeting.values.greetings);
 
   return {
     source: 'profile',
     // The last of the three is the colour the launcher resolved for its
     // button, so the window and the button are never of different colours.
     accentColor:
-      own('primaryColor') ||
-      color(root.values.accent_color) ||
-      settings.primaryColor,
+      own('primaryColor') || root.given.accent_color || settings.primaryColor,
     header: header && {
-      title: own('title') || text(header.values.titles) || DEFAULT_TITLE,
-      subtitle:
-        own('subtitle') || text(header.values.subtitles) || DEFAULT_SUBTITLE,
+      title: own('title') || header.values.titles,
+      subtitle: own('subtitle') || header.values.subtitles,
     },
     greeting: greetingText ? {text: greetingText} : null,
     composer: composer && {
       placeholder:
-        own('newMessagePlaceholder') ||
-        text(composer.values.input_placeholders) ||
-        DEFAULT_PLACEHOLDER,
+        own('newMessagePlaceholder') || composer.values.input_placeholders,
     },
     contact: contact && {
-      hasForm: flag(contact.values.has_form, true),
-      formTitle: text(contact.values.form_titles) || DEFAULT_FORM_TITLE,
-      formConfirmation:
-        text(contact.values.form_confirmations) || DEFAULT_FORM_CONFIRMATION,
+      phone: contact.values.phone,
+      email: contact.values.email,
+      firstCopyHint: contact.values.copy_hints,
+      copyHint: contact.values.copy_hints,
+      copiedNote: contact.values.copied_notes,
+      copyFailedNote: contact.values.copy_failed_notes,
+      form: formOf(contact.values.form),
     },
-    branding: !!slot('branding', 'Branding'),
-    messages: {
-      assistantBubbleColor:
-        color(look.assistant_bubble_color) || DEFAULT_ASSISTANT_BUBBLE_COLOR,
-      guestBubbleColor: color(look.guest_bubble_color),
-      hasAvatars: flag(look.has_avatars, true),
-      hasFeedback: flag(look.has_feedback, true),
-      hasTimestamps: flag(look.has_timestamps, true),
+    branding: branding && brandingOf(branding.values),
+    messages: messagesOf(messages ? messages.values : defaults('Messages')),
+  };
+}
+
+// What the launcher draws of a profile, or null when the chat cannot start
+// from it.
+export function launcherAppearance(
+  profile: AppearanceProfile
+): LauncherAppearance | null {
+  const root = readProfile(profile);
+  if (!root) return null;
+  const launcher: Read | null = root.values.launcher;
+
+  return {
+    accentColor: root.given.accent_color,
+    side: root.values.screen_side,
+    button: launcher && {
+      icon: launcher.values.icon,
+      hasGreetingPreview: launcher.values.has_greeting_preview,
     },
   };
 }
@@ -266,6 +528,56 @@ export function pickProfile(
     ours.find((item) => item.is_default === true) ||
     null
   );
+}
+
+// A text of a profile a page gives in its embed: one string for every
+// language, or a map of languages. A map is read for the page's language,
+// then its base language, then English, then any, as the API reads the texts
+// of a profile it holds.
+const textFor = (value: unknown, locale: string): unknown => {
+  if (!isRecord(value)) return value;
+  const tags = Object.keys(value);
+  const wanted = [locale, locale.split('-')[0], 'en'].map((tag) =>
+    tag.toLowerCase()
+  );
+  const found = wanted
+    .map((tag) => tags.find((key) => key.toLowerCase() === tag))
+    .concat(tags)
+    .find((key) => key !== undefined && text(value[key]) !== null);
+
+  return found === undefined ? undefined : value[found];
+};
+
+// The profile a page gives in its own embed, as one the chat can draw: its
+// texts read for the page's language. Null when it is not a profile. The page
+// is trusted no more than the network: every value is still checked when the
+// profile is read.
+export function embedProfile(
+  value: unknown,
+  locale: unknown
+): AppearanceProfile | null {
+  const elements = elementsOf(value).slice(0, EMBED_ELEMENTS_MAX);
+  if (!elements.length) return null;
+  const language = localeTag(locale) || 'en';
+
+  return {
+    ui: FLOATING_CHAT_UI,
+    code: 'embed',
+    is_default: true,
+    elements: elements.map((element) => {
+      const component = componentNamed(element.component);
+      const texts = component
+        ? component.props.filter((prop) => prop.type === 'texts')
+        : [];
+      const values = {...element.values};
+      texts.forEach((prop) => {
+        if (prop.name in values)
+          values[prop.name] = textFor(values[prop.name], language);
+      });
+
+      return {...element, values};
+    }),
+  };
 }
 
 export function resolveAppearance(

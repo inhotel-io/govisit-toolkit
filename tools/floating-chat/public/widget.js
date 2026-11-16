@@ -20143,7 +20143,11 @@ OD =
                     .catch(function () {
                       return null;
                     }),
-                  cd.fetchAppearanceOverlay(t.inbox_id, t.appearance_profile),
+                  cd.fetchAppearanceOverlay(
+                    t.inbox_id,
+                    t.appearance_profile,
+                    t.appearance
+                  ),
                 ]).then(function (r) {
                   var settings = r[0] || {},
                     overlay = r[1] || {},
@@ -20171,8 +20175,10 @@ OD =
         byDefault = null,
         out = {},
         i,
+        j,
         item,
         element,
+        button,
         values;
       for (i = 0; i < items.length; i++) {
         item = items[i];
@@ -20201,14 +20207,57 @@ OD =
           (out.color = values.accent_color);
         ('left' === values.screen_side || 'right' === values.screen_side) &&
           (out.position = values.screen_side);
+        // The round button is the `Launcher` the root names. A profile that
+        // names none has no button. A picture the launcher does not have is
+        // left to the embed.
+        out.launcher = !1;
+        for (j = 0; j < item.elements.length; j++) {
+          button = item.elements[j];
+          if (
+            !button ||
+            'string' != typeof values.launcher ||
+            values.launcher !== button.name ||
+            'Launcher' !== button.component
+          )
+            continue;
+          button = button.values || {};
+          out.launcher = {
+            icon:
+              'outlined' === button.icon || 'filled' === button.icon
+                ? button.icon
+                : null,
+            preview: !0 === button.has_greeting_preview,
+          };
+          break;
+        }
         break;
       }
       return out;
     };
+    // The profile a page gives in its own embed, as plain data the iframe can
+    // be sent, or null when it gives none. A profile is a list of elements.
+    cd.embedProfileOf = function (given) {
+      if (!given || !Array.isArray(given.elements) || !given.elements.length)
+        return null;
+      try {
+        return {
+          ui: 'floating_chat',
+          code: 'embed',
+          is_default: !0,
+          elements: JSON.parse(JSON.stringify(given.elements)),
+        };
+      } catch (error) {
+        return null;
+      }
+    };
     // Only a UUID is an Assistant ID the read knows. It has three seconds;
     // without an answer the launcher is drawn from the settings alone. It
     // never rejects and never throws, whatever the page has done to `fetch`.
-    cd.fetchAppearanceOverlay = function (assistantId, code) {
+    cd.fetchAppearanceOverlay = function (assistantId, code, given) {
+      // A profile the page gives in its own embed is the one drawn, and
+      // nothing is read.
+      var own = cd.embedProfileOf(given);
+      if (own) return Promise.resolve(cd.appearanceOverlay({items: [own]}));
       if (
         'function' != typeof fetch ||
         !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -22635,6 +22684,7 @@ OD =
                           account_id: r || t,
                           inbox_id: n,
                           appearance_profile: e.appearanceProfile,
+                          appearance: e.appearance,
                         },
                         a
                       )
@@ -22809,7 +22859,11 @@ OD =
                 t = (void 0 === e ? {} : e).subscriptionPlan,
                 r = void 0 === t ? null : t,
                 a = n.props,
-                i = a.popUpInitialMessage,
+                // The greeting shows above the button when the embed asks for
+                // it, or the profile's button does.
+                i =
+                  a.popUpInitialMessage ||
+                  !(!n.state.launcher || !0 !== n.state.launcher.preview),
                 o = a.onChatLoaded,
                 s = void 0 === o ? ed : o;
               if (!assistantRemount && s && typeof s === 'function') {
@@ -22840,6 +22894,10 @@ OD =
                 );
               }
               n.send('inhotel:plan', {plan: r});
+              // A profile the page gives in its own embed is the iframe's to
+              // draw. It is sent each time the chat loads.
+              n.ownProfile &&
+                n.send('config:update', {appearance: n.ownProfile});
             }),
             (n.formatCustomerMetadata = function (e) {
               return e
@@ -23114,12 +23172,20 @@ OD =
                       (T.appearanceProfile = this.props.appearanceProfile),
                       (T.locale = cd.pageLanguage(document, navigator)),
                       (T.embedKeys = cd.embedKeysOf(this.props)),
+                      // A page with a profile of its own says so, and the
+                      // iframe then reads none: it is sent the page's.
+                      (this.ownProfile = cd.embedProfileOf(
+                        this.props.appearance
+                      )),
+                      (T.appearanceInline = this.ownProfile ? 1 : void 0),
                       (O = T),
                       (x = $FvpG$$interop$default.d.stringify(O, {
                         skipEmptyString: !0,
                         skipNull: !0,
                       })),
-                      this.setState({config: O, query: x}),
+                      // The round button as the profile has it: `false` when
+                      // it has none. Without a profile this is not set.
+                      this.setState({config: O, query: x, launcher: a.launcher}),
                       [4, this.updateWidgetSettingsMetadata()]
                     );
                   case 5:
@@ -23235,6 +23301,7 @@ OD =
                 iframeUrl: g,
                 query: r,
                 shouldDisplayNotifications: i,
+                launcher: this.state.launcher,
                 setIframeRef: this.setIframeRef,
                 onToggleOpen: this.handleToggleOpen,
               })
@@ -23360,8 +23427,10 @@ OD =
               l = e.shouldDisplayNotifications,
               h = e.setIframeRef,
               u = e.onToggleOpen,
-              O = t.hideToggleButton,
-              c = t.iconVariant,
+              // The button is the profile's: none when the profile has none,
+              // and its picture unless the page's own embed names one.
+              O = t.hideToggleButton || !1 === e.launcher,
+              c = t.iconVariant || (e.launcher && e.launcher.icon) || void 0,
               d = t.renderToggleButton,
               p = t.position,
               X = void 0 === p ? 'right' : p,
@@ -23455,6 +23524,9 @@ OD =
         (document.currentScript &&
           document.currentScript.getAttribute('data-appearance-profile')) ||
         ga.appearance_profile,
+      // A whole profile the page gives itself, drawn in place of the
+      // assistant's: `config.appearance`, a list of elements.
+      ownAppearance = ga.appearance,
       ar = ga.accountId,
       ED = ga.title,
       FD = ga.subtitle,
@@ -23470,7 +23542,6 @@ OD =
       RD = ga.agentUnavailableText,
       SD = ga.showAgentAvailability,
       br = ga.iconVariant,
-      TD = void 0 === br ? 'outlined' : br,
       cr = ga.hideToggleButton,
       UD = void 0 !== cr && cr,
       dr = ga.requireEmailUpfront,
@@ -23519,6 +23590,7 @@ OD =
           token: _q,
           inbox: DD,
           appearanceProfile: appearanceProfile,
+          appearance: ownAppearance,
           accountId: ar,
           title: ED,
           subtitle: FD,
@@ -23539,7 +23611,7 @@ OD =
           defaultIsOpen: WD,
           isOpenByDefault: XD,
           persistOpenState: YD,
-          iconVariant: TD,
+          iconVariant: br,
           hideToggleButton: UD,
           hideOutsideWorkingHours: ZD,
           popUpInitialMessage: $D,

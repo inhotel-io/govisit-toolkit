@@ -108,46 +108,142 @@ reusing the previous conversation state.
 
 ## Appearance profiles
 
-An assistant can carry an appearance profile for this UI, `floating_chat`, in
-the inHotel v2 API. When it has one, the chat is drawn from the profile instead
-of the legacy widget settings. The launcher and the iframe both read
-`GET /api/v2/assistants/{assistant ID}/appearance-profiles?ui=floating_chat`,
-which answers any origin and fills in the defaults of the UI's library.
+The chat is drawn from an appearance profile: a list of elements that says
+which parts the chat has and what each part says. A part the profile leaves out
+is not drawn. Without a profile the chat is drawn from the legacy widget
+settings, as before.
 
-A profile lists the blocks the chat has. A block it leaves out is not drawn.
+### The library
 
+What a profile can hold is this UI's library,
+[`appearance-library.json`](appearance-library.json): every component, what it
+takes, each type and each default. The chat reads a profile against that file,
+the playground draws its controls from it, and `npm test` checks the table
+below against it.
+
+<!-- library:start -->
 | Component | What it is | What a profile sets |
 | --- | --- | --- |
-| `FloatingChat` | The chat as a whole, with its button and its message list | `accent_color`, `screen_side`, and the blocks below |
-| `Header` | The bar at the top | `titles`, `subtitles` |
-| `Greeting` | The first message | `greetings` |
-| `Composer` | The field the guest writes in | `input_placeholders` |
-| `Contact` | The line with the phone, the e-mail and the contact form | `has_form`, `form_titles`, `form_confirmations` |
-| `Branding` | The "Powered by" line | nothing |
-| `Messages` | How the message list looks: a group of values, not a block | `assistant_bubble_color`, `guest_bubble_color`, `has_avatars`, `has_feedback`, `has_timestamps` |
+| `FloatingChat` | The chat as a whole: the round button, the window and the list of messages. | `header`, `greeting`, `composer`, `accent_color`, `screen_side`, `contact`, `branding`, `messages`, `launcher` |
+| `Launcher` | The round button the chat opens from. | `icon`, `has_greeting_preview` |
+| `Header` | The bar at the top of the window, with a title and a line under it. | `titles`, `subtitles` |
+| `Greeting` | The first message, shown before the guest writes. | `greetings` |
+| `Messages` | How the list of messages looks. A group of values, not a part. | `assistant_bubble_color`, `guest_bubble_color`, `has_avatars`, `has_feedback`, `has_timestamps` |
+| `Composer` | The field the guest writes in, with the send button. | `input_placeholders` |
+| `Contact` | The line under the composer with the phone, the e-mail and the contact form. | `phone`, `email`, `form`, `copy_hints`, `copied_notes`, `copy_failed_notes` |
+| `ContactForm` | The form a guest sends a message with, opened from the contact line. | `titles`, `first_name`, `last_name`, `email`, `message`, `send_labels`, `sending_labels`, `discard_labels`, `confirmations` |
+| `FormField` | One field of the contact form. | `labels`, `is_required` |
+| `Branding` | The "Powered by" line at the bottom. | `texts`, `name`, `link_url` |
+<!-- library:end -->
 
-Each block the iframe draws carries its component's name as `data-component`.
+A profile starts at the element named `root`, a `FloatingChat`. A prop that
+takes a component is a slot: its value is the name of another element. The
+contact form is a `ContactForm` in the `form` slot of the `Contact` line, and
+each of its fields is a `FormField` in a slot of the form.
 
-- **Which profile.** The assistant's default profile. To draw another, name its
-  code on the script, `data-appearance-profile="govisit"`, or as
-  `appearance_profile` in `window.FloatingChatWindow.config`. That is also how a
-  profile is tried on a page before it becomes the default.
+```json
+{
+  "elements": [
+    {
+      "name": "root",
+      "component": "FloatingChat",
+      "values": {
+        "header": "header",
+        "composer": "composer",
+        "contact": "contact",
+        "launcher": "launcher",
+        "accent_color": "#0B6E4F"
+      }
+    },
+    {
+      "name": "header",
+      "component": "Header",
+      "values": {"titles": {"en": "Ask us", "cs": "Zeptejte se"}}
+    },
+    {"name": "composer", "component": "Composer", "values": {}},
+    {"name": "contact", "component": "Contact", "values": {"form": "form"}},
+    {
+      "name": "form",
+      "component": "ContactForm",
+      "values": {"email": "email", "message": "message"}
+    },
+    {
+      "name": "email",
+      "component": "FormField",
+      "values": {"labels": {"en": "Your e-mail", "cs": "Váš e-mail"}}
+    },
+    {"name": "message", "component": "FormField", "values": {}},
+    {"name": "launcher", "component": "Launcher", "values": {"icon": "filled"}}
+  ]
+}
+```
+
+This chat has a header, a composer and a contact line whose form asks for an
+e-mail and a message. It has no greeting and no branding line: the root names
+none.
+
+Each part the iframe draws carries its component's name as `data-component`.
+
+### Where the profile comes from
+
+- **The assistant's.** An assistant can carry profiles for this UI,
+  `floating_chat`, in the inHotel v2 API. The launcher and the iframe both read
+  `GET /api/v2/assistants/{assistant ID}/appearance-profiles?ui=floating_chat`,
+  which answers any origin and fills in the library's defaults. The assistant's
+  default profile is drawn. To draw another, name its code on the script,
+  `data-appearance-profile="govisit"`, or as `appearance_profile` in
+  `window.FloatingChatWindow.config`. That is also how a profile is tried on a
+  page before it becomes the default.
+- **The page's own.** A page can give a whole profile itself, as `appearance`
+  in `window.FloatingChatWindow.config`, in the shape above. It is drawn in
+  place of the assistant's, and nothing is read from the API. A text is one
+  string for every language, or a map of languages as above.
+
+```html
+<script>
+  window.FloatingChatWindow = {
+    config: {
+      agent_card_url: 'https://ASSISTANT_ID.agents.inhotel.io/.well-known/agent-card.json',
+      appearance: {elements: [/* as above */]},
+    },
+  };
+</script>
+<script defer src="https://floating-chat.govisit.ai/widget.js"></script>
+```
+
+### What else decides the look
+
 - **Language.** Texts come in the host page's `<html lang>`, else in the
-  browser's language. The read falls back when a text has no translation.
+  browser's language. A text with no translation falls back to the base
+  language, then to English, then to any.
 - **The embed still wins** for what a page sets in its own
   `FloatingChatWindow.config`: `title`, `subtitle`, `greeting`,
-  `newMessagePlaceholder` and `primaryColor`. The side is the profile's, ahead
-  of the embed's `position`, as the legacy setting's has always been.
+  `newMessagePlaceholder`, `primaryColor`, `iconVariant` and
+  `hideToggleButton`. The side is the profile's, ahead of the embed's
+  `position`, as the legacy setting's has always been.
 - **Without a profile** the chat is drawn from the legacy settings, as before.
-  The same holds when the read fails or takes more than three seconds. A profile
-  ID that is not a UUID is never asked for.
-- The phone and the e-mail of the contact line are the assistant's contact
-  details. They still come from the legacy settings. A profile's contact form
-  is offered only when there is an e-mail to send it to.
+  The same holds when the read fails or takes more than three seconds, and for
+  a profile with no `root`. A profile ID that is not a UUID is never asked for.
+- **The round button** is the profile's `launcher`. A profile that leaves it
+  out has no button, and the page opens the chat itself.
+- **The contact line** shows the profile's `phone` and `email`, else the
+  assistant's own from the legacy settings. The contact form is sent by the
+  inHotel backend to the assistant's own e-mail, so it is offered only when the
+  assistant has one. A field the form leaves out is sent empty.
+- A value that is not of its prop's type is not drawn: the library's default
+  stands in. A link is drawn only for an `http` or `https` address.
 - A profile that leaves the header out still has the control that closes the
   chat.
 
-To see one assistant's profile locally, open
+### Try it
+
+`npm run dev`, then open `http://localhost:3000/playground`. Every prop of the
+library is a control there, and the chat beside the controls redraws as you
+change them. Add `?assistant=ASSISTANT_ID` to start from an assistant's
+profile. Nothing is saved and nothing is sent: the page shows the profile to
+copy. It runs on a local server only.
+
+To see one assistant's profile as the iframe draws it, open
 `http://localhost:3000/?token=-1&inbox=ASSISTANT_ID&version=1.0.0&locale=cs`.
 Add `&appearanceProfile=CODE` for a profile that is not the default.
 
@@ -180,14 +276,16 @@ maintenance follow-up.
 | --- | --- |
 | `public/widget.js` | Host-page launcher and iframe bridge |
 | `pages/index.tsx` | Iframe application entry point |
+| `pages/playground.tsx` | Tries every prop of the library on the real chat; local only |
+| `appearance-library.json` | The UI's library: every component, its props, types and defaults |
 | `components/EmbedLanding.tsx` | Embed code and live launcher, shown when `/` is opened directly |
 | `components/Widget.tsx` | Configuration and theme wrapper; reads the appearance profile |
 | `components/ChatWindow.tsx` | Conversation behavior; places the blocks the look lists |
 | `components/ChatHeader.tsx`, `components/ChatMessages.tsx` | The header and the message list |
 | `components/ChatMessage*.tsx` | Message rendering |
-| `components/ChatFooter*.tsx` | Composer and contact controls |
+| `components/ChatFooter*.tsx`, `components/ContactForm.tsx` | Composer, contact line and contact form |
 | `helpers/a2a-client.ts` | A2A JSON-RPC/SSE communication |
-| `helpers/appearance.ts` | The look the chat draws from, built from a profile or from the settings |
+| `helpers/appearance.ts` | The look the chat draws from: a profile read against the library, or the settings |
 | `helpers/appearance-api.ts` | Reads the assistant's appearance profile |
 | `helpers/storage.ts` | Browser conversation and context persistence |
 | `helpers/embed-security.ts` | Parent-message validation and fixed-origin agent URLs |

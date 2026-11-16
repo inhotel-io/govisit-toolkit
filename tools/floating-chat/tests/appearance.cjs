@@ -25,16 +25,20 @@ oldExtensions.set('.css', require.extensions['.css']);
 require.extensions['.css'] = (module) => {
   module.exports = {btn_up_down: 'btn_up_down'};
 };
+const appearanceModel = require('../helpers/appearance.ts');
 const {
   settingsAppearance,
   profileAppearance,
   resolveAppearance,
   pickProfile,
+  embedProfile,
   isAssistantId,
   isProfileCode,
   localeTag,
   embedKeys,
-} = require('../helpers/appearance.ts');
+  launcherAppearance,
+} = appearanceModel;
+const library = require('../appearance-library.json');
 const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
@@ -54,6 +58,59 @@ const DEFAULT_MESSAGES = {
   hasAvatars: true,
   hasFeedback: true,
   hasTimestamps: true,
+};
+const BRANDING = {
+  text: 'Powered by',
+  name: 'inHotel',
+  linkUrl: 'https://www.inhotel.io',
+};
+// The contact line and its form as the chat has always had them.
+const SETTINGS_CONTACT = {
+  phone: null,
+  email: null,
+  firstCopyHint: 'Copy to clipboard',
+  copyHint: 'Click to copy',
+  copiedNote: 'Copied!',
+  copyFailedNote: 'Failed to copy',
+  form: {
+    isOffered: false,
+    title: 'Contact Us',
+    firstName: {label: 'First Name', isRequired: true},
+    lastName: {label: 'Last Name', isRequired: true},
+    email: {label: 'Email', isRequired: true},
+    message: {label: 'Message', isRequired: true},
+    sendLabel: 'Send',
+    sendingLabel: 'Sending',
+    discardLabel: 'Discard',
+    openHint: 'Contact Us',
+    sendHint: 'Send as email',
+    discardHint: 'Discard message',
+    confirmation: CONFIRMATION,
+  },
+};
+// The same two as the profile below describes them.
+const PROFILE_CONTACT = {
+  phone: null,
+  email: null,
+  firstCopyHint: 'Click to copy',
+  copyHint: 'Click to copy',
+  copiedNote: 'Copied!',
+  copyFailedNote: 'Failed to copy',
+  form: {
+    isOffered: true,
+    title: 'Contact Us',
+    firstName: {label: 'Jméno', isRequired: true},
+    lastName: {label: 'Příjmení', isRequired: false},
+    email: {label: 'E-mail', isRequired: true},
+    message: {label: 'Zpráva', isRequired: true},
+    sendLabel: 'Send',
+    sendingLabel: 'Sending',
+    discardLabel: 'Discard',
+    openHint: 'Contact Us',
+    sendHint: 'Send',
+    discardHint: 'Discard',
+    confirmation: CONFIRMATION,
+  },
 };
 
 // What the public read answers for an assistant with a whole profile, asked
@@ -77,7 +134,13 @@ const page = () => ({
             contact: 'contact',
             branding: 'branding',
             messages: 'messages',
+            launcher: 'launcher',
           },
+        },
+        {
+          name: 'launcher',
+          component: 'Launcher',
+          values: {icon: 'outlined', has_greeting_preview: false},
         },
         {
           name: 'header',
@@ -101,12 +164,56 @@ const page = () => ({
           name: 'contact',
           component: 'Contact',
           values: {
-            has_form: true,
-            form_titles: 'Contact Us',
-            form_confirmations: CONFIRMATION,
+            form: 'form',
+            copy_hints: 'Click to copy',
+            copied_notes: 'Copied!',
+            copy_failed_notes: 'Failed to copy',
           },
         },
-        {name: 'branding', component: 'Branding', values: {}},
+        {
+          name: 'form',
+          component: 'ContactForm',
+          values: {
+            titles: 'Contact Us',
+            first_name: 'first_name',
+            last_name: 'last_name',
+            email: 'email',
+            message: 'message',
+            send_labels: 'Send',
+            sending_labels: 'Sending',
+            discard_labels: 'Discard',
+            confirmations: CONFIRMATION,
+          },
+        },
+        {
+          name: 'first_name',
+          component: 'FormField',
+          values: {labels: 'Jméno', is_required: true},
+        },
+        {
+          name: 'last_name',
+          component: 'FormField',
+          values: {labels: 'Příjmení', is_required: false},
+        },
+        {
+          name: 'email',
+          component: 'FormField',
+          values: {labels: 'E-mail', is_required: true},
+        },
+        {
+          name: 'message',
+          component: 'FormField',
+          values: {labels: 'Zpráva', is_required: true},
+        },
+        {
+          name: 'branding',
+          component: 'Branding',
+          values: {
+            texts: 'Powered by',
+            name: 'inHotel',
+            link_url: 'https://www.inhotel.io',
+          },
+        },
         {
           name: 'messages',
           component: 'Messages',
@@ -156,12 +263,8 @@ test('without a profile the chat is as it is today', () => {
     header: {title: 'Welcome!', subtitle: 'How can we help you?'},
     greeting: null,
     composer: {placeholder: 'Start typing...'},
-    contact: {
-      hasForm: false,
-      formTitle: 'Contact Us',
-      formConfirmation: CONFIRMATION,
-    },
-    branding: true,
+    contact: SETTINGS_CONTACT,
+    branding: BRANDING,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -179,7 +282,7 @@ test('the settings give the chat its texts, colour and contact form', () => {
   assert.deepEqual(look.greeting, {text: 'Hi'});
   assert.deepEqual(look.composer, {placeholder: 'Write here'});
   assert.equal(look.accentColor, '#112233');
-  assert.equal(look.contact.hasForm, true);
+  assert.equal(look.contact.form.isOffered, true);
 });
 
 test('a whole profile fills every block', () => {
@@ -189,12 +292,8 @@ test('a whole profile fills every block', () => {
     header: {title: 'Zeptejte se nás', subtitle: 'Hotel Example'},
     greeting: {text: 'Dobrý den, jak vám mohu pomoci?'},
     composer: {placeholder: 'Zeptejte se na cokoli...'},
-    contact: {
-      hasForm: true,
-      formTitle: 'Contact Us',
-      formConfirmation: CONFIRMATION,
-    },
-    branding: true,
+    contact: PROFILE_CONTACT,
+    branding: BRANDING,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -214,7 +313,7 @@ test('a block the profile leaves out is not drawn', () => {
   assert.equal(look.greeting, null);
   assert.equal(look.composer, null);
   assert.equal(look.contact, null);
-  assert.equal(look.branding, false);
+  assert.equal(look.branding, null);
   assert.equal(look.accentColor, '#0B6E4F');
   assert.deepEqual(look.messages, DEFAULT_MESSAGES);
 });
@@ -272,8 +371,13 @@ test('a value of the wrong shape gives way to the default', () => {
       element('root').values.accent_color = 'red;background:url(//evil)';
       element('header').values.titles = {en: 'A locale map, not a text'};
       element('composer').values.input_placeholders = 42;
-      element('contact').values.has_form = 'yes';
-      element('contact').values.form_titles = '';
+      element('contact').values.phone = 420224000000;
+      element('contact').values.copy_hints = ['Click'];
+      element('form').values.titles = '';
+      element('form').values.send_labels = null;
+      element('email').values.labels = {cs: 'E-mail'};
+      element('email').values.is_required = 'yes';
+      element('branding').values.name = '   ';
       element('messages').values.assistant_bubble_color = '#12345';
       element('messages').values.guest_bubble_color = 'javascript:alert(1)';
       element('messages').values.has_avatars = 0;
@@ -296,8 +400,12 @@ test('a value of the wrong shape gives way to the default', () => {
   );
   assert.equal(look.header.title, 'Welcome!');
   assert.equal(look.composer.placeholder, 'Start typing...');
-  assert.equal(look.contact.hasForm, true);
-  assert.equal(look.contact.formTitle, 'Contact Us');
+  assert.equal(look.contact.phone, null);
+  assert.equal(look.contact.copyHint, 'Click to copy');
+  assert.equal(look.contact.form.title, 'Contact Us');
+  assert.equal(look.contact.form.sendLabel, 'Send');
+  assert.deepEqual(look.contact.form.email, {label: 'Email', isRequired: true});
+  assert.equal(look.branding.name, 'inHotel');
   assert.deepEqual(look.messages, DEFAULT_MESSAGES);
 });
 
@@ -347,6 +455,350 @@ test('the message values a profile gives are taken, the rest are the defaults', 
     hasFeedback: false,
     hasTimestamps: false,
   });
+});
+
+test('the contact form has the fields its profile lists, each with its own words', () => {
+  const form = profileAppearance(
+    profile((item, element) => {
+      delete element('form').values.last_name;
+      element('first_name').values.labels = 'Your name';
+      Object.assign(element('form').values, {
+        titles: 'Write to us',
+        send_labels: 'Send it',
+        sending_labels: 'On its way',
+        discard_labels: 'Close',
+        confirmations: 'We will answer today.',
+      });
+    }),
+    {},
+    []
+  ).contact.form;
+  assert.deepEqual(form, {
+    isOffered: true,
+    title: 'Write to us',
+    firstName: {label: 'Your name', isRequired: true},
+    lastName: null,
+    email: {label: 'E-mail', isRequired: true},
+    message: {label: 'Zpráva', isRequired: true},
+    sendLabel: 'Send it',
+    sendingLabel: 'On its way',
+    discardLabel: 'Close',
+    // What the controls say on hover follows their words.
+    openHint: 'Write to us',
+    sendHint: 'Send it',
+    discardHint: 'Close',
+    confirmation: 'We will answer today.',
+  });
+});
+
+test('a field with no words of its own takes its name', () => {
+  const form = profileAppearance(
+    profile((item, element) => {
+      for (const name of ['first_name', 'last_name', 'email', 'message'])
+        element(name).values = {};
+    }),
+    {},
+    []
+  ).contact.form;
+  assert.deepEqual(
+    [form.firstName, form.lastName, form.email, form.message],
+    ['First Name', 'Last Name', 'Email', 'Message'].map((label) => ({
+      label,
+      isRequired: true,
+    }))
+  );
+});
+
+test('a contact line without a form, or with a form of no fields, offers none', () => {
+  const without = profileAppearance(
+    profile((item, element) => {
+      delete element('contact').values.form;
+    }),
+    {},
+    []
+  );
+  assert.equal(without.contact.form, null);
+  assert.equal(without.contact.copyHint, 'Click to copy');
+
+  const empty = profileAppearance(
+    profile((item, element) => {
+      element('form').values = {titles: 'Write to us'};
+    }),
+    {},
+    []
+  );
+  assert.equal(empty.contact.form, null);
+
+  // A slot of the form holds a field and nothing else.
+  const wrong = profileAppearance(
+    profile((item, element) => {
+      element('form').values.email = 'header';
+      element('form').values.message = 'missing';
+    }),
+    {},
+    []
+  ).contact.form;
+  assert.equal(wrong.email, null);
+  assert.equal(wrong.message, null);
+  assert.deepEqual(wrong.firstName, {label: 'Jméno', isRequired: true});
+});
+
+test('the contact line shows the phone and the e-mail its profile gives', () => {
+  const look = profileAppearance(
+    profile((item, element) => {
+      Object.assign(element('contact').values, {
+        phone: '+420 224 000 000',
+        email: 'stay@hotel.example',
+        copy_hints: 'Kliknutím zkopírujete',
+        copied_notes: 'Zkopírováno',
+        copy_failed_notes: 'Nepodařilo se',
+      });
+    }),
+    {},
+    []
+  ).contact;
+  assert.equal(look.phone, '+420 224 000 000');
+  assert.equal(look.email, 'stay@hotel.example');
+  // A profile has one hint, before a copy and after it.
+  assert.equal(look.firstCopyHint, 'Kliknutím zkopírujete');
+  assert.equal(look.copyHint, 'Kliknutím zkopírujete');
+  assert.equal(look.copiedNote, 'Zkopírováno');
+  assert.equal(look.copyFailedNote, 'Nepodařilo se');
+});
+
+test('the branding line says what its profile gives it, and only a web address is a link', () => {
+  const branding = (values) =>
+    profileAppearance(
+      profile((item, element) => {
+        element('branding').values = values;
+      }),
+      {},
+      []
+    ).branding;
+  assert.deepEqual(branding({}), BRANDING);
+  assert.deepEqual(
+    branding({
+      texts: 'Provozuje',
+      name: 'Example Chat',
+      link_url: 'https://chat.example/about',
+    }),
+    {
+      text: 'Provozuje',
+      name: 'Example Chat',
+      linkUrl: 'https://chat.example/about',
+    }
+  );
+  for (const address of [
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    '//chat.example',
+    'chat.example',
+    ' https://chat.example',
+  ]) {
+    assert.equal(branding({link_url: address}).linkUrl, null, address);
+  }
+});
+
+test('an element that holds itself is not followed', () => {
+  const look = profileAppearance(
+    profile((item, element) => {
+      // Not a tree: the form names the contact line it sits in.
+      element('form').component = 'Contact';
+      element('form').values = {form: 'form'};
+      element('contact').values.form = 'form';
+    }),
+    {},
+    []
+  );
+  assert.equal(look.source, 'profile');
+  assert.equal(look.contact.form, null);
+});
+
+// Every prop of the library, with a value that is not its default.
+const otherValue = (prop) => {
+  switch (prop.type) {
+    case 'text':
+      return prop.name === 'link_url' ? 'https://chat.example/x' : 'Other';
+    case 'texts':
+      return 'Other words';
+    case 'color':
+      return '#123456';
+    case 'boolean':
+      return !prop.default;
+    case 'option':
+      return prop.options.find((option) => option !== prop.default);
+    default:
+      return undefined;
+  }
+};
+
+test('the chat has a default for what the library gives one, and the same one', () => {
+  const byName = (name) =>
+    library.components.find((component) => component.name === name);
+  const defaultOf = (component, prop) => {
+    const value = byName(component).props.find((p) => p.name === prop).default;
+    return value && typeof value === 'object' ? value.en : value;
+  };
+  const look = settingsAppearance({});
+  assert.equal(look.header.title, defaultOf('Header', 'titles'));
+  assert.equal(look.header.subtitle, defaultOf('Header', 'subtitles'));
+  assert.equal(
+    look.composer.placeholder,
+    defaultOf('Composer', 'input_placeholders')
+  );
+  assert.equal(look.contact.form.title, defaultOf('ContactForm', 'titles'));
+  assert.equal(
+    look.contact.form.confirmation,
+    defaultOf('ContactForm', 'confirmations')
+  );
+  assert.equal(look.contact.copyHint, defaultOf('Contact', 'copy_hints'));
+  assert.equal(look.branding.name, defaultOf('Branding', 'name'));
+  assert.equal(
+    look.messages.assistantBubbleColor,
+    defaultOf('Messages', 'assistant_bubble_color')
+  );
+  // The library is this UI's, with one root to start from.
+  assert.equal(library.ui, 'floating_chat');
+  assert.deepEqual(
+    library.components.filter((c) => c.is_root).map((c) => c.name),
+    ['FloatingChat']
+  );
+});
+
+test('the README lists the library as the file has it', () => {
+  const readme = fs.readFileSync(path.join(__dirname, '../README.md'), 'utf8');
+  const listed = readme
+    .slice(
+      readme.indexOf('<!-- library:start -->'),
+      readme.indexOf('<!-- library:end -->')
+    )
+    .split('\n')
+    .filter((line) => line.startsWith('| `'));
+  assert.deepEqual(
+    listed,
+    library.components.map(
+      (component) =>
+        '| `' +
+        component.name +
+        '` | ' +
+        component.description +
+        (component.kind === 'object' ? ' A group of values, not a part.' : '') +
+        ' | ' +
+        component.props.map((prop) => '`' + prop.name + '`').join(', ') +
+        ' |'
+    )
+  );
+});
+
+test('every prop of the library changes what the chat draws', () => {
+  // The launcher draws the button and the side itself; its own checks are
+  // further down.
+  const drawnByLauncher = (component, prop) =>
+    component.name === 'Launcher' ||
+    (component.is_root && ['screen_side', 'launcher'].includes(prop.name));
+  // A profile in which no value is its default, so that taking any one prop
+  // away shows.
+  const full = () =>
+    profile((item) => {
+      for (const element of item.elements) {
+        const component = library.components.find(
+          (c) => c.name === element.component
+        );
+        for (const prop of component.props) {
+          if (prop.type !== 'element')
+            element.values[prop.name] = otherValue(prop);
+        }
+      }
+    });
+  const before = JSON.stringify(profileAppearance(full(), {}, []));
+  let read = 0;
+  for (const component of library.components) {
+    for (const prop of component.props) {
+      if (drawnByLauncher(component, prop)) continue;
+      const without = full();
+      for (const element of without.elements) {
+        if (element.component === component.name)
+          delete element.values[prop.name];
+      }
+      assert.notEqual(
+        JSON.stringify(profileAppearance(without, {}, [])),
+        before,
+        `${component.name}.${prop.name} is not read`
+      );
+      read++;
+    }
+  }
+  // 40 props in all: the launcher's two, and the two of the root it draws.
+  assert.equal(read, 36);
+});
+
+test('a profile the page gives in its embed is read in the page’s language', () => {
+  const given = {
+    elements: [
+      {
+        name: 'root',
+        component: 'FloatingChat',
+        values: {header: 'header', accent_color: '#0B6E4F', contact: 'contact'},
+      },
+      {
+        name: 'header',
+        component: 'Header',
+        values: {
+          titles: {en: 'Ask us', cs: 'Zeptejte se', 'pt-BR': 'Pergunte'},
+          subtitles: 'One text for every language',
+        },
+      },
+      {name: 'contact', component: 'Contact', values: {phone: '+1 555 0100'}},
+    ],
+  };
+  const title = (locale) =>
+    profileAppearance(embedProfile(given, locale), {}, []).header.title;
+  assert.equal(title('cs'), 'Zeptejte se');
+  assert.equal(title('cs-CZ'), 'Zeptejte se');
+  assert.equal(title('pt-BR'), 'Pergunte');
+  // A language the profile does not have falls back to English, then to any.
+  assert.equal(title('de'), 'Ask us');
+  assert.equal(title(undefined), 'Ask us');
+  delete given.elements[1].values.titles.en;
+  assert.equal(title('de'), 'Zeptejte se');
+
+  const look = profileAppearance(embedProfile(given, 'cs'), {}, []);
+  assert.equal(look.source, 'profile');
+  assert.equal(look.header.subtitle, 'One text for every language');
+  assert.equal(look.accentColor, '#0B6E4F');
+  assert.equal(look.contact.phone, '+1 555 0100');
+  assert.equal(look.composer, null);
+
+  // It is this UI's profile, and the one to draw.
+  const read = embedProfile(given, 'cs');
+  assert.equal(read.ui, 'floating_chat');
+  assert.equal(read.is_default, true);
+  assert.equal(pickProfile({items: [read]}), read);
+});
+
+test('what is not a profile is not taken from the embed', () => {
+  for (const value of [
+    undefined,
+    null,
+    'root = FloatingChat()',
+    42,
+    [],
+    {},
+    {elements: 'none'},
+    {elements: []},
+    {elements: [{name: 'root'}]},
+  ]) {
+    assert.equal(embedProfile(value, 'en'), null);
+  }
+  // No more elements than a chat can have are kept.
+  const many = {
+    elements: Array.from({length: 500}, (_, index) => ({
+      name: index ? `field_${index}` : 'root',
+      component: index ? 'FormField' : 'FloatingChat',
+      values: {},
+    })),
+  };
+  assert.equal(embedProfile(many, 'en').elements.length, 50);
 });
 
 test('the chat takes the profile its embed names, else the default', () => {
@@ -589,7 +1041,7 @@ test('the chat draws the blocks its look lists, and only those', () => {
             ...whole(),
             composer: null,
             contact: null,
-            branding: false,
+            branding: null,
           },
         })
       )
@@ -602,9 +1054,12 @@ test('each block says what the look gives it', () => {
   const look = {
     ...whole(),
     contact: {
-      hasForm: true,
-      formTitle: 'Write to us',
-      formConfirmation: 'We will answer today.',
+      ...whole().contact,
+      form: {
+        ...whole().contact.form,
+        title: 'Write to us',
+        confirmation: 'We will answer today.',
+      },
     },
   };
   const markup = html(chat({appearance: look}));
@@ -636,7 +1091,10 @@ test('each block says what the look gives it', () => {
 test('the contact form is offered when the look has it and there is somewhere to send it', () => {
   const look = (hasForm) => ({
     ...whole(),
-    contact: {...whole().contact, hasForm},
+    contact: {
+      ...whole().contact,
+      form: hasForm ? whole().contact.form : null,
+    },
   });
   const envelope = /data-contact-form-control="true"/;
   const hotelEmail = 'stay@hotel.example';
@@ -658,6 +1116,211 @@ test('the contact form is offered when the look has it and there is somewhere to
   // that gives the flag already knows whether there is an e-mail.
   assert.match(html(chat({shouldShowContactForm: true})), envelope);
   assert.doesNotMatch(html(chat()), envelope);
+});
+
+// The contact form of a look, open, for an assistant with an e-mail to send
+// it to.
+const HOTEL_EMAIL = 'stay@hotel.example';
+const withForm = (form = {}, contact = {}) => ({
+  ...whole(),
+  contact: {
+    ...whole().contact,
+    ...contact,
+    form: {...whole().contact.form, ...form},
+  },
+});
+const openForm = (look, state = {}) =>
+  chat(
+    {appearance: look, hotelEmail: HOTEL_EMAIL},
+    {isMailIconClicked: true, ...state}
+  );
+const placeholders = (markup) =>
+  [...markup.matchAll(/<(?:input|textarea)[^>]*>/g)].map((field) => [
+    /name="([^"]*)"/.exec(field[0])[1],
+    /placeholder="([^"]*)"/.exec(field[0])[1],
+  ]);
+
+test('the contact form draws the fields of its look, each with its own words', () => {
+  assert.deepEqual(placeholders(html(openForm(withForm()))), [
+    ['firstName', 'Jméno'],
+    ['lastName', 'Příjmení'],
+    ['email', 'E-mail'],
+    ['message', 'Zpráva'],
+  ]);
+  assert.deepEqual(
+    placeholders(
+      html(
+        openForm(
+          withForm({
+            lastName: null,
+            email: {label: 'Where we can answer you', isRequired: true},
+          })
+        )
+      )
+    ),
+    [
+      ['firstName', 'Jméno'],
+      ['email', 'Where we can answer you'],
+      ['message', 'Zpráva'],
+    ]
+  );
+  assert.deepEqual(
+    placeholders(
+      html(openForm(withForm({firstName: null, lastName: null, email: null})))
+    ),
+    [['message', 'Zpráva']]
+  );
+});
+
+test('the buttons of the contact form say what the look gives them', () => {
+  const look = withForm({
+    sendLabel: 'Odeslat',
+    sendingLabel: 'Odesílá se',
+    discardLabel: 'Zahodit',
+  });
+  const open = html(openForm(look));
+  assert.match(open, />Odeslat</);
+  assert.match(open, />Zahodit</);
+  assert.doesNotMatch(open, />Send</);
+  assert.doesNotMatch(open, />Discard</);
+
+  const sending = html(openForm(look, {isLoading: true}));
+  assert.match(sending, />Odesílá se</);
+  assert.doesNotMatch(sending, />Sending</);
+
+  // Without a profile they say what they always have.
+  const plain = html(
+    chat({shouldShowContactForm: true}, {isMailIconClicked: true})
+  );
+  assert.match(plain, />Send</);
+  assert.match(plain, />Discard</);
+  assert.deepEqual(placeholders(plain), [
+    ['firstName', 'First Name'],
+    ['lastName', 'Last Name'],
+    ['email', 'Email'],
+    ['message', 'Message'],
+  ]);
+});
+
+// What the chat sends of the contact form, or null when it sends nothing.
+async function sentForm(look, filled) {
+  let body = null;
+  await withFetch(
+    (url, options) => {
+      body = JSON.parse(options.body);
+      return Promise.resolve({ok: true, json: async () => ({status: 1})});
+    },
+    async () => {
+      const instance = openForm(look, filled);
+      quietly(() => instance.handleSubmitCF());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  );
+  return body;
+}
+
+test('the contact form is sent once the fields it requires are filled', async () => {
+  const filled = {
+    firstName: 'Ada',
+    lastName: null,
+    email: 'ada@guest.example',
+    message: 'Is breakfast included?',
+  };
+  // The fixture's last name is not required.
+  assert.deepEqual(await sentForm(withForm(), filled), {
+    firstname: 'Ada',
+    lastname: '',
+    email: 'ada@guest.example',
+    message: 'Is breakfast included?',
+    inbox_id: ASSISTANT,
+  });
+  assert.equal(await sentForm(withForm(), {...filled, email: null}), null);
+  assert.equal(
+    await sentForm(
+      withForm({lastName: {label: 'Příjmení', isRequired: true}}),
+      filled
+    ),
+    null
+  );
+});
+
+test('a field the form does not have is sent empty, whatever was typed before', async () => {
+  const body = await sentForm(withForm({firstName: null, lastName: null}), {
+    firstName: 'Left from another look',
+    lastName: null,
+    email: 'ada@guest.example',
+    message: 'Hello',
+  });
+  assert.equal(body.firstname, '');
+  assert.equal(body.lastname, '');
+  assert.equal(body.email, 'ada@guest.example');
+});
+
+test('only a field the form requires is marked when it is left empty', () => {
+  const marked = (look) =>
+    count(
+      html(openForm(look, {clickedSubmit: true, firstName: 'Ada'})),
+      /border-color:red/g
+    );
+  // First name is filled, last name is not required: e-mail and message.
+  assert.equal(marked(withForm()), 2);
+  assert.equal(
+    marked(withForm({message: {label: 'Zpráva', isRequired: false}})),
+    1
+  );
+  assert.equal(marked(withForm({email: null, message: null})), 0);
+});
+
+test('the contact line shows the phone and e-mail of its look, else the assistant’s own', () => {
+  const own = {hotelEmail: HOTEL_EMAIL, hotelPhone: '+420 111 111 111'};
+  const assistants = html(chat({appearance: whole(), ...own}));
+  assert.match(assistants, />stay@hotel\.example</);
+  assert.match(assistants, />\+420 111 111 111</);
+
+  const profiles = html(
+    chat({
+      appearance: withForm(
+        {},
+        {phone: '+420 222 222 222', email: 'front@hotel.example'}
+      ),
+      ...own,
+    })
+  );
+  assert.match(profiles, />front@hotel\.example</);
+  assert.match(profiles, />\+420 222 222 222</);
+  assert.doesNotMatch(profiles, /stay@hotel\.example/);
+  assert.doesNotMatch(profiles, /111 111 111/);
+});
+
+test('the branding line says what its look gives it', () => {
+  // The words of the line, without the styles the markup carries beside them.
+  const branding = (look) =>
+    /<div[^>]*data-component="Branding"[^>]*>(.*?)<\/div>/.exec(
+      html(chat({appearance: look})).replace(/<style[^>]*>[^<]*<\/style>/g, '')
+    )[1];
+  assert.match(
+    branding(whole()),
+    /^Powered by <a[^>]*href="https:\/\/www\.inhotel\.io"[^>]*>inHotel<\/a>$/
+  );
+  assert.match(
+    branding({
+      ...whole(),
+      branding: {
+        text: 'Provozuje',
+        name: 'Example Chat',
+        linkUrl: 'https://chat.example/about',
+      },
+    }),
+    /^Provozuje <a[^>]*href="https:\/\/chat\.example\/about"[^>]*>Example Chat<\/a>$/
+  );
+  // A name with nowhere to lead is written, not linked.
+  assert.equal(
+    branding({
+      ...whole(),
+      branding: {text: 'Provozuje', name: 'Example Chat', linkUrl: null},
+    }),
+    'Provozuje Example Chat'
+  );
 });
 
 test('the contact form cannot stay open once the look has no contact line', () => {
@@ -992,6 +1655,86 @@ test('the chat is drawn from the profile of its assistant', async () => {
   );
 });
 
+// A profile a page gives in its own embed, with a title in two languages.
+const embedded = () => ({
+  elements: [
+    {
+      name: 'root',
+      component: 'FloatingChat',
+      values: {header: 'header', accent_color: '#0B6E4F', launcher: 'button'},
+    },
+    {
+      name: 'header',
+      component: 'Header',
+      values: {titles: {en: 'From the page', cs: 'Ze stránky'}},
+    },
+    {name: 'button', component: 'Launcher', values: {icon: 'filled'}},
+  ],
+});
+
+test('a profile the page gives in its embed is drawn in the page’s language, with no read', async () => {
+  await withFetch(
+    async () => ({ok: true, json: async () => page()}),
+    async (calls) => {
+      // The launcher says so when the page has a profile of its own.
+      const wrapper = widget({
+        inbox: ASSISTANT,
+        locale: 'cs',
+        appearanceInline: '1',
+      });
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        assert.equal(calls.length, 0);
+        assert.equal(shown(wrapper).source, 'settings');
+
+        wrapper.handleConfigUpdate({appearance: embedded()});
+        assert.equal(shown(wrapper).source, 'profile');
+        assert.equal(shown(wrapper).header.title, 'Ze stránky');
+        assert.equal(shown(wrapper).accentColor, '#0B6E4F');
+        assert.equal(shown(wrapper).composer, null);
+
+        const before = wrapper.state;
+        wrapper.handleConfigUpdate({locale: 'en'});
+        wrapper.componentDidUpdate(wrapper.props, before);
+        await settle();
+        assert.equal(shown(wrapper).header.title, 'From the page');
+        assert.equal(calls.length, 0);
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('the page’s own profile stands in front of the assistant’s, and goes when it is no profile', async () => {
+  await withFetch(
+    async () => ({ok: true, json: async () => page()}),
+    async () => {
+      const wrapper = widget({inbox: ASSISTANT, locale: 'cs'});
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
+
+        wrapper.handleConfigUpdate({appearance: embedded()});
+        assert.equal(shown(wrapper).header.title, 'Ze stránky');
+        // Another assistant on the same page is drawn in the page's profile
+        // too: it is the page's, not the assistant's.
+        wrapper.handleConfigUpdate({inbox: OTHER});
+        assert.equal(shown(wrapper).header.title, 'Ze stránky');
+
+        for (const nothing of ['root = FloatingChat()', {elements: []}, null]) {
+          wrapper.handleConfigUpdate({appearance: nothing});
+          assert.equal(shown(wrapper).source, 'settings');
+        }
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
 test('every setting reaches the look when there is no profile', () => {
   const wrapper = widget({
     inbox: 'hotel-paris',
@@ -1009,14 +1752,16 @@ test('every setting reaches the look when there is no profile', () => {
     greeting: {text: 'Hi'},
     composer: {placeholder: 'Write here'},
     contact: {
-      hasForm: true,
-      formTitle: 'Contact Us',
-      formConfirmation: CONFIRMATION,
+      ...SETTINGS_CONTACT,
+      form: {...SETTINGS_CONTACT.form, isOffered: true},
     },
-    branding: true,
+    branding: BRANDING,
     messages: DEFAULT_MESSAGES,
   });
-  assert.equal(shown(widget({inbox: 'hotel-paris'})).contact.hasForm, false);
+  assert.equal(
+    shown(widget({inbox: 'hotel-paris'})).contact.form.isOffered,
+    false
+  );
 });
 
 test('leaving the page cancels the read, and its late answer changes nothing', async () => {
@@ -1228,25 +1973,37 @@ const twoProfiles = () => {
   return both;
 };
 
-test('the launcher takes its colour and side from the profile', () => {
-  const overlay = bundledLauncherHandler('appearanceOverlay', {});
-  const of = (...args) => ({...overlay(...args)});
-  assert.deepEqual(of(page()), {color: '#465EA4', position: 'right'});
+// What the launcher makes of a page of the read, as plain data.
+const overlayOf = (...args) =>
+  JSON.parse(
+    JSON.stringify(bundledLauncherHandler('appearanceOverlay', {})(...args))
+  );
+const BUTTON = {icon: 'outlined', preview: false};
+
+test('the launcher takes its colour, its side and its button from the profile', () => {
+  const of = overlayOf;
+  assert.deepEqual(of(page()), {
+    color: '#465EA4',
+    position: 'right',
+    launcher: BUTTON,
+  });
   assert.deepEqual(of(twoProfiles(), 'govisit'), {
     color: '#0B6E4F',
     position: 'left',
+    launcher: BUTTON,
   });
   assert.deepEqual(of(twoProfiles(), 'gone'), {
     color: '#465EA4',
     position: 'right',
+    launcher: BUTTON,
   });
 
   // A value the launcher cannot draw is left to the settings.
   const odd = page();
   odd.items[0].elements[0].values.accent_color = 'url(//evil)';
-  assert.deepEqual(of(odd), {position: 'right'});
+  assert.deepEqual(of(odd), {position: 'right', launcher: BUTTON});
   odd.items[0].elements[0].values.screen_side = 'top';
-  assert.deepEqual(of(odd), {});
+  assert.deepEqual(of(odd), {launcher: BUTTON});
 
   const anotherUi = page();
   anotherUi.items[0].ui = 'guest_directory';
@@ -1265,6 +2022,81 @@ test('the launcher takes its colour and side from the profile', () => {
     noDefault,
   ]) {
     assert.deepEqual(of(nothing), {});
+  }
+});
+
+test('the round button is the profile’s: its picture, its preview, or none at all', () => {
+  const button = (change) => {
+    const changed = page();
+    const element = (name) =>
+      changed.items[0].elements.find((e) => e.name === name);
+    change(element);
+    return overlayOf(changed).launcher;
+  };
+  assert.deepEqual(
+    button((element) => {
+      element('launcher').values = {icon: 'filled', has_greeting_preview: true};
+    }),
+    {icon: 'filled', preview: true}
+  );
+  // A picture the launcher does not have is left to the embed.
+  assert.deepEqual(
+    button((element) => {
+      element('launcher').values = {icon: 'star', has_greeting_preview: 'yes'};
+    }),
+    {icon: null, preview: false}
+  );
+  assert.deepEqual(
+    button((element) => {
+      delete element('launcher').values;
+    }),
+    {icon: null, preview: false}
+  );
+  // A profile that leaves the button out has none.
+  for (const without of [
+    (element) => delete element('root').values.launcher,
+    (element) => (element('root').values.launcher = 'missing'),
+    // The slot holds a `Launcher` and nothing else.
+    (element) => (element('root').values.launcher = 'header'),
+    (element) => (element('root').values.launcher = 7),
+  ]) {
+    assert.equal(button(without), false);
+  }
+});
+
+test('the launcher and the chat read the same profile the same way', () => {
+  const profiles = [
+    page(),
+    twoProfiles(),
+    (() => {
+      const changed = page();
+      const values = changed.items[0].elements.find(
+        (e) => e.name === 'launcher'
+      ).values;
+      values.icon = 'filled';
+      values.has_greeting_preview = true;
+      return changed;
+    })(),
+    (() => {
+      const changed = page();
+      delete changed.items[0].elements[0].values.launcher;
+      return changed;
+    })(),
+  ];
+  for (const read of profiles) {
+    for (const code of [undefined, 'govisit']) {
+      const launcher = overlayOf(read, code);
+      const chat = launcherAppearance(pickProfile(read, code));
+      assert.equal(launcher.color, chat.accentColor);
+      assert.equal(launcher.position, chat.side);
+      // The launcher says `false` where the chat says `null`: no button.
+      assert.deepEqual(
+        launcher.launcher,
+        chat.button
+          ? {icon: chat.button.icon, preview: chat.button.hasGreetingPreview}
+          : false
+      );
+    }
   }
 });
 
@@ -1289,12 +2121,12 @@ test('the launcher reads the profile for an Assistant ID only, and waits three s
         Mq: 'https://backend.inhotel.io',
         cd: {
           appearanceOverlay: bundledLauncherHandler('appearanceOverlay', {}),
+          embedProfileOf: bundledLauncherHandler('embedProfileOf', {}),
         },
       }
     );
-  const answer = async (fetcher, ...args) => ({
-    ...(await reader(fetcher)(...args)),
-  });
+  const answer = async (fetcher, ...args) =>
+    JSON.parse(JSON.stringify(await reader(fetcher)(...args)));
   const profiles = async () => ({ok: true, json: async () => twoProfiles()});
 
   assert.deepEqual(await answer(profiles, 'hotel-paris'), {});
@@ -1304,6 +2136,7 @@ test('the launcher reads the profile for an Assistant ID only, and waits three s
   assert.deepEqual(await answer(profiles, ASSISTANT.toUpperCase()), {
     color: '#465EA4',
     position: 'right',
+    launcher: BUTTON,
   });
   assert.equal(
     calls[0].url,
@@ -1313,6 +2146,7 @@ test('the launcher reads the profile for an Assistant ID only, and waits three s
   assert.deepEqual(await answer(profiles, ASSISTANT, 'govisit'), {
     color: '#0B6E4F',
     position: 'left',
+    launcher: BUTTON,
   });
 
   for (const failing of [
@@ -1441,9 +2275,11 @@ test('the launcher lays the profile over the legacy settings, and one failed rea
   const read = async (world, query) => {
     const context = launcherWorld(world);
     vm.runInNewContext(settingsRead() + '\n;this.Pq = Pq;', context);
-    return {
-      ...(await context.Pq({account_id: -1, inbox_id: ASSISTANT, ...query})),
-    };
+    return JSON.parse(
+      JSON.stringify(
+        await context.Pq({account_id: -1, inbox_id: ASSISTANT, ...query})
+      )
+    );
   };
 
   const queries = [];
@@ -1454,6 +2290,7 @@ test('the launcher lays the profile over the legacy settings, and one failed rea
       title: 'Legacy title',
       color: '#465EA4',
       position: 'right',
+      launcher: BUTTON,
     }
   );
   // The legacy service is asked what it always was, and nothing more.
@@ -1470,14 +2307,86 @@ test('the launcher lays the profile over the legacy settings, and one failed rea
       {legacy, profiles: twoProfiles()},
       {appearance_profile: 'govisit'}
     ),
-    {title: 'Legacy title', color: '#0B6E4F', position: 'left'}
+    {
+      title: 'Legacy title',
+      color: '#0B6E4F',
+      position: 'left',
+      launcher: BUTTON,
+    }
   );
   assert.deepEqual(await read({legacy, profiles: null}), legacy);
   assert.deepEqual(await read({legacy: null, profiles: twoProfiles()}), {
     color: '#465EA4',
     position: 'right',
+    launcher: BUTTON,
   });
   assert.deepEqual(await read({legacy: null, profiles: null}), {});
+});
+
+test('a profile the page gives in its embed is the launcher’s, with no read', async () => {
+  const legacy = {title: 'Legacy title', color: '#111111', position: 'left'};
+  const read = async (world, query) => {
+    const context = launcherWorld(world);
+    vm.runInNewContext(settingsRead() + '\n;this.Pq = Pq;', context);
+    return JSON.parse(
+      JSON.stringify(
+        await context.Pq({account_id: -1, inbox_id: ASSISTANT, ...query})
+      )
+    );
+  };
+  const reads = [];
+  assert.deepEqual(
+    await read(
+      {legacy, profiles: twoProfiles(), reads},
+      {appearance: embedded()}
+    ),
+    {
+      title: 'Legacy title',
+      color: '#0B6E4F',
+      position: 'left',
+      launcher: {icon: 'filled', preview: false},
+    }
+  );
+  assert.equal(reads.length, 0);
+
+  // What is not a profile leaves the assistant's own to be read.
+  for (const nothing of [
+    undefined,
+    null,
+    'root = FloatingChat()',
+    {},
+    {elements: []},
+    {elements: 'none'},
+  ]) {
+    const asked = [];
+    assert.deepEqual(
+      await read(
+        {legacy, profiles: twoProfiles(), reads: asked},
+        {appearance: nothing}
+      ),
+      {
+        title: 'Legacy title',
+        color: '#465EA4',
+        position: 'right',
+        launcher: BUTTON,
+      }
+    );
+    assert.equal(asked.length, 1);
+  }
+
+  // The copy the iframe is sent is plain data, whatever the page holds.
+  const copy = bundledLauncherHandler('embedProfileOf', {});
+  const own = embedded();
+  own.elements[1].values.onClick = () => {};
+  assert.deepEqual(JSON.parse(JSON.stringify(copy(own))), {
+    ui: 'floating_chat',
+    code: 'embed',
+    is_default: true,
+    elements: embedded().elements,
+  });
+  const loop = embedded();
+  loop.elements[0].values.self = loop;
+  assert.equal(copy(loop), null);
 });
 
 test('the launcher hands the iframe the colour, the side and what it needs to read the profile', async () => {
@@ -1572,14 +2481,19 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
       locale,
       embedKeys,
     } = state.config;
-    return {
-      primaryColor,
-      position,
-      title,
-      appearanceProfile,
-      locale,
-      embedKeys,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        primaryColor,
+        position,
+        title,
+        appearanceProfile,
+        locale,
+        embedKeys,
+        // `undefined` is left out here, as it is of the iframe's address.
+        appearanceInline: state.config.appearanceInline,
+        launcher: state.launcher,
+      })
+    );
   };
   const legacy = {title: 'Legacy title', color: '#111111', position: 'left'};
 
@@ -1588,7 +2502,6 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
     primaryColor: '#111111',
     position: 'left',
     title: 'Legacy title',
-    appearanceProfile: undefined,
     locale: 'cs',
     embedKeys: '',
   });
@@ -1597,9 +2510,9 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
     primaryColor: '#465EA4',
     position: 'right',
     title: 'Legacy title',
-    appearanceProfile: undefined,
     locale: 'en-US',
     embedKeys: '',
+    launcher: BUTTON,
   });
   // What the page set in its own embed stands in front of both, and is named.
   assert.deepEqual(
@@ -1619,8 +2532,97 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
       appearanceProfile: 'govisit',
       locale: 'en-US',
       embedKeys: 'title,primaryColor',
+      launcher: BUTTON,
     }
   );
+  // A profile without the round button, and one the page gives itself: the
+  // iframe is told the page has its own, so it reads none.
+  const noButton = twoProfiles();
+  delete noButton.items[0].elements[0].values.launcher;
+  assert.equal((await handed({legacy, profiles: noButton})).launcher, false);
+  assert.deepEqual(
+    await handed({
+      legacy,
+      profiles: twoProfiles(),
+      props: {appearance: embedded()},
+    }),
+    {
+      primaryColor: '#0B6E4F',
+      position: 'left',
+      title: 'Legacy title',
+      locale: 'en-US',
+      embedKeys: '',
+      appearanceInline: 1,
+      launcher: {icon: 'filled', preview: false},
+    }
+  );
+});
+
+test('once the chat has loaded it is sent the page’s own profile, and the greeting shows above a button that asks for it', () => {
+  // The launcher's step for a chat that has just loaded, closed.
+  const loaded = ({launcher, ownProfile, props = {}, seen = false}) => {
+    const sent = [];
+    const timers = [];
+    const bridge = {
+      state: {isLoaded: false, isOpen: false, config: {}, launcher},
+      setState(change, callback) {
+        Object.assign(this.state, change);
+        if (callback) callback();
+      },
+      props,
+      ownProfile,
+      shouldOpenByDefault: () => false,
+      storage: {getPopupSeen: () => seen},
+      send: (...args) => sent.push(args),
+    };
+    bundledLauncherHandler('handleChatLoaded', bridge, {
+      setTimeout: (run, ms) => timers.push({run, ms}),
+    })({});
+    timers.forEach((timer) => timer.run());
+    return JSON.parse(JSON.stringify(sent));
+  };
+  const preview = [
+    'notifications:display',
+    {shouldDisplayNotifications: true, popUpInitialMessage: true},
+  ];
+  const plan = ['inhotel:plan', {plan: null}];
+
+  // Without a profile, and with a button that does not ask: as before.
+  assert.deepEqual(loaded({}), [plan]);
+  assert.deepEqual(loaded({launcher: BUTTON}), [plan]);
+  assert.deepEqual(loaded({launcher: false}), [plan]);
+  // The profile's button asks for the greeting, or the embed does.
+  assert.deepEqual(loaded({launcher: {icon: 'outlined', preview: true}}), [
+    plan,
+    preview,
+  ]);
+  assert.deepEqual(loaded({props: {popUpInitialMessage: true}}), [
+    plan,
+    preview,
+  ]);
+  // A guest who has seen it is not shown it again.
+  assert.deepEqual(
+    loaded({launcher: {icon: 'outlined', preview: true}, seen: true}),
+    [plan]
+  );
+
+  // The page's own profile follows, as the launcher copied it at the start.
+  const copy = bundledLauncherHandler('embedProfileOf', {});
+  const ownProfile = copy(embedded());
+  assert.deepEqual(loaded({ownProfile}), [
+    plan,
+    [
+      'config:update',
+      {
+        appearance: {
+          ui: 'floating_chat',
+          code: 'embed',
+          is_default: true,
+          elements: embedded().elements,
+        },
+      },
+    ],
+  ]);
 });
 
 test('the embed can name the profile to draw', () => {
@@ -1653,6 +2655,22 @@ test('the embed can name the profile to draw', () => {
     'govisit'
   );
   assert.equal(named(), undefined);
+
+  // The page's own profile is taken from its configuration as it is.
+  const own = embedded();
+  const given = vm.runInNewContext(bootstrap + '\n(ownAppearance);', {
+    window: {
+      FloatingChatWindow: {
+        config: {
+          agent_card_url: `https://${ASSISTANT}.agents.inhotel.io/.well-known/agent-card.json`,
+          appearance: own,
+        },
+      },
+    },
+    document: {currentScript: null},
+    ACCOUNT_ID: -1,
+  });
+  assert.equal(given, own);
 });
 
 test('the launcher wires the profile into its settings and the iframe configuration', () => {
@@ -1661,11 +2679,26 @@ test('the launcher wires the profile into its settings and the iframe configurat
     /appearanceProfile: appearanceProfile,/,
     // which asks for it together with the legacy settings,
     /appearance_profile: e\.appearanceProfile/,
-    /cd\.fetchAppearanceOverlay\(t\.inbox_id, t\.appearance_profile\)/,
+    /cd\.fetchAppearanceOverlay\(\s*t\.inbox_id,\s*t\.appearance_profile,\s*t\.appearance\s*\)/,
     // and tells the iframe what it needs to read the profile itself.
     /T\.appearanceProfile = this\.props\.appearanceProfile/,
     /T\.locale = cd\.pageLanguage\(document, navigator\)/,
     /T\.embedKeys = cd\.embedKeysOf\(this\.props\)/,
+    // The page's own profile goes the same way: to the settings read, and to
+    // the iframe once it has loaded.
+    /appearance: ownAppearance,/,
+    /appearance: e\.appearance,/,
+    /this\.ownProfile = cd\.embedProfileOf\(\s*this\.props\.appearance\s*\)/,
+    /T\.appearanceInline = this\.ownProfile \? 1 : void 0/,
+    /n\.send\('config:update', \{appearance: n\.ownProfile\}\)/,
+    // The button is drawn as the profile has it: not at all, or with its
+    // picture, unless the page's own embed says otherwise.
+    /launcher: this\.state\.launcher,/,
+    /O = t\.hideToggleButton \|\| !1 === e\.launcher,/,
+    /c = t\.iconVariant \|\| \(e\.launcher && e\.launcher\.icon\) \|\| void 0,/,
+    /iconVariant: br,/,
+    // and the greeting shows above it when the profile asks for that.
+    /a\.popUpInitialMessage \|\|\s*!\(!n\.state\.launcher \|\| !0 !== n\.state\.launcher\.preview\),/,
   ]) {
     assert.match(launcher, wiring);
   }

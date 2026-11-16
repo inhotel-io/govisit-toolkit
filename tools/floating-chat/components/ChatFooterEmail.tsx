@@ -13,6 +13,11 @@ import PhoneIcon from './PhoneIcon';
 import DiscardIcon from './DiscardIcon';
 import Tippy from '@tippyjs/react';
 import {FadeLoader} from 'react-spinners';
+import {ContactAppearance} from '../helpers/appearance';
+
+// Where the hint of the phone, or of the e-mail, stands: before the first
+// copy, after one, or just after a copy that worked or failed.
+type CopyHint = 'first' | 'again' | 'copied' | 'failed';
 
 const ChatFooterEmail = ({
   onClickMailIcon,
@@ -25,7 +30,7 @@ const ChatFooterEmail = ({
   isLoading,
   statusMessageCF,
   handleSummarize,
-  formConfirmation,
+  look,
 }: {
   onClickMailIcon: () => void;
   isMailIconClicked: boolean;
@@ -37,29 +42,36 @@ const ChatFooterEmail = ({
   isLoading: boolean;
   statusMessageCF: string;
   handleSummarize: () => void;
-  // What the bar says once the contact form is sent.
-  formConfirmation: string;
+  // What the look gives the contact line: its hints, and the words of its
+  // form when it has one.
+  look: ContactAppearance;
 }) => {
-  const [tooltipContentEmail, setTooltipContentEmail] = useState(
-    'Copy to clipboard'
-  );
-  const [tooltipContentPhone, setTooltipContentPhone] = useState(
-    'Copy to clipboard'
-  );
+  const {form} = look;
+  const [emailHint, setEmailHint] = useState<CopyHint>('first');
+  const [phoneHint, setPhoneHint] = useState<CopyHint>('first');
+  // The words are read from the look each time, so a look that arrives late
+  // is the one the hint speaks in.
+  const hintText = (hint: CopyHint): string =>
+    ({
+      first: look.firstCopyHint,
+      again: look.copyHint,
+      copied: look.copiedNote,
+      failed: look.copyFailedNote,
+    }[hint]);
 
   const copyToClipboard = (
     text: string,
-    setTooltipContent: React.Dispatch<React.SetStateAction<string>>
+    setHint: React.Dispatch<React.SetStateAction<CopyHint>>
   ) => {
     navigator.clipboard.writeText(text).then(
       () => {
-        setTooltipContent('Copied!');
-        setTimeout(() => setTooltipContent('Click to copy'), 1500);
+        setHint('copied');
+        setTimeout(() => setHint('again'), 1500);
       },
       (err) => {
         console.error('Failed to copy:', err);
-        setTooltipContent('Failed to copy');
-        setTimeout(() => setTooltipContent('Click to copy'), 1500);
+        setHint('failed');
+        setTimeout(() => setHint('again'), 1500);
       }
     );
   };
@@ -111,7 +123,7 @@ const ChatFooterEmail = ({
             >
               <Tippy
                 // theme="dynamic-primary"
-                content="Discard message"
+                content={form ? form.discardHint : ''}
                 interactive={true}
                 interactiveBorder={20}
                 delay={100}
@@ -148,7 +160,7 @@ const ChatFooterEmail = ({
                     marginLeft: '8px',
                   }}
                 >
-                  Discard
+                  {form && form.discardLabel}
                 </Box>
               )}
             </Box>
@@ -163,7 +175,7 @@ const ChatFooterEmail = ({
                       marginRight: '8px',
                     }}
                   >
-                    Send
+                    {form && form.sendLabel}
                   </Box>
                 )}
                 {isLoading && (
@@ -174,12 +186,12 @@ const ChatFooterEmail = ({
                       marginRight: '8px',
                     }}
                   >
-                    Sending
+                    {form && form.sendingLabel}
                   </Box>
                 )}
                 <Tippy
                   // theme="dynamic-primary"
-                  content="Send as email"
+                  content={form ? form.sendHint : ''}
                   interactive={true}
                   interactiveBorder={20}
                   delay={100}
@@ -238,7 +250,7 @@ const ChatFooterEmail = ({
                   marginLeft: '8px', // Ensure some space between the button and text, adjust as needed
                 }}
               >
-                {formConfirmation}
+                {form && form.confirmation}
               </Box>
             )}
 
@@ -295,12 +307,10 @@ const ChatFooterEmail = ({
                 fontSize: '14px',
               }}
             >
-              <Tippy content={tooltipContentPhone}>
+              <Tippy content={hintText(phoneHint)}>
                 <Text
                   sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
-                  onClick={() =>
-                    copyToClipboard(hotelPhone, setTooltipContentPhone)
-                  }
+                  onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
                 >
                   {hotelPhone}
                 </Text>
@@ -320,7 +330,7 @@ const ChatFooterEmail = ({
                 fontSize: '14px',
               }}
             >
-              <Tippy content={tooltipContentEmail}>
+              <Tippy content={hintText(emailHint)}>
                 <Text
                   sx={{
                     ml: 2,
@@ -331,9 +341,7 @@ const ChatFooterEmail = ({
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
                   }}
-                  onClick={() =>
-                    copyToClipboard(hotelEmail, setTooltipContentEmail)
-                  }
+                  onClick={() => copyToClipboard(hotelEmail, setEmailHint)}
                 >
                   {hotelEmail}
                 </Text>
@@ -341,7 +349,8 @@ const ChatFooterEmail = ({
             </Box>
             <Tippy
               // theme="dynamic-primary"
-              content="Contact Us"
+              content={form ? form.openHint : ''}
+              disabled={!form}
               interactive={true}
               interactiveBorder={20}
               delay={100}

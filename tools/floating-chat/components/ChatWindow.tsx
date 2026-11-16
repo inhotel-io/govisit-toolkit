@@ -41,7 +41,11 @@ import {
 } from '../helpers/types';
 import Logger from '../helpers/logger';
 import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
-import {Appearance, settingsAppearance} from '../helpers/appearance';
+import {
+  Appearance,
+  FormFieldAppearance,
+  settingsAppearance,
+} from '../helpers/appearance';
 import {
   agentEndpoint,
   isTrustedParentMessage,
@@ -982,8 +986,23 @@ class ChatWindow extends React.Component<Props, State> {
   // };
   handleSubmitCF = () => {
     this.setState({clickedSubmit: true});
-    const {firstName, lastName, email, message} = this.state;
-    if (!firstName || !lastName || !email || !message) {
+    const contact = this.look().contact;
+    const form = contact && contact.form;
+    if (!form) return;
+    // What the guest wrote in each field the form has. A field it does not
+    // have is sent empty, and one it requires must be filled.
+    const fields: Array<[FormFieldAppearance | null, string | null]> = [
+      [form.firstName, this.state.firstName],
+      [form.lastName, this.state.lastName],
+      [form.email, this.state.email],
+      [form.message, this.state.message],
+    ];
+    const [firstName, lastName, email, message] = fields.map(
+      ([field, written]) => (field && written) || ''
+    );
+    if (
+      fields.some(([field, written]) => field && field.isRequired && !written)
+    ) {
       console.log('Missing value');
       return;
     }
@@ -1112,17 +1131,18 @@ class ChatWindow extends React.Component<Props, State> {
     // there is nowhere to send it, so it is not offered. For a chat drawn from
     // its settings the flag says so already: the service that gives it knows
     // whether there is an e-mail.
+    const form = look.contact ? look.contact.form : null;
     const hasContactForm =
-      !!look.contact &&
-      look.contact.hasForm &&
+      !!form &&
+      form.isOffered &&
       (look.source !== 'profile' || !!this.props.hotelEmail);
     const isFormOpen =
       this.state.isMailIconClicked &&
-      (look.source === 'profile' ? hasContactForm : !!look.contact);
+      (look.source === 'profile' ? hasContactForm : !!form);
     // A profile lists the branding or leaves it out. For a chat drawn from
     // its settings the subscription plan decides, as it always has.
     const hasBranding =
-      look.branding && (look.source === 'profile' || shouldDisplayBranding);
+      !!look.branding && (look.source === 'profile' || shouldDisplayBranding);
 
     return (
       <Box
@@ -1181,7 +1201,7 @@ class ChatWindow extends React.Component<Props, State> {
                 clickedSubmit={this.state.clickedSubmit}
                 shouldSummarize={this.state.shouldSummarize}
                 primaryColor={this.props.primaryColor}
-                title={look.contact.formTitle}
+                form={form}
               />
             </Box>
           )}
@@ -1229,13 +1249,13 @@ class ChatWindow extends React.Component<Props, State> {
                 isMailIconClicked={isFormOpen}
                 handleSubmitCF={this.handleSubmitCF}
                 isSubmittedCF={this.state.isContactFormSubmitted}
-                hotelEmail={this.props.hotelEmail}
-                hotelPhone={this.props.hotelPhone}
+                hotelEmail={look.contact.email || this.props.hotelEmail}
+                hotelPhone={look.contact.phone || this.props.hotelPhone}
                 shouldShowContactForm={hasContactForm}
                 isLoading={this.state.isLoading}
                 statusMessageCF={this.state.statusMessageCF}
                 handleSummarize={this.handleSummarize}
-                formConfirmation={look.contact.formConfirmation}
+                look={look.contact}
               />
             </Box>
           )}
@@ -1245,7 +1265,7 @@ class ChatWindow extends React.Component<Props, State> {
               bg: 'rgb(239, 239, 239)',
             }}
           >
-            {hasBranding && <InhotelBranding />}
+            {hasBranding && <InhotelBranding {...look.branding} />}
           </Box>
 
           <img

@@ -9,6 +9,7 @@ import {
   APPEARANCE_LOAD_TIMEOUT_MS,
   AppearanceProfile,
   embedKeys,
+  embedProfile,
   isAssistantId,
   resolveAppearance,
 } from '../helpers/appearance';
@@ -62,6 +63,9 @@ type Config = {
   // primaryColor the page set in its own embed, comma-separated. Those stand
   // in front of the profile.
   embedKeys?: string;
+  // Set when the page gives a whole profile in its own embed. The launcher
+  // sends that profile by message, and the assistant's is not read.
+  appearanceInline?: string;
 };
 
 const parseCustomerMetadata = (str: string): CustomerMetadata => {
@@ -127,6 +131,10 @@ type State = {
   assistantRemount: boolean;
   // The appearance profile of the assistant in `config.inbox`, once read.
   profile: AppearanceProfile | null;
+  // The profile the page gives in its own embed, as the launcher sent it. It
+  // is the page's, so it stands in front of the assistant's, whichever
+  // assistant the page shows.
+  embed: unknown;
 };
 
 class Wrapper extends React.Component<Props, State> {
@@ -147,6 +155,7 @@ class Wrapper extends React.Component<Props, State> {
       config: props.config,
       assistantRemount: false,
       profile: null,
+      embed: null,
     };
   }
 
@@ -188,11 +197,14 @@ class Wrapper extends React.Component<Props, State> {
 
   // Read the assistant's appearance profile for this UI. Until it answers the
   // chat is drawn from its settings, and it stays so when the assistant has no
-  // profile or the read does not answer in time.
+  // profile or the read does not answer in time. A page with a profile of its
+  // own needs no read.
   loadAppearance = () => {
     this.cancelAppearance();
     const {inbox, appearanceProfile, locale} = this.state.config;
-    if (!isAssistantId(inbox)) return;
+    const hasOwnProfile =
+      !!Number(this.state.config.appearanceInline) || !!this.state.embed;
+    if (!isAssistantId(inbox) || hasOwnProfile) return;
 
     const controller = new AbortController();
     this.appearanceRequest = controller;
@@ -229,9 +241,14 @@ class Wrapper extends React.Component<Props, State> {
 
   handleConfigUpdate = (payload: any) => {
     const updates = sanitizeConfigPayload(payload);
+    // The page's own profile comes as it was given. It is checked when it is
+    // read, like one from the network.
+    const hasEmbed = isRecord(payload) && 'appearance' in payload;
     this.logger.debug('Updating widget config:', updates);
 
-    this.setState(({config, assistantRemount, profile}) => {
+    // The assistant's own profile is not waited for any longer.
+    if (hasEmbed) this.cancelAppearance();
+    this.setState(({config, assistantRemount, profile, embed}) => {
       const nextConfig = {...config, ...updates};
       const isAnotherAssistant = config.inbox !== nextConfig.inbox;
       return {
@@ -239,6 +256,7 @@ class Wrapper extends React.Component<Props, State> {
         assistantRemount: assistantRemount || isAnotherAssistant,
         // One assistant is never drawn in the look of another.
         profile: isAnotherAssistant ? null : profile,
+        embed: hasEmbed ? payload.appearance : embed,
       };
     });
   };
@@ -292,10 +310,11 @@ class Wrapper extends React.Component<Props, State> {
     } else {
       shouldShowCF = false;
     }
-    // What the chat looks like: the assistant's appearance profile when it has
-    // one, and otherwise the settings above, as it has always been drawn.
+    // What the chat looks like: the profile the page gives itself, else the
+    // assistant's appearance profile when it has one, and otherwise the
+    // settings above, as it has always been drawn.
     const appearance = resolveAppearance(
-      this.state.profile,
+      embedProfile(this.state.embed, config.locale) || this.state.profile,
       {
         title,
         subtitle,
