@@ -24,11 +24,10 @@ const isCustomerMessage = (msg: any, customerId?: string): boolean => {
 const isAgentMessage = (msg: any): boolean => {
   return !!(msg?.user_id || msg?.type === 'agent' || msg?.type === 'bot');
 };
-import ChatMessage from './ChatMessage';
+import ChatHeader from './ChatHeader';
+import ChatMessages from './ChatMessages';
 import ChatFooter from './ChatFooter';
-import AgentAvailability from './AgentAvailability';
 import InhotelBranding from './InhotelBranding';
-import CloseIcon from './CloseIcon';
 import {
   shorten,
   shouldActivateGameMode,
@@ -42,6 +41,7 @@ import {
 } from '../helpers/types';
 import Logger from '../helpers/logger';
 import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
+import {Appearance, settingsAppearance} from '../helpers/appearance';
 import {
   agentEndpoint,
   isTrustedParentMessage,
@@ -54,9 +54,7 @@ import {
 import analytics from '../helpers/analytics';
 import EmbeddedGame from './EmbeddedGame';
 import UnreadMessages from './UnreadMessages';
-import QuickReplies from './QuickReplies';
 import ContactForm from './ContactForm';
-import {PulseLoader, SyncLoader} from 'react-spinners';
 import ChatFooterEmail from './ChatFooterEmail';
 // import Swal from 'sweetalert2';
 
@@ -92,6 +90,9 @@ type Props = {
   avatarURL?: string;
   parentOrigin?: string | null;
   assistantRemount?: boolean;
+  // What the chat looks like: its blocks and their values. Left out, it is
+  // the look the flat settings above describe.
+  appearance?: Appearance;
 };
 
 type State = {
@@ -138,6 +139,8 @@ class ChatWindow extends React.Component<Props, State> {
   avatarTimeout: ReturnType<typeof setTimeout> | null = null;
   subscriptions: Array<() => void> = [];
   logger: Logger;
+  // The greeting the conversation was last opened with.
+  shownGreeting: string | undefined = undefined;
   // A2A mode - no legacy SDK instance
 
   constructor(props: Props) {
@@ -209,7 +212,9 @@ class ChatWindow extends React.Component<Props, State> {
 
   async componentDidMount() {
     // A2A mode - restore history from localStorage
-    const {inboxId, greeting} = this.props;
+    const {inboxId} = this.props;
+    const greeting = this.greetingText();
+    this.shownGreeting = greeting;
     if (inboxId) {
       const savedHistory = getChatHistory(inboxId);
       const savedSessionId = getSessionId(inboxId);
@@ -241,14 +246,7 @@ class ChatWindow extends React.Component<Props, State> {
 
       // Add greeting if no messages and greeting exists
       if (restoredMessages.length === 0 && greeting) {
-        restoredMessages.push({
-          id: 'greeting',
-          body: greeting,
-          customer_id: undefined,
-          user_id: 0, // Bot user
-          created_at: new Date().toISOString(),
-          type: 'bot',
-        });
+        restoredMessages.push(this.greetingMessage(greeting));
       }
 
       this.setState({
@@ -273,7 +271,68 @@ class ChatWindow extends React.Component<Props, State> {
       this.setState({agentCardAvatarURL: undefined, isAvatarLoading: true});
       this.loadAgentAvatar();
     }
+    this.followGreeting();
   }
+
+  // What the chat looks like. `Widget` passes the model it resolved from the
+  // assistant's appearance profile; without one it is what the flat settings
+  // describe.
+  look = (): Appearance => {
+    const {
+      appearance,
+      title,
+      subtitle,
+      greeting,
+      newMessagePlaceholder,
+      primaryColor,
+      shouldShowContactForm,
+    } = this.props;
+
+    return (
+      appearance ||
+      settingsAppearance({
+        title,
+        subtitle,
+        greeting,
+        newMessagePlaceholder,
+        primaryColor,
+        shouldShowContactForm,
+      })
+    );
+  };
+
+  greetingText = (): string | undefined => {
+    const {greeting} = this.look();
+
+    return greeting ? greeting.text : undefined;
+  };
+
+  greetingMessage = (body: string): Message => ({
+    id: 'greeting',
+    body,
+    customer_id: undefined,
+    user_id: 0, // Bot user
+    created_at: new Date().toISOString(),
+    type: 'bot',
+  });
+
+  // The greeting is the look's. When the look changes before the guest has
+  // written, as when the profile arrives after the chat has loaded, the
+  // greeting follows it. A conversation under way is left as it is.
+  followGreeting = () => {
+    const greeting = this.greetingText();
+    if (greeting === this.shownGreeting) return;
+    this.shownGreeting = greeting;
+    this.setState(({messages}) => {
+      const isUntouched =
+        messages.length === 0 ||
+        (messages.length === 1 && messages[0].id === 'greeting');
+
+      return isUntouched
+        ? {messages: greeting ? [this.greetingMessage(greeting)] : []}
+        : null;
+    });
+  };
 
   loadAgentAvatar = () => {
     if (this.avatarRequest) this.avatarRequest.abort();
@@ -815,7 +874,7 @@ class ChatWindow extends React.Component<Props, State> {
     this.setState({statusMessageCF: null});
   };
   handleSummarize = () => {
-    const updateMessages = this.props.greeting
+    const updateMessages = this.greetingText()
       ? this.state.messages.length - 1
       : this.state.messages.length;
 
@@ -966,9 +1025,6 @@ class ChatWindow extends React.Component<Props, State> {
 
   render() {
     const {
-      title = 'Welcome!',
-      subtitle = 'How can we help you?',
-      newMessagePlaceholder = 'Start typing...',
       emailInputPlaceholder = 'Enter your email',
       agentAvailableText = "We're online right now!",
       agentUnavailableText = "We're away at the moment.",
@@ -979,8 +1035,6 @@ class ChatWindow extends React.Component<Props, State> {
       showAgentAvailability = false,
       accountId,
       baseUrl,
-      shouldShowContactForm = false,
-      avatarURL,
     } = this.props;
     const {
       customerId,
@@ -1024,22 +1078,18 @@ class ChatWindow extends React.Component<Props, State> {
       return null;
     }
 
+    // Each block below is one component of the UI's library. The look lists
+    // the blocks the chat has; one it leaves out is not drawn.
+    const look = this.look();
     const shouldAskForEmail = this.askForEmailUpfront();
     const hasAvailableAgents = availableAgents.length > 0;
     const replies = this.getQuickReplies(messages);
-    console.log(
-      'ChatWindow: ',
-      shouldShowContactForm,
-      'Type: ',
-      typeof shouldShowContactForm
-    );
-    // const {greeting}= this.props
-    // var numberOfMessages = 0;
-    // console.log("NewMessagePlaceholder: ", newMessagePlaceholder);
-    // console.log("newMessagesNotificationText: ", newMessagesNotificationText);
-    // console.log('no. of messages', Math.floor(this.state.numberOfMessages / 2));
-    // console.log('SummarizeGenerated?: ', this.state.isSummarizeGenerated);
-    // console.log("Greeting", this.props.greeting)
+    const isFormOpen = this.state.isMailIconClicked && !!look.contact;
+    // A profile lists the branding or leaves it out. For a chat drawn from
+    // its settings the subscription plan decides, as it always has.
+    const hasBranding =
+      look.branding && (look.source === 'profile' || shouldDisplayBranding);
+
     return (
       <Box
         id="widgetContainer"
@@ -1051,9 +1101,7 @@ class ChatWindow extends React.Component<Props, State> {
         <Flex
           className={isMobile ? 'Mobile' : ''}
           sx={{
-            bg: this.state.isMailIconClicked
-              ? 'rgb(239, 239, 239)'
-              : 'background',
+            bg: isFormOpen ? 'rgb(239, 239, 239)' : 'background',
             flexDirection: 'column',
             height: '100%',
             width: '100%',
@@ -1061,133 +1109,34 @@ class ChatWindow extends React.Component<Props, State> {
             flex: 1,
           }}
         >
-          <Box sx={{bg: 'primary', position: 'relative'}}>
-            <Box pt={3} pb={showAgentAvailability ? 12 : 16} px={20}>
-              {/* TODO: wrap in a button element */}
-              {isCloseable && !this.isOnDeprecatedVersion() && (
-                <CloseIcon
-                  className="CloseIcon"
-                  width={24}
-                  height={24}
-                  onClick={this.emitCloseWindow}
-                />
-              )}
-              <Heading
-                as="h2"
-                className="Inhotel-heading"
-                sx={{color: 'background', my: 1, mr: 12}}
-              >
-                {title}
-              </Heading>
-              <Text sx={{color: 'offset'}}>{subtitle}</Text>
-            </Box>
+          <ChatHeader
+            header={look.header}
+            canClose={isCloseable && !this.isOnDeprecatedVersion()}
+            isMobile={isMobile}
+            onClose={this.emitCloseWindow}
+            showAgentAvailability={showAgentAvailability}
+            hasAvailableAgents={hasAvailableAgents}
+            agentAvailableText={agentAvailableText}
+            agentUnavailableText={agentUnavailableText}
+          />
 
-            {showAgentAvailability && (
-              <AgentAvailability
-                hasAvailableAgents={hasAvailableAgents}
-                agentAvailableText={agentAvailableText}
-                agentUnavailableText={agentUnavailableText}
-              />
-            )}
-          </Box>
-          {!this.state.isMailIconClicked && (
-            <Box
-              p={3}
-              px={'20px'}
-              sx={{
-                flex: 1,
-                boxShadow: 'rgba(0, 0, 0, 0.2) 0px 21px 4px -20px inset',
-                overflowY: 'scroll',
-              }}
-            >
-              {messages.map((msg, key) => {
-                const next = messages[key + 1];
-                const isLastInGroup = next
-                  ? msg.customer_id !== next.customer_id
-                  : true;
-                const isLastMessage = key === messages.length - 1;
-                const isMe = isCustomerMessage(msg, customerId);
-                var userBot = {
-                  archived_at: null,
-                  created_at: '2024-03-11T07:13:39',
-                  disabled_at: null,
-                  display_name: null,
-                  email: 'testhotel@inhotel.io',
-                  full_name: null,
-                  id: 117,
-                  object: 'user',
-                  profile_photo_url: this.state.avatarURL,
-                  role: 'admin',
-                };
-                // if (msg.user != null){
-                //   userBot = msg.user;
-                // }
-                const loader =
-                  isLastMessage && this.state.shouldShowMessageLoading ? (
-                    <Box
-                      sx={{
-                        backgroundColor: 'rgba(200, 200, 200, 0.2)',
-                        padding: '6px 10px',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      <PulseLoader
-                        color="rgba(200, 200, 200, 1.0)"
-                        size="7px"
-                        speedMultiplier={0.4}
-                      />
-                    </Box>
-                  ) : null;
-                return (
-                  <React.Fragment key={key}>
-                    <motion.div
-                      initial={{opacity: 0, x: isMe ? 2 : -2}}
-                      animate={{opacity: 1, x: 0}}
-                      transition={{duration: 0.2, ease: 'easeIn'}}
-                    >
-                      <ChatMessage
-                        message={msg}
-                        isMe={isMe}
-                        companyName={companyName}
-                        isLastInGroup={isLastInGroup}
-                        shouldDisplayTimestamp={isLastMessage}
-                        shouldShowLoader={false}
-                        avatarURL={this.state.agentCardAvatarURL}
-                        isAvatarLoading={this.state.isAvatarLoading}
-                      />
-                    </motion.div>
-                    {isLastMessage && this.state.shouldShowMessageLoading && (
-                      <motion.div
-                        initial={{opacity: 0}}
-                        animate={{opacity: 1}}
-                        transition={{duration: 0.2}}
-                      >
-                        <ChatMessage
-                          message={{body: '', user: userBot}}
-                          loader={loader}
-                          shouldShowLoader={true}
-                          avatarURL={this.state.agentCardAvatarURL}
-                          isAvatarLoading={this.state.isAvatarLoading}
-                        />
-                        {/* <SyncLoader color={this.props.primaryColor}  size='7px'/> */}
-                      </motion.div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-
-              {replies && replies.length > 0 ? (
-                <QuickReplies
-                  replies={replies}
-                  onSelect={this.handleSelectQuickReply}
-                />
-              ) : null}
-
-              <div ref={(el) => (this.scrollToEl = el)} />
-            </Box>
+          {!isFormOpen && (
+            <ChatMessages
+              messages={messages}
+              isMine={(msg) => isCustomerMessage(msg, customerId)}
+              companyName={companyName}
+              isReplying={this.state.shouldShowMessageLoading}
+              avatarURL={this.state.agentCardAvatarURL}
+              isAvatarLoading={this.state.isAvatarLoading}
+              replyingAvatarURL={this.state.avatarURL}
+              replies={replies}
+              onSelectReply={this.handleSelectQuickReply}
+              scrollRef={(el) => (this.scrollToEl = el)}
+              look={look.messages}
+            />
           )}
 
-          {this.state.isMailIconClicked && (
+          {isFormOpen && (
             <Box sx={{flex: 1, minHeight: 0, overflowY: 'auto'}} px={'20px'}>
               <ContactForm
                 handleChange={this.handleChangeCF}
@@ -1199,24 +1148,22 @@ class ChatWindow extends React.Component<Props, State> {
                 clickedSubmit={this.state.clickedSubmit}
                 shouldSummarize={this.state.shouldSummarize}
                 primaryColor={this.props.primaryColor}
+                title={look.contact.formTitle}
               />
             </Box>
           )}
-          {!this.state.isMailIconClicked && (
+
+          {!isFormOpen && look.composer && (
             <Box
               px={'20px'}
-              // className="footer-bg"
               sx={{
-                // bg: this.state.isMailIconClicked
-                //   ? 'rgba(233, 233, 233, 0.7)'
-                //   : 'background',
                 bg: 'background',
-                // bg:'rgba(248,248,248, 1.0)',
                 borderTop: '1px solid rgb(230, 230, 230)',
                 // TODO: only show shadow on focus TextArea below
                 boxShadow: 'rgba(0, 0, 0, 0.1) 0px 0px 100px 0px',
                 marginTop: '2px',
               }}
+              data-component="Composer"
             >
               {/*
               NB: we use a `key` prop here to force re-render on open so
@@ -1226,55 +1173,46 @@ class ChatWindow extends React.Component<Props, State> {
                 key={isOpen ? 1 : 0}
                 accountId={accountId}
                 baseUrl={baseUrl}
-                placeholder={newMessagePlaceholder}
+                placeholder={look.composer.placeholder}
                 emailInputPlaceholder={emailInputPlaceholder}
                 isSending={isSending}
                 shouldRequireEmail={shouldAskForEmail}
                 onSendMessage={this.handleSendMessage}
-                // isMailIconClicked={this.state.isMailIconClicked}
               />
             </Box>
           )}
 
-          {true && (
+          {look.contact && (
             <Box
               px={'20px'}
-              // className="footer-bg"
               sx={{
-                // bg: this.state.isMailIconClicked
-                //   ? 'rgba(233, 233, 233, 0.7)'
-                //   : 'background',
                 bg: 'rgb(239, 239, 239)',
-                // borderTop: '1px solid rgb(230, 230, 230)',
-                // TODO: only show shadow on focus TextArea below
-                // boxShadow: 'rgba(0, 0, 0, 0.1) 0px 0px 100px 0px',
                 marginTop: '2px',
               }}
+              data-component="Contact"
             >
               <ChatFooterEmail
                 onClickMailIcon={this.handleClickMailIcon}
-                isMailIconClicked={this.state.isMailIconClicked}
+                isMailIconClicked={isFormOpen}
                 handleSubmitCF={this.handleSubmitCF}
                 isSubmittedCF={this.state.isContactFormSubmitted}
                 hotelEmail={this.props.hotelEmail}
                 hotelPhone={this.props.hotelPhone}
-                shouldShowContactForm={shouldShowContactForm}
+                shouldShowContactForm={look.contact.hasForm}
                 isLoading={this.state.isLoading}
                 statusMessageCF={this.state.statusMessageCF}
                 handleSummarize={this.handleSummarize}
+                formConfirmation={look.contact.formConfirmation}
               />
             </Box>
           )}
 
           <Box
             sx={{
-              // bg: this.state.isMailIconClicked
-              //   ? 'rgba(233, 233, 233, 0.7)'
-              //   : 'background',
               bg: 'rgb(239, 239, 239)',
             }}
           >
-            {shouldDisplayBranding && <InhotelBranding />}
+            {hasBranding && <InhotelBranding />}
           </Box>
 
           <img

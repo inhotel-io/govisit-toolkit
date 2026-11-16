@@ -24,6 +24,7 @@ const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const ChatWindow = require('../components/ChatWindow.tsx').default;
 const ChatMessage = require('../components/ChatMessage.tsx').default;
+const ChatMessages = require('../components/ChatMessages.tsx').default;
 const getThemeConfig = require('../helpers/theme.ts').default;
 const Widget = require('../components/Widget.tsx').default;
 for (const [ext, previous] of oldExtensions) {
@@ -39,6 +40,8 @@ const nextTick = () => new Promise(setImmediate);
 function welcome(chat, id = 'greeting') {
   function find(node) {
     if (!React.isValidElement(node)) return null;
+    // The message list is a component of its own: look at what it draws.
+    if (node.type === ChatMessages) return find(node.type(node.props));
     if (node.type === ChatMessage && node.props.message.id === id) return node;
     for (const child of React.Children.toArray(node.props.children)) {
       const result = find(child);

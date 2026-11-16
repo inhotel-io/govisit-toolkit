@@ -33,6 +33,9 @@ const {
   embedKeys,
 } = require('../helpers/appearance.ts');
 const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
+const React = require('react');
+const {renderToStaticMarkup} = require('react-dom/server');
+const ChatWindow = require('../components/ChatWindow.tsx').default;
 for (const [ext, previous] of oldExtensions) {
   if (previous) require.extensions[ext] = previous;
   else delete require.extensions[ext];
@@ -473,6 +476,287 @@ test('a read that fails leaves the chat as it is', async () => {
       assert.equal(calls.length, 1);
     });
   }
+});
+
+// The chat window itself, open, as the iframe draws it. `ChatWindow` still
+// logs while it works; that is kept out of the test output.
+const quietly = (run) => {
+  const log = console.log;
+  console.log = () => {};
+  try {
+    return run();
+  } finally {
+    console.log = log;
+  }
+};
+function chat(props = {}, state = {}) {
+  global.window = {
+    document: {},
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  global.document = {
+    hidden: false,
+    addEventListener() {},
+    removeEventListener() {},
+    documentElement: {style: {setProperty() {}}},
+  };
+  global.parent = {postMessage() {}};
+  const instance = quietly(
+    () =>
+      new ChatWindow({
+        accountId: '-1',
+        inboxId: ASSISTANT,
+        disableAnalyticsTracking: true,
+        version: '1.2.0',
+        ...props,
+      })
+  );
+  instance.setState = (change, callback) => {
+    instance.state = {
+      ...instance.state,
+      ...(typeof change === 'function'
+        ? change(instance.state, instance.props)
+        : change),
+    };
+    if (callback) callback();
+  };
+  Object.assign(instance.state, {isOpen: true}, state);
+  return instance;
+}
+const html = (instance) =>
+  quietly(() => renderToStaticMarkup(instance.render()));
+const BLOCKS = ['Header', 'Messages', 'Composer', 'Contact', 'Branding'];
+const blocksIn = (markup) =>
+  BLOCKS.filter((name) => markup.includes(`data-component="${name}"`));
+const count = (markup, pattern) => (markup.match(pattern) || []).length;
+const whole = () => profileAppearance(profile(), {}, []);
+const conversation = () => [
+  {
+    id: 'greeting',
+    type: 'bot',
+    body: 'Hello',
+    created_at: '2026-11-16T07:00:00Z',
+  },
+  {
+    id: 'user-1',
+    type: 'customer',
+    customer_id: 'customer',
+    body: 'Is breakfast included?',
+    created_at: '2026-11-16T07:01:00Z',
+  },
+  {
+    id: 'assistant-1',
+    type: 'agent',
+    user_id: 1,
+    body: 'Yes, every morning.',
+    created_at: '2026-11-16T07:02:00Z',
+  },
+];
+
+test('the chat draws the blocks its look lists, and only those', () => {
+  assert.deepEqual(blocksIn(html(chat({appearance: whole()}))), BLOCKS);
+  assert.deepEqual(
+    blocksIn(html(chat({appearance: {...whole(), header: null}}))),
+    ['Messages', 'Composer', 'Contact', 'Branding']
+  );
+  assert.deepEqual(
+    blocksIn(
+      html(
+        chat({
+          appearance: {
+            ...whole(),
+            composer: null,
+            contact: null,
+            branding: false,
+          },
+        })
+      )
+    ),
+    ['Header', 'Messages']
+  );
+});
+
+test('each block says what the look gives it', () => {
+  const look = {
+    ...whole(),
+    contact: {
+      hasForm: true,
+      formTitle: 'Write to us',
+      formConfirmation: 'We will answer today.',
+    },
+  };
+  const markup = html(chat({appearance: look}));
+  assert.match(markup, /<h2[^>]*>Zeptejte se nÃ¡s<\/h2>/);
+  assert.match(markup, />Hotel Example</);
+  assert.match(markup, /placeholder="Zeptejte se na cokoli\.\.\."/);
+
+  const form = html(chat({appearance: look}, {isMailIconClicked: true}));
+  assert.match(form, />Write to us</);
+  assert.doesNotMatch(form, />Contact Us</);
+
+  const sent = html(
+    chat(
+      {appearance: look},
+      {
+        isMailIconClicked: true,
+        isContactFormSubmitted: true,
+        statusMessageCF: null,
+      }
+    )
+  );
+  assert.match(sent, />We will answer today\.</);
+  assert.doesNotMatch(sent, /Thank you for your message/);
+});
+
+test('the envelope is there only when the look has the contact form', () => {
+  const look = (hasForm) => ({
+    ...whole(),
+    contact: {...whole().contact, hasForm},
+  });
+  const envelope = /data-contact-form-control="true"/;
+  assert.match(html(chat({appearance: look(true)})), envelope);
+  assert.doesNotMatch(html(chat({appearance: look(false)})), envelope);
+});
+
+test('without a profile the chat looks as it always has', () => {
+  const plain = html(chat());
+  assert.match(plain, /<h2[^>]*>Welcome!<\/h2>/);
+  assert.match(plain, />How can we help you\?</);
+  assert.match(plain, /placeholder="Start typing\.\.\."/);
+  // The branding waits for the subscription plan's word, as before.
+  assert.deepEqual(blocksIn(plain), [
+    'Header',
+    'Messages',
+    'Composer',
+    'Contact',
+  ]);
+  assert.deepEqual(
+    blocksIn(html(chat({}, {shouldDisplayBranding: true}))),
+    BLOCKS
+  );
+
+  const set = html(
+    chat({
+      title: 'Ask us',
+      subtitle: 'Any time',
+      newMessagePlaceholder: 'Write here',
+    })
+  );
+  assert.match(set, /<h2[^>]*>Ask us<\/h2>/);
+  assert.match(set, />Any time</);
+  assert.match(set, /placeholder="Write here"/);
+});
+
+test('a profile shows its branding without waiting for the plan', () => {
+  const markup = html(chat({appearance: whole()}));
+  assert.match(markup, /data-component="Branding"/);
+  assert.match(markup, /Powered by/);
+});
+
+test('on a phone the close control stays when the header is left out', () => {
+  const look = {...whole(), header: null};
+  const phone = html(
+    chat({appearance: look, isMobile: true, isCloseable: true})
+  );
+  assert.match(phone, /class="CloseIcon"/);
+  assert.doesNotMatch(phone, /<h2/);
+
+  const desktop = html(chat({appearance: look, isCloseable: true}));
+  assert.doesNotMatch(desktop, /class="CloseIcon"/);
+});
+
+test('the message list takes its colours and its parts from the look', () => {
+  const plain = html(chat({appearance: whole()}, {messages: conversation()}));
+  assert.match(plain, /data-avatar-state=/);
+  assert.equal(count(plain, /class="btn_up_down"/g), 2);
+  assert.equal(count(plain, /<time/g), 1);
+  assert.match(plain, /background-color:#F5F5F5/);
+
+  const styled = html(
+    chat(
+      {
+        appearance: {
+          ...whole(),
+          messages: {
+            assistantBubbleColor: '#EEF2FF',
+            guestBubbleColor: '#0B6E4F',
+            hasAvatars: false,
+            hasFeedback: false,
+            hasTimestamps: false,
+          },
+        },
+      },
+      {messages: conversation()}
+    )
+  );
+  assert.doesNotMatch(styled, /data-avatar-state=/);
+  assert.equal(count(styled, /class="btn_up_down"/g), 0);
+  assert.equal(count(styled, /<time/g), 0);
+  assert.match(styled, /background-color:#EEF2FF/);
+  assert.match(styled, /background-color:#0B6E4F/);
+  assert.doesNotMatch(styled, /background-color:#F5F5F5/);
+});
+
+test('a light bubble is written on in dark, a dark one in white', () => {
+  const written = (messages) =>
+    count(
+      html(
+        chat(
+          {
+            appearance: {
+              ...whole(),
+              messages: {...whole().messages, ...messages},
+            },
+          },
+          {messages: conversation()}
+        )
+      ),
+      /Text--white/g
+    );
+  // As today: white on the accent colour, dark on the grey.
+  assert.equal(written({}), 1);
+  assert.equal(written({guestBubbleColor: '#FFF4CC'}), 0);
+  assert.equal(written({assistantBubbleColor: '#1F2937'}), 3);
+});
+
+test('the chat opens with the greeting of its look and follows it until the guest writes', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      const instance = chat({
+        appearance: settingsAppearance({greeting: 'From the settings'}),
+      });
+      const bodies = () => instance.state.messages.map((m) => m.body);
+      const look = (appearance) => {
+        const previous = instance.props;
+        instance.props = {...previous, appearance};
+        instance.componentDidUpdate(previous);
+      };
+      try {
+        await instance.componentDidMount();
+        assert.deepEqual(bodies(), ['From the settings']);
+
+        // The profile arrives after the chat has loaded.
+        look(whole());
+        assert.deepEqual(bodies(), ['Dobrý den, jak vám mohu pomoci?']);
+        assert.equal(instance.state.messages[0].type, 'bot');
+
+        look({...whole(), greeting: null});
+        assert.deepEqual(bodies(), []);
+
+        look(whole());
+        instance.state.messages = [
+          ...instance.state.messages,
+          {id: 'user-1', type: 'customer', customer_id: 'customer', body: 'Hi'},
+        ];
+        look({...whole(), greeting: {text: 'Another greeting'}});
+        assert.deepEqual(bodies(), ['Dobrý den, jak vám mohu pomoci?', 'Hi']);
+      } finally {
+        instance.componentWillUnmount();
+      }
+    }
+  );
 });
 
 (async () => {

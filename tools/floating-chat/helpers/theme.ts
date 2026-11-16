@@ -5,6 +5,11 @@ export const GOVISIT_BLUE_600 = '#465ea4';
 
 type ThemeSettings = {primary?: string};
 
+// Whether dark text reads on this colour. A bubble of a colour the look sets is
+// written on in whichever of the two reads.
+export const isLightColor = (color: string): boolean =>
+  tinycolor(color).isLight();
+
 export const getThemeConfig = (settings: ThemeSettings) => {
   const baseColor = tinycolor(settings.primary);
   const base = baseColor.isValid() ? baseColor : tinycolor(GOVISIT_BLUE_600);

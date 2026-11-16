@@ -14,6 +14,8 @@ type Props = {
   clickedSubmit: boolean;
   shouldSummarize: boolean;
   primaryColor: string;
+  // The form's heading.
+  title: string;
 };
 
 const ContactForm = ({
@@ -25,6 +27,7 @@ const ContactForm = ({
   clickedSubmit,
   shouldSummarize,
   primaryColor,
+  title,
 }: Props) => {
   return (
     <Box
@@ -46,7 +49,7 @@ const ContactForm = ({
           fontSize: '18px',
         }}
       >
-        Contact Us
+        {title}
       </Heading>
       <Flex
         sx={{

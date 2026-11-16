@@ -6,6 +6,7 @@ const InhotelBranding = () => (
     p={2}
     pt={0}
     sx={{textAlign: 'center', color: 'gray', fontSize: '0.75rem'}}
+    data-component="Branding"
   >
     Powered by{' '}
     <Link

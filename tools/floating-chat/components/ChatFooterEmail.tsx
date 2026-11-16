@@ -25,6 +25,7 @@ const ChatFooterEmail = ({
   isLoading,
   statusMessageCF,
   handleSummarize,
+  formConfirmation,
 }: {
   onClickMailIcon: () => void;
   isMailIconClicked: boolean;
@@ -36,6 +37,8 @@ const ChatFooterEmail = ({
   isLoading: boolean;
   statusMessageCF: string;
   handleSummarize: () => void;
+  // What the bar says once the contact form is sent.
+  formConfirmation: string;
 }) => {
   const [tooltipContentEmail, setTooltipContentEmail] = useState(
     'Copy to clipboard'
@@ -235,8 +238,7 @@ const ChatFooterEmail = ({
                   marginLeft: '8px', // Ensure some space between the button and text, adjust as needed
                 }}
               >
-                Thank you for your message! Please expect our reply within 1
-                working day.
+                {formConfirmation}
               </Box>
             )}
 
@@ -345,6 +347,9 @@ const ChatFooterEmail = ({
               delay={100}
             >
               <Box
+                data-contact-form-control={
+                  shouldShowContactForm ? 'true' : undefined
+                }
                 onClick={() => {
                   onClickMailIcon(), handleSummarize();
                 }}
