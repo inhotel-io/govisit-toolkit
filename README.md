@@ -1,5 +1,6 @@
 # GoVisit Toolkit
 
+[![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Listed on AgentSkillsHub](https://agentskillshub.dev/badges/listed-on-agentskillshub.svg)](https://agentskillshub.dev/skills/govisit-toolkit/)
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
 
@@ -19,10 +20,10 @@
 [![GoVisit Toolkit trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dinhotel-io%252Fgovisit-toolkit%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/inhotel-io%2Fgovisit-toolkit)
 [![skills.sh](https://skills.sh/b/inhotel-io/govisit-toolkit)](https://skills.sh/inhotel-io/govisit-toolkit)
 [![Listed on MCP Collection](https://mcpcollection.com/badge/govisit-tools.svg)](https://mcpcollection.com/server/govisit-tools)
-[![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Tested on ToolPassed](https://toolpassed.com/badge/skills/govisit-search-places.svg)](https://toolpassed.com/skills/govisit-search-places/)
 [![Listed on OpenAgentSkill](https://www.openagentskill.com/api/badge/inhotel-io-govisit-toolkit-govisit-search-places?metric=listed&label=Listed)](https://www.openagentskill.com/skills/inhotel-io-govisit-toolkit-govisit-search-places)
 [![ToolSDK MCP Registry](https://badges.toolsdk.ai/badge/@toolsdk-remote/govisit-tools)](https://toolsdk-ai.github.io/toolsdk-mcp-registry/#%40toolsdk-remote%2Fgovisit-tools)
+[![Listed on PickAPlugin](https://pickaplugin.com/badge/govisit-toolkit.svg)](https://pickaplugin.com/p/govisit-toolkit)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
