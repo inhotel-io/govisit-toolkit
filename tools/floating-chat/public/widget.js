@@ -20206,7 +20206,8 @@ OD =
       return out;
     };
     // Only a UUID is an Assistant ID the read knows. It has three seconds;
-    // without an answer the launcher is drawn from the settings alone.
+    // without an answer the launcher is drawn from the settings alone. It
+    // never rejects and never throws, whatever the page has done to `fetch`.
     cd.fetchAppearanceOverlay = function (assistantId, code) {
       if (
         'function' != typeof fetch ||
@@ -20215,46 +20216,65 @@ OD =
         )
       )
         return Promise.resolve({});
-      var controller =
-          'function' == typeof AbortController ? new AbortController() : null,
-        timer,
-        late = new Promise(function (resolve) {
-          timer = setTimeout(function () {
-            controller && controller.abort();
-            resolve({});
-          }, 3000);
-        }),
-        read = fetch(
-          Mq +
-            '/api/v2/assistants/' +
-            String(assistantId).toLowerCase() +
-            '/appearance-profiles?ui=floating_chat',
-          {credentials: 'omit', signal: controller ? controller.signal : void 0}
-        )
-          .then(function (response) {
-            return response.ok ? response.json() : null;
-          })
-          .then(function (page) {
-            return cd.appearanceOverlay(page, code);
-          })
-          .catch(function () {
-            return {};
-          });
-      return Promise.race([read, late]).then(function (overlay) {
+      var timer;
+      try {
+        var controller =
+            'function' == typeof AbortController ? new AbortController() : null,
+          late = new Promise(function (resolve) {
+            timer = setTimeout(function () {
+              controller && controller.abort();
+              resolve({});
+            }, 3000);
+          }),
+          read = fetch(
+            Mq +
+              '/api/v2/assistants/' +
+              String(assistantId).toLowerCase() +
+              '/appearance-profiles?ui=floating_chat&limit=200',
+            {
+              credentials: 'omit',
+              signal: controller ? controller.signal : void 0,
+            }
+          )
+            .then(function (response) {
+              return response.ok ? response.json() : null;
+            })
+            .then(function (page) {
+              return cd.appearanceOverlay(page, code);
+            })
+            .catch(function () {
+              return {};
+            });
+        return Promise.race([read, late]).then(function (overlay) {
+          clearTimeout(timer);
+          return overlay;
+        });
+      } catch (error) {
         clearTimeout(timer);
-        return overlay;
-      });
+        return Promise.resolve({});
+      }
     };
-    // The page's language, for the texts of the profile.
+    // The page's language, for the texts of the profile: the page's own
+    // `lang`, else the browser's. The read takes a language and two more parts
+    // at most, and `_` is read as the `-` it stands for.
     cd.pageLanguage = function (doc, nav) {
-      var tag =
-        (doc && doc.documentElement && doc.documentElement.lang) ||
-        (nav && nav.language) ||
-        '';
-      return /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,3}$/i.test(tag) ? tag : '';
+      var given = [
+          doc && doc.documentElement && doc.documentElement.lang,
+          nav && nav.language,
+        ],
+        i,
+        tag;
+      for (i = 0; i < given.length; i++) {
+        if ('string' != typeof given[i]) continue;
+        tag = given[i].replace(/_/g, '-').split('-').slice(0, 3).join('-');
+        if (/^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(tag)) return tag;
+      }
+      return '';
     };
     // Which of the settings a profile also gives the page set in its own
-    // embed. Those stand in front of the profile in the iframe.
+    // embed. Those stand in front of the profile in the iframe. A setting is
+    // the embed's own when it is truthy, which is when the launcher sends it
+    // on instead of the legacy one.
     cd.embedKeysOf = function (props) {
       var keys = [
           'title',
@@ -20264,12 +20284,9 @@ OD =
           'primaryColor',
         ],
         set = [],
-        i,
-        value;
-      for (i = 0; i < keys.length; i++) {
-        value = props ? props[keys[i]] : void 0;
-        void 0 !== value && null !== value && '' !== value && set.push(keys[i]);
-      }
+        i;
+      for (i = 0; i < keys.length; i++)
+        props && props[keys[i]] && set.push(keys[i]);
       return set.join(',');
     };
     // STUB: Removed Papercups metadata update - using A2A protocol instead

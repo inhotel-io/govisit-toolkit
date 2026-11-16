@@ -142,10 +142,25 @@ const ChatMessage = ({
   const {body, created_at, user, type, attachments = []} = message;
   const created = created_at ? dayjs.utc(created_at) : null;
   const timestamp = created ? formatRelativeTime(created) : null;
+  // White on the accent colour and dark on the grey, as ever. On a colour the
+  // look sets, the text and the time are whichever of the two reads.
+  const isGuestBubbleDark =
+    !guestBubbleColor || !isLightColor(guestBubbleColor);
+  const isAssistantBubbleDark = !isLightColor(assistantBubbleColor);
+  // The styles know the time's colour on the chat's own two bubbles. `data-on`
+  // names the bubble only where the look makes it the other kind.
+  const timeOn = isMe
+    ? isGuestBubbleDark
+      ? undefined
+      : 'light'
+    : isAssistantBubbleDark
+    ? 'dark'
+    : undefined;
   const timestampNode = shouldDisplayTimestamp ? (
     <time
       className={styles.timestamp}
       data-mine={isMe || undefined}
+      data-on={timeOn}
       dateTime={created ? created.toISOString() : undefined}
     >
       {isMe ? (timestamp ? `Sent ${timestamp}` : 'Sending...') : timestamp}
@@ -254,9 +269,7 @@ const ChatMessage = ({
 
   // console.log("ShowLoader?: ",shouldShowLoader);
   if (isMe) {
-    // White on the accent colour, as ever. On a colour the look sets, the text
-    // is whichever of white and dark reads.
-    const isDarkBubble = !guestBubbleColor || !isLightColor(guestBubbleColor);
+    const isDarkBubble = isGuestBubbleDark;
     return (
       <Box pr={0} pl={4} pb={isLastInGroup ? 3 : 2}>
         <Flex sx={{justifyContent: 'flex-end'}}>
@@ -276,7 +289,7 @@ const ChatMessage = ({
     );
   }
 
-  const isDarkBubble = !isLightColor(assistantBubbleColor);
+  const isDarkBubble = isAssistantBubbleDark;
   const canRate = hasFeedback && type === 'agent';
 
   return (

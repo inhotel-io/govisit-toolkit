@@ -139,8 +139,10 @@ class ChatWindow extends React.Component<Props, State> {
   avatarTimeout: ReturnType<typeof setTimeout> | null = null;
   subscriptions: Array<() => void> = [];
   logger: Logger;
-  // The greeting the conversation was last opened with.
+  // The greeting the conversation was last opened with, and whether it was
+  // an appearance profile's.
   shownGreeting: string | undefined = undefined;
+  shownFromProfile = false;
   // A2A mode - no legacy SDK instance
 
   constructor(props: Props) {
@@ -215,6 +217,7 @@ class ChatWindow extends React.Component<Props, State> {
     const {inboxId} = this.props;
     const greeting = this.greetingText();
     this.shownGreeting = greeting;
+    this.shownFromProfile = this.look().source === 'profile';
     if (inboxId) {
       const savedHistory = getChatHistory(inboxId);
       const savedSessionId = getSessionId(inboxId);
@@ -316,22 +319,43 @@ class ChatWindow extends React.Component<Props, State> {
     type: 'bot',
   });
 
-  // The greeting is the look's. When the look changes before the guest has
-  // written, as when the profile arrives after the chat has loaded, the
-  // greeting follows it. A conversation under way is left as it is.
+  // The greeting is the look's. When an appearance profile arrives after the
+  // chat has loaded, or changes, the greeting follows it while the guest has
+  // not written. A conversation under way is left as it is, and so is a
+  // greeting that changes in the settings alone, as it always was.
   followGreeting = () => {
     const greeting = this.greetingText();
-    if (greeting === this.shownGreeting) return;
+    const fromProfile = this.look().source === 'profile';
+    const follows =
+      greeting !== this.shownGreeting && (fromProfile || this.shownFromProfile);
     this.shownGreeting = greeting;
-    this.setState(({messages}) => {
-      const isUntouched =
-        messages.length === 0 ||
-        (messages.length === 1 && messages[0].id === 'greeting');
+    this.shownFromProfile = fromProfile;
+    if (!follows) return;
 
-      return isUntouched
-        ? {messages: greeting ? [this.greetingMessage(greeting)] : []}
-        : null;
-    });
+    this.setState(
+      ({messages}) => {
+        const isUntouched =
+          messages.length === 0 ||
+          (messages.length === 1 && messages[0].id === 'greeting');
+
+        return isUntouched
+          ? {messages: greeting ? [this.greetingMessage(greeting)] : []}
+          : null;
+      },
+      () => {
+        // The launcher may be showing the greeting above its button. When
+        // none is left to show it is told so, as it is when the chat loads
+        // with nothing unread; it would otherwise hold an empty frame open.
+        const {shouldDisplayNotifications, popUpInitialMessage} = this.state;
+        if (
+          shouldDisplayNotifications &&
+          popUpInitialMessage &&
+          this.getUnreadMessages().length === 0
+        ) {
+          this.markMessagesAsSeen();
+        }
+      }
+    );
   };
 
   loadAgentAvatar = () => {
@@ -1084,7 +1108,17 @@ class ChatWindow extends React.Component<Props, State> {
     const shouldAskForEmail = this.askForEmailUpfront();
     const hasAvailableAgents = availableAgents.length > 0;
     const replies = this.getQuickReplies(messages);
-    const isFormOpen = this.state.isMailIconClicked && !!look.contact;
+    // A profile's contact form is sent to the assistant's e-mail. Without one
+    // there is nowhere to send it, so it is not offered. For a chat drawn from
+    // its settings the flag says so already: the service that gives it knows
+    // whether there is an e-mail.
+    const hasContactForm =
+      !!look.contact &&
+      look.contact.hasForm &&
+      (look.source !== 'profile' || !!this.props.hotelEmail);
+    const isFormOpen =
+      this.state.isMailIconClicked &&
+      (look.source === 'profile' ? hasContactForm : !!look.contact);
     // A profile lists the branding or leaves it out. For a chat drawn from
     // its settings the subscription plan decides, as it always has.
     const hasBranding =
@@ -1112,7 +1146,6 @@ class ChatWindow extends React.Component<Props, State> {
           <ChatHeader
             header={look.header}
             canClose={isCloseable && !this.isOnDeprecatedVersion()}
-            isMobile={isMobile}
             onClose={this.emitCloseWindow}
             showAgentAvailability={showAgentAvailability}
             hasAvailableAgents={hasAvailableAgents}
@@ -1198,7 +1231,7 @@ class ChatWindow extends React.Component<Props, State> {
                 isSubmittedCF={this.state.isContactFormSubmitted}
                 hotelEmail={this.props.hotelEmail}
                 hotelPhone={this.props.hotelPhone}
-                shouldShowContactForm={look.contact.hasForm}
+                shouldShowContactForm={hasContactForm}
                 isLoading={this.state.isLoading}
                 statusMessageCF={this.state.statusMessageCF}
                 handleSummarize={this.handleSummarize}

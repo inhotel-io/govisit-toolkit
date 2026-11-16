@@ -136,12 +136,16 @@ Each block the iframe draws carries its component's name as `data-component`.
   browser's language. The read falls back when a text has no translation.
 - **The embed still wins** for what a page sets in its own
   `FloatingChatWindow.config`: `title`, `subtitle`, `greeting`,
-  `newMessagePlaceholder` and `primaryColor`.
+  `newMessagePlaceholder` and `primaryColor`. The side is the profile's, ahead
+  of the embed's `position`, as the legacy setting's has always been.
 - **Without a profile** the chat is drawn from the legacy settings, as before.
   The same holds when the read fails or takes more than three seconds. A profile
   ID that is not a UUID is never asked for.
 - The phone and the e-mail of the contact line are the assistant's contact
-  details. They still come from the legacy settings.
+  details. They still come from the legacy settings. A profile's contact form
+  is offered only when there is an e-mail to send it to.
+- A profile that leaves the header out still has the control that closes the
+  chat.
 
 To see one assistant's profile locally, open
 `http://localhost:3000/?token=-1&inbox=ASSISTANT_ID&version=1.0.0&locale=cs`.

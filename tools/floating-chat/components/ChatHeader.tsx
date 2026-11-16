@@ -7,7 +7,6 @@ type Props = {
   // What the look gives the header, or null when it has none.
   header: {title: string; subtitle: string} | null;
   canClose: boolean;
-  isMobile: boolean;
   onClose: (e: any) => void;
   showAgentAvailability: boolean;
   hasAvailableAgents: boolean;
@@ -19,7 +18,6 @@ type Props = {
 const ChatHeader = ({
   header,
   canClose,
-  isMobile,
   onClose,
   showAgentAvailability,
   hasAvailableAgents,
@@ -32,9 +30,9 @@ const ChatHeader = ({
   ) : null;
 
   if (!header) {
-    // On a phone the chat fills the screen, so the control that closes it
-    // stays even when the look leaves the header out.
-    return isMobile && close ? (
+    // A page can hide the launcher's button, and this control is then the only
+    // way to close the chat. So it stays when the look leaves the header out.
+    return close ? (
       <Box sx={{bg: 'primary', position: 'relative', height: 40}}>{close}</Box>
     ) : null;
   }

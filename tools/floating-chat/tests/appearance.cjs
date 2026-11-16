@@ -83,7 +83,7 @@ const page = () => ({
           name: 'header',
           component: 'Header',
           values: {
-            titles: 'Zeptejte se nÃ¡s',
+            titles: 'Zeptejte se nás',
             subtitles: 'Hotel Example',
           },
         },
@@ -186,7 +186,7 @@ test('a whole profile fills every block', () => {
   assert.deepEqual(profileAppearance(profile(), {}, []), {
     source: 'profile',
     accentColor: '#465EA4',
-    header: {title: 'Zeptejte se nÃ¡s', subtitle: 'Hotel Example'},
+    header: {title: 'Zeptejte se nás', subtitle: 'Hotel Example'},
     greeting: {text: 'Dobrý den, jak vám mohu pomoci?'},
     composer: {placeholder: 'Zeptejte se na cokoli...'},
     contact: {
@@ -208,7 +208,7 @@ test('a block the profile leaves out is not drawn', () => {
     []
   );
   assert.deepEqual(look.header, {
-    title: 'Zeptejte se nÃ¡s',
+    title: 'Zeptejte se nás',
     subtitle: 'Hotel Example',
   });
   assert.equal(look.greeting, null);
@@ -261,7 +261,7 @@ test('what the embed sets itself stands in front of the profile', () => {
   assert.equal(look.accentColor, '#101010');
 
   const plain = profileAppearance(profile(), settings, []);
-  assert.equal(plain.header.title, 'Zeptejte se nÃ¡s');
+  assert.equal(plain.header.title, 'Zeptejte se nás');
   assert.equal(plain.greeting.text, 'Dobrý den, jak vám mohu pomoci?');
   assert.equal(plain.accentColor, '#465EA4');
 });
@@ -282,6 +282,18 @@ test('a value of the wrong shape gives way to the default', () => {
     []
   );
   assert.equal(look.accentColor, undefined);
+  // The launcher has already resolved a colour for its button: the window
+  // keeps to it, so the two are never of different colours.
+  assert.equal(
+    profileAppearance(
+      profile((item, element) => {
+        element('root').values.accent_color = 'red';
+      }),
+      {primaryColor: '#101010'},
+      []
+    ).accentColor,
+    '#101010'
+  );
   assert.equal(look.header.title, 'Welcome!');
   assert.equal(look.composer.placeholder, 'Start typing...');
   assert.equal(look.contact.hasForm, true);
@@ -385,8 +397,13 @@ test('only what the read can take is sent to it', () => {
   assert.equal(localeTag('cs'), 'cs');
   assert.equal(localeTag('pt-BR'), 'pt-BR');
   assert.equal(localeTag(' en-GB '), 'en-GB');
+  assert.equal(localeTag('zh-Hant-TW'), 'zh-Hant-TW');
+  // The read takes a language and two more parts at most, and `_` is a
+  // common slip for `-`.
+  assert.equal(localeTag('de-Latn-DE-1996'), 'de-Latn-DE');
+  assert.equal(localeTag('cs_CZ'), 'cs-CZ');
   // `all` asks the read for every language at once, which is not a text.
-  for (const no of ['en_US', 'all', '<script>', '', null, 'x'.repeat(40)]) {
+  for (const no of ['all', '<script>', '', null, 'e', 'x'.repeat(40)]) {
     assert.equal(localeTag(no), null);
   }
 
@@ -425,7 +442,7 @@ test('the profile is read from the fixed service, for this UI and language', asy
       assert.equal(calls.length, 1);
       assert.equal(
         calls[0].url,
-        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&locale=cs`
+        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&limit=200&locale=cs`
       );
       assert.equal(calls[0].options.credentials, 'omit');
       assert.equal(calls[0].options.signal, controller.signal);
@@ -437,7 +454,7 @@ test('the profile is read from the fixed service, for this UI and language', asy
       });
       assert.equal(
         calls[1].url,
-        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat`
+        `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&limit=200`
       );
     }
   );
@@ -591,17 +608,20 @@ test('each block says what the look gives it', () => {
     },
   };
   const markup = html(chat({appearance: look}));
-  assert.match(markup, /<h2[^>]*>Zeptejte se nÃ¡s<\/h2>/);
+  assert.match(markup, /<h2[^>]*>Zeptejte se nás<\/h2>/);
   assert.match(markup, />Hotel Example</);
   assert.match(markup, /placeholder="Zeptejte se na cokoli\.\.\."/);
 
-  const form = html(chat({appearance: look}, {isMailIconClicked: true}));
+  const hotelEmail = 'stay@hotel.example';
+  const form = html(
+    chat({appearance: look, hotelEmail}, {isMailIconClicked: true})
+  );
   assert.match(form, />Write to us</);
   assert.doesNotMatch(form, />Contact Us</);
 
   const sent = html(
     chat(
-      {appearance: look},
+      {appearance: look, hotelEmail},
       {
         isMailIconClicked: true,
         isContactFormSubmitted: true,
@@ -613,14 +633,44 @@ test('each block says what the look gives it', () => {
   assert.doesNotMatch(sent, /Thank you for your message/);
 });
 
-test('the envelope is there only when the look has the contact form', () => {
+test('the contact form is offered when the look has it and there is somewhere to send it', () => {
   const look = (hasForm) => ({
     ...whole(),
     contact: {...whole().contact, hasForm},
   });
   const envelope = /data-contact-form-control="true"/;
-  assert.match(html(chat({appearance: look(true)})), envelope);
-  assert.doesNotMatch(html(chat({appearance: look(false)})), envelope);
+  const hotelEmail = 'stay@hotel.example';
+  assert.match(html(chat({appearance: look(true), hotelEmail})), envelope);
+  assert.doesNotMatch(
+    html(chat({appearance: look(false), hotelEmail})),
+    envelope
+  );
+  // The form is sent to the assistant's e-mail. Without one a profile's form
+  // would be sent nowhere, so it is not offered, and cannot be open.
+  assert.doesNotMatch(html(chat({appearance: look(true)})), envelope);
+  const forced = html(
+    chat({appearance: look(true)}, {isMailIconClicked: true})
+  );
+  assert.match(forced, /data-component="Messages"/);
+  assert.doesNotMatch(forced, /name="firstName"/);
+
+  // From the settings the flag alone decides, as it always has: the service
+  // that gives the flag already knows whether there is an e-mail.
+  assert.match(html(chat({shouldShowContactForm: true})), envelope);
+  assert.doesNotMatch(html(chat()), envelope);
+});
+
+test('the contact form cannot stay open once the look has no contact line', () => {
+  const markup = html(
+    chat({appearance: {...whole(), contact: null}}, {isMailIconClicked: true})
+  );
+  assert.deepEqual(blocksIn(markup), [
+    'Header',
+    'Messages',
+    'Composer',
+    'Branding',
+  ]);
+  assert.doesNotMatch(markup, /name="firstName"/);
 });
 
 test('without a profile the chat looks as it always has', () => {
@@ -658,16 +708,19 @@ test('a profile shows its branding without waiting for the plan', () => {
   assert.match(markup, /Powered by/);
 });
 
-test('on a phone the close control stays when the header is left out', () => {
+test('the chat can still be closed when the header is left out', () => {
+  // A page may hide the launcher's button; the control in the window is then
+  // the only way out, so it stays without the header around it.
   const look = {...whole(), header: null};
-  const phone = html(
-    chat({appearance: look, isMobile: true, isCloseable: true})
-  );
-  assert.match(phone, /class="CloseIcon"/);
-  assert.doesNotMatch(phone, /<h2/);
+  const closeable = html(chat({appearance: look, isCloseable: true}));
+  assert.match(closeable, /class="CloseIcon"/);
+  assert.doesNotMatch(closeable, /<h2/);
+  assert.doesNotMatch(closeable, /data-component="Header"/);
 
-  const desktop = html(chat({appearance: look, isCloseable: true}));
-  assert.doesNotMatch(desktop, /class="CloseIcon"/);
+  assert.doesNotMatch(
+    html(chat({appearance: look, isCloseable: false})),
+    /class="CloseIcon"/
+  );
 });
 
 test('the message list takes its colours and its parts from the look', () => {
@@ -722,6 +775,31 @@ test('a light bubble is written on in dark, a dark one in white', () => {
   assert.equal(written({}), 1);
   assert.equal(written({guestBubbleColor: '#FFF4CC'}), 0);
   assert.equal(written({assistantBubbleColor: '#1F2937'}), 3);
+});
+
+test('the time under a message reads on its bubble', () => {
+  // The time stands under the last message only.
+  const time = (messages, last) =>
+    html(
+      chat(
+        {
+          appearance: {
+            ...whole(),
+            messages: {...whole().messages, ...messages},
+          },
+        },
+        {messages: conversation().slice(0, last)}
+      )
+    ).match(/<time[^>]*>/)[0];
+  // As today: light on the accent colour, dark on the grey.
+  assert.match(time({}, 2), /data-mine="true"/);
+  assert.doesNotMatch(time({}, 2), /data-on=/);
+  assert.doesNotMatch(time({}, 3), /data-mine=|data-on=/);
+  // On a colour the look sets, whichever of the two reads.
+  assert.match(time({guestBubbleColor: '#FFF4CC'}, 2), /data-on="light"/);
+  assert.doesNotMatch(time({guestBubbleColor: '#0B6E4F'}, 2), /data-on=/);
+  assert.match(time({assistantBubbleColor: '#1F2937'}, 3), /data-on="dark"/);
+  assert.doesNotMatch(time({assistantBubbleColor: '#EEF2FF'}, 3), /data-on=/);
 });
 
 test('the chat opens with the greeting of its look and follows it until the guest writes', async () => {
@@ -787,6 +865,104 @@ const settle = async () => {
 };
 const OTHER = 'f1a4e101-0000-8000-8000-000000000002';
 
+test('a greeting changed in the settings alone leaves the conversation as it was', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      const instance = chat({greeting: 'First'});
+      try {
+        await instance.componentDidMount();
+        const previous = instance.props;
+        instance.props = {...previous, greeting: 'Second'};
+        instance.componentDidUpdate(previous);
+        assert.deepEqual(
+          instance.state.messages.map((m) => m.body),
+          ['First']
+        );
+      } finally {
+        instance.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('a conversation brought back from the browser keeps its first message', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      const instance = chat({
+        appearance: settingsAppearance({greeting: 'Old'}),
+      });
+      global.localStorage = {
+        getItem: (key) =>
+          key.startsWith('inhotel_chat_history')
+            ? JSON.stringify({
+                messages: [
+                  {
+                    role: 'assistant',
+                    type: 'bot',
+                    content: 'Old',
+                    timestamp: new Date().toISOString(),
+                  },
+                ],
+                timestamp: Date.now(),
+              })
+            : null,
+      };
+      try {
+        await instance.componentDidMount();
+        const previous = instance.props;
+        instance.props = {...previous, appearance: whole()};
+        instance.componentDidUpdate(previous);
+        assert.deepEqual(
+          instance.state.messages.map((m) => m.body),
+          ['Old']
+        );
+      } finally {
+        instance.componentWillUnmount();
+        delete global.localStorage;
+      }
+    }
+  );
+});
+
+test('a greeting that goes away takes its preview with it', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      const instance = chat(
+        {appearance: settingsAppearance({greeting: 'From the settings'})},
+        {isOpen: false}
+      );
+      const events = [];
+      instance.emit = (event) => events.push(event);
+      try {
+        await instance.componentDidMount();
+        // The launcher asks for the greeting to be shown above its button.
+        instance.handleDisplayNotifications({
+          shouldDisplayNotifications: true,
+          popUpInitialMessage: true,
+        });
+        assert.equal(instance.getUnreadMessages().length, 1);
+        events.length = 0;
+
+        // The profile arrives, and it has no greeting. The launcher is told
+        // there is nothing left to show, or it would hold an empty frame open.
+        const previous = instance.props;
+        instance.props = {
+          ...previous,
+          appearance: {...whole(), greeting: null},
+        };
+        instance.componentDidUpdate(previous);
+        assert.deepEqual(instance.state.messages, []);
+        assert.deepEqual(events, ['messages:seen']);
+      } finally {
+        instance.componentWillUnmount();
+      }
+    }
+  );
+});
+
 test('the chat is drawn from the profile of its assistant', async () => {
   await withFetch(
     async () => ({ok: true, json: async () => page()}),
@@ -805,10 +981,95 @@ test('the chat is drawn from the profile of its assistant', async () => {
         assert.equal(calls.length, 1);
         assert.equal(
           calls[0].url,
-          `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&locale=cs`
+          `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&limit=200&locale=cs`
         );
         assert.equal(shown(wrapper).source, 'profile');
-        assert.equal(shown(wrapper).header.title, 'Zeptejte se nÃ¡s');
+        assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('every setting reaches the look when there is no profile', () => {
+  const wrapper = widget({
+    inbox: 'hotel-paris',
+    title: 'Ask us',
+    subtitle: 'Any time',
+    greeting: 'Hi',
+    newMessagePlaceholder: 'Write here',
+    primaryColor: '#112233',
+    shouldShowContactForm: 'true',
+  });
+  assert.deepEqual(shown(wrapper), {
+    source: 'settings',
+    accentColor: '#112233',
+    header: {title: 'Ask us', subtitle: 'Any time'},
+    greeting: {text: 'Hi'},
+    composer: {placeholder: 'Write here'},
+    contact: {
+      hasForm: true,
+      formTitle: 'Contact Us',
+      formConfirmation: CONFIRMATION,
+    },
+    branding: true,
+    messages: DEFAULT_MESSAGES,
+  });
+  assert.equal(shown(widget({inbox: 'hotel-paris'})).contact.hasForm, false);
+});
+
+test('leaving the page cancels the read, and its late answer changes nothing', async () => {
+  const answers = [];
+  await withFetch(
+    () => new Promise((resolve) => answers.push(resolve)),
+    async (calls) => {
+      const wrapper = widget({inbox: ASSISTANT});
+      wrapper.componentDidMount();
+      wrapper.componentWillUnmount();
+      assert.equal(calls[0].options.signal.aborted, true);
+      let updates = 0;
+      const setState = wrapper.setState;
+      wrapper.setState = (...args) => {
+        updates++;
+        return setState(...args);
+      };
+      answers[0]({ok: true, json: async () => page()});
+      await settle();
+      assert.equal(updates, 0);
+    }
+  );
+});
+
+test('a new language, and a newly named profile, are read again', async () => {
+  await withFetch(
+    async () => ({ok: true, json: async () => page()}),
+    async (calls) => {
+      const wrapper = widget({inbox: ASSISTANT, locale: 'en'});
+      const update = (change) => {
+        const previous = wrapper.state;
+        wrapper.handleConfigUpdate(change);
+        wrapper.componentDidUpdate(wrapper.props, previous);
+      };
+      try {
+        wrapper.componentDidMount();
+        await settle();
+        update({locale: 'cs'});
+        await settle();
+        update({appearanceProfile: 'govisit'});
+        await settle();
+        update({title: 'Only a title'});
+        await settle();
+        assert.deepEqual(
+          calls.map((call) => call.url.split('?')[1]),
+          [
+            'ui=floating_chat&limit=200&locale=en',
+            'ui=floating_chat&limit=200&locale=cs',
+            'ui=floating_chat&limit=200&locale=cs',
+          ]
+        );
+        // The same assistant keeps its profile while it is read again.
+        assert.equal(shown(wrapper).source, 'profile');
       } finally {
         wrapper.componentWillUnmount();
       }
@@ -904,7 +1165,7 @@ test('one assistant is never shown in the look of another', async () => {
 
         answer(2, page());
         await settle();
-        assert.equal(shown(wrapper).header.title, 'Zeptejte se nÃ¡s');
+        assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
       } finally {
         wrapper.componentWillUnmount();
       }
@@ -915,8 +1176,9 @@ test('one assistant is never shown in the look of another', async () => {
 test('a read that does not answer in time leaves the chat as it is', async () => {
   const realSetTimeout = global.setTimeout;
   const timers = [];
+  const answers = [];
   await withFetch(
-    () => new Promise(() => {}),
+    () => new Promise((resolve) => answers.push(resolve)),
     async (calls) => {
       const wrapper = widget({inbox: ASSISTANT, title: 'Ask us'});
       global.setTimeout = (run, ms) => {
@@ -936,6 +1198,8 @@ test('a read that does not answer in time leaves the chat as it is', async () =>
         );
         timers[0].run();
         assert.equal(calls[0].options.signal.aborted, true);
+        // An answer that comes after the limit is too late to be drawn.
+        answers[0]({ok: true, json: async () => page()});
         await settle();
         assert.equal(shown(wrapper).source, 'settings');
         assert.equal(shown(wrapper).header.title, 'Ask us');
@@ -1043,7 +1307,7 @@ test('the launcher reads the profile for an Assistant ID only, and waits three s
   });
   assert.equal(
     calls[0].url,
-    `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat`
+    `https://backend.inhotel.io/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&limit=200`
   );
   assert.equal(calls[0].options.credentials, 'omit');
   assert.deepEqual(await answer(profiles, ASSISTANT, 'govisit'), {
@@ -1065,6 +1329,14 @@ test('the launcher reads the profile for an Assistant ID only, and waits three s
   ]) {
     assert.deepEqual(await answer(failing, ASSISTANT), {});
   }
+
+  // A page may have replaced `fetch` with something that throws.
+  assert.deepEqual(
+    await answer(() => {
+      throw new Error('patched');
+    }, ASSISTANT),
+    {}
+  );
 
   timers.length = 0;
   calls.length = 0;
@@ -1090,6 +1362,16 @@ test('the launcher tells the iframe the page language and what the embed set its
   );
   assert.equal(language({}, {}), '');
   assert.equal(language({documentElement: {lang: '"><script>'}}, {}), '');
+  // A tag the read cannot take gives way to the browser's language.
+  assert.equal(
+    language({documentElement: {lang: '"><script>'}}, {language: 'en-US'}),
+    'en-US'
+  );
+  assert.equal(language({documentElement: {lang: 'cs_CZ'}}, {}), 'cs-CZ');
+  assert.equal(
+    language({documentElement: {lang: 'de-Latn-DE-1996'}}, {}),
+    'de-Latn-DE'
+  );
 
   const keys = bundledLauncherHandler('embedKeysOf', {});
   assert.equal(
@@ -1104,6 +1386,241 @@ test('the launcher tells the iframe the page language and what the embed set its
     'title,primaryColor'
   );
   assert.equal(keys({}), '');
+  // The launcher sends a setting on only when it is truthy, so only then is
+  // it the embed's own.
+  assert.equal(
+    keys({title: 0, greeting: false, subtitle: 'Any time'}),
+    'subtitle'
+  );
+});
+
+// The launcher's own code, run as it is in the served file. Each piece is
+// taken out by the lines that open and close it, so an edit that moves one of
+// those lines fails here loudly.
+const launcherLines = launcher.split('\n');
+const lineOf = (pattern) => {
+  const index = launcherLines.findIndex((line) => pattern.test(line));
+  if (index < 0) throw new Error('Launcher code not found: ' + pattern);
+  return index;
+};
+const piece = (from, to, last = 0) =>
+  launcherLines.slice(lineOf(from), lineOf(to) + last).join('\n');
+// The settings read: the bundle's async helpers, `Pq` and the `cd.*` helpers.
+const settingsRead = () =>
+  piece(/^    var Nq =$/, /cd\.updateWidgetSettingsMetadata = Qq;/, 1);
+// A legacy settings service and a profile read, as the launcher sees them.
+const launcherWorld = ({legacy, profiles, queries = [], reads = []}) => ({
+  cd: {},
+  Mq: 'https://backend.inhotel.io',
+  za: (module) => ({d: module}),
+  Jj: {
+    get: (url) => ({
+      query: (query) => {
+        queries.push({url, query});
+        return legacy
+          ? Promise.resolve({body: {data: JSON.parse(JSON.stringify(legacy))}})
+          : Promise.reject(new Error('404'));
+      },
+    }),
+  },
+  fetch: async (url) => {
+    reads.push(url);
+    return profiles ? {ok: true, json: async () => profiles} : {ok: false};
+  },
+  AbortController,
+  setTimeout,
+  clearTimeout,
+});
+
+test('the launcher bundle is a script a browser can run', () => {
+  assert.doesNotThrow(() => new vm.Script(launcher, {filename: 'widget.js'}));
+});
+
+test('the launcher lays the profile over the legacy settings, and one failed read leaves the other', async () => {
+  const legacy = {title: 'Legacy title', color: '#111111', position: 'left'};
+  const read = async (world, query) => {
+    const context = launcherWorld(world);
+    vm.runInNewContext(settingsRead() + '\n;this.Pq = Pq;', context);
+    return {
+      ...(await context.Pq({account_id: -1, inbox_id: ASSISTANT, ...query})),
+    };
+  };
+
+  const queries = [];
+  const reads = [];
+  assert.deepEqual(
+    await read({legacy, profiles: twoProfiles(), queries, reads}),
+    {
+      title: 'Legacy title',
+      color: '#465EA4',
+      position: 'right',
+    }
+  );
+  // The legacy service is asked what it always was, and nothing more.
+  assert.deepEqual(JSON.parse(JSON.stringify(queries)), [
+    {
+      url: 'https://backend.inhotel.io/public/get_widget_settings',
+      query: {account_id: -1, inbox_id: ASSISTANT},
+    },
+  ]);
+  assert.equal(reads.length, 1);
+
+  assert.deepEqual(
+    await read(
+      {legacy, profiles: twoProfiles()},
+      {appearance_profile: 'govisit'}
+    ),
+    {title: 'Legacy title', color: '#0B6E4F', position: 'left'}
+  );
+  assert.deepEqual(await read({legacy, profiles: null}), legacy);
+  assert.deepEqual(await read({legacy: null, profiles: twoProfiles()}), {
+    color: '#465EA4',
+    position: 'right',
+  });
+  assert.deepEqual(await read({legacy: null, profiles: null}), {});
+});
+
+test('the launcher hands the iframe the colour, the side and what it needs to read the profile', async () => {
+  // The launcher component's real mount step and its settings call.
+  const helpers =
+    'var ' + piece(/^      fd =$/, /^      Wq =$/).replace(/,\s*$/, '') + ';';
+  const positions =
+    'var ' +
+    piece(/^      fg = 20,$/, /^      Zq = function \(t\) \{$/).replace(
+      /,\s*$/,
+      ''
+    ) +
+    ';';
+  const mount = piece(
+    /\(t\.prototype\.componentDidMount = function \(\) \{/,
+    /\(t\.prototype\.componentWillUnmount = function \(\) \{/
+  )
+    .replace(/^\s*\(t\.prototype\.componentDidMount = /, 'componentDidMount = ')
+    .replace(/\),\s*$/, ';');
+  const settingsCall = piece(
+    /\(n\.fetchWidgetSettings = function \(\) \{/,
+    /\(n\.updateWidgetSettingsMetadata = function \(\) \{/
+  )
+    .replace(/^\s*\(n\.fetchWidgetSettings = /, 'fetchWidgetSettings = ')
+    .replace(/\),\s*$/, ';');
+
+  const handed = async ({props = {}, legacy, profiles, lang = ''}) => {
+    const state = {};
+    const context = {
+      ...launcherWorld({legacy, profiles}),
+      // Names the mount step reads from the rest of the bundle.
+      ob: {},
+      di: {},
+      yc: {stringify: () => ''},
+      console: {log() {}, warn() {}, error() {}},
+      document: {documentElement: {lang}},
+      navigator: {language: 'en-US'},
+      window: {location: {origin: 'https://hotel.example'}},
+      Uq: function () {},
+      yD: () => () => {},
+      zD: () => () => {},
+      Tq: () => ({getCustomerId: () => null}),
+      Qj: () => ({}),
+      Bb: Object.assign,
+      xe: Object.assign,
+    };
+    vm.runInNewContext(
+      [
+        settingsRead(),
+        helpers,
+        positions,
+        'var componentDidMount, fetchWidgetSettings, n;',
+        'this.make = function (component) { n = component; ' +
+          settingsCall +
+          mount +
+          ' return {componentDidMount: componentDidMount, fetchWidgetSettings: fetchWidgetSettings}; };',
+      ].join('\n'),
+      context
+    );
+    const component = {
+      props: {
+        canToggle: true,
+        baseUrl: 'https://backend.inhotel.io',
+        token: -1,
+        inbox: ASSISTANT,
+        position: 'right',
+        ...props,
+      },
+      setState: (change) => Object.assign(state, change),
+      postMessageHandlers() {},
+      customEventHandlers() {},
+      EVENTS: [],
+      getDefaultTitle(settings) {
+        return Promise.resolve(this.props.title || settings.title);
+      },
+      getDefaultSubtitle(settings) {
+        return Promise.resolve(this.props.subtitle || settings.subtitle);
+      },
+      getDefaultGreeting(settings) {
+        return Promise.resolve(this.props.greeting || settings.greeting);
+      },
+      updateWidgetSettingsMetadata: () => Promise.resolve(),
+    };
+    const made = context.make(component);
+    component.fetchWidgetSettings = made.fetchWidgetSettings;
+    await made.componentDidMount.call(component);
+    const {
+      primaryColor,
+      position,
+      title,
+      appearanceProfile,
+      locale,
+      embedKeys,
+    } = state.config;
+    return {
+      primaryColor,
+      position,
+      title,
+      appearanceProfile,
+      locale,
+      embedKeys,
+    };
+  };
+  const legacy = {title: 'Legacy title', color: '#111111', position: 'left'};
+
+  // Without a profile: the legacy settings, as before, and the page language.
+  assert.deepEqual(await handed({legacy, profiles: null, lang: 'cs'}), {
+    primaryColor: '#111111',
+    position: 'left',
+    title: 'Legacy title',
+    appearanceProfile: undefined,
+    locale: 'cs',
+    embedKeys: '',
+  });
+  // The profile's colour and side stand in front of the legacy ones.
+  assert.deepEqual(await handed({legacy, profiles: twoProfiles()}), {
+    primaryColor: '#465EA4',
+    position: 'right',
+    title: 'Legacy title',
+    appearanceProfile: undefined,
+    locale: 'en-US',
+    embedKeys: '',
+  });
+  // What the page set in its own embed stands in front of both, and is named.
+  assert.deepEqual(
+    await handed({
+      legacy,
+      profiles: twoProfiles(),
+      props: {
+        primaryColor: '#ff0000',
+        title: 'Embed title',
+        appearanceProfile: 'govisit',
+      },
+    }),
+    {
+      primaryColor: '#ff0000',
+      position: 'left',
+      title: 'Embed title',
+      appearanceProfile: 'govisit',
+      locale: 'en-US',
+      embedKeys: 'title,primaryColor',
+    }
+  );
 });
 
 test('the embed can name the profile to draw', () => {

@@ -91,12 +91,14 @@ export const isAssistantId = (value: unknown): value is string =>
 export const isProfileCode = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-z][a-z0-9_]{0,63}$/.test(value);
 
-// A language tag the read resolves texts to. `all` asks it for every language
-// at once, which the chat cannot draw.
+// A language tag the read resolves texts to. It takes a language and two more
+// parts at most, so a longer tag is cut to that, and `_` is read as the `-` it
+// stands for. `all` asks for every language at once, which the chat cannot
+// draw.
 export const localeTag = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
-  const tag = value.trim();
-  return /^[a-z]{2,3}(?:-[a-z0-9]{2,8}){0,3}$/i.test(tag) &&
+  const tag = value.trim().replace(/_/g, '-').split('-').slice(0, 3).join('-');
+  return /^[a-z]{2,3}(?:-[a-z0-9]{2,8}){0,2}$/i.test(tag) &&
     tag.toLowerCase() !== 'all'
     ? tag
     : null;
@@ -207,8 +209,12 @@ export function profileAppearance(
 
   return {
     source: 'profile',
+    // The last of the three is the colour the launcher resolved for its
+    // button, so the window and the button are never of different colours.
     accentColor:
-      own('primaryColor') || color(root.values.accent_color) || undefined,
+      own('primaryColor') ||
+      color(root.values.accent_color) ||
+      settings.primaryColor,
     header: header && {
       title: own('title') || text(header.values.titles) || DEFAULT_TITLE,
       subtitle:
