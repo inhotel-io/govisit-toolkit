@@ -107,11 +107,6 @@ export type Appearance = {
   composer: {placeholder: string} | null;
   contact: ContactAppearance | null;
   branding: BrandingAppearance | null;
-  // Whether the subscription plan decides if the branding line is drawn. It
-  // does for a chat drawn from its settings, as it always has, and for a
-  // profile a page gives itself. The assistant's own profile lists the line or
-  // leaves it out.
-  isBrandingByPlan: boolean;
   messages: MessagesAppearance;
 };
 
@@ -410,7 +405,6 @@ export function settingsAppearance(settings: AppearanceSettings): Appearance {
     },
     // Whether it shows is still the subscription plan's word.
     branding: brandingOf(BRANDING),
-    isBrandingByPlan: true,
     messages: messagesOf(defaults('Messages')),
   };
 }
@@ -455,17 +449,13 @@ const formOf = (form: Read | null): ContactFormAppearance | null => {
 };
 
 // The model a profile describes, or null when the chat cannot start from it:
-// no `root`, or a root that is not this UI's.
-//
-// `isPageOwn` says the profile is one a page gives in its own embed, not the
-// assistant's. Such a profile decides everything but the branding line: that
-// stays the chat's own, drawn when the subscription plan says so, so that no
-// page can take it away or put another name on it.
+// no `root`, or a root that is not this UI's. It is the same for the
+// assistant's own profile and for one a page gives in its embed: either lists
+// every part, the branding line too, or leaves it out.
 export function profileAppearance(
   profile: AppearanceProfile,
   settings: AppearanceSettings,
-  explicit: string[],
-  isPageOwn = false
+  explicit: string[]
 ): Appearance | null {
   const root = readProfile(profile);
   if (!root) return null;
@@ -510,10 +500,7 @@ export function profileAppearance(
       copyFailedNote: contact.values.copy_failed_notes,
       form: formOf(contact.values.form),
     },
-    branding: isPageOwn
-      ? brandingOf(BRANDING)
-      : branding && brandingOf(branding.values),
-    isBrandingByPlan: isPageOwn,
+    branding: branding && brandingOf(branding.values),
     messages: messagesOf(messages ? messages.values : defaults('Messages')),
   };
 }
@@ -614,11 +601,10 @@ export function embedProfile(
 export function resolveAppearance(
   profile: AppearanceProfile | null,
   settings: AppearanceSettings,
-  explicit: string[],
-  isPageOwn = false
+  explicit: string[]
 ): Appearance {
   return (
-    (profile && profileAppearance(profile, settings, explicit, isPageOwn)) ||
+    (profile && profileAppearance(profile, settings, explicit)) ||
     settingsAppearance(settings)
   );
 }

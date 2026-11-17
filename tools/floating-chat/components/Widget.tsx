@@ -333,9 +333,8 @@ class Wrapper extends React.Component<Props, State> {
     // What the chat looks like: the profile the page gives itself, else the
     // assistant's appearance profile when it has one, and otherwise the
     // settings above, as it has always been drawn.
-    const ownProfile = embedProfile(this.state.embed, config.locale);
     const appearance = resolveAppearance(
-      ownProfile || this.state.profile,
+      embedProfile(this.state.embed, config.locale) || this.state.profile,
       {
         title,
         subtitle,
@@ -344,8 +343,7 @@ class Wrapper extends React.Component<Props, State> {
         primaryColor: configuredPrimaryColor,
         shouldShowContactForm: shouldShowCF,
       },
-      embedKeys(config.embedKeys),
-      !!ownProfile
+      embedKeys(config.embedKeys)
     );
     const theme = getThemeConfig({primary: appearance.accentColor});
     const primaryColor = theme.colors.primary;

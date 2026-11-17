@@ -281,7 +281,6 @@ test('without a profile the chat is as it is today', () => {
     composer: {placeholder: 'Start typing...'},
     contact: SETTINGS_CONTACT,
     branding: BRANDING,
-    isBrandingByPlan: true,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -311,7 +310,6 @@ test('a whole profile fills every block', () => {
     composer: {placeholder: 'Zeptejte se na cokoli...'},
     contact: PROFILE_CONTACT,
     branding: BRANDING,
-    isBrandingByPlan: false,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -682,42 +680,36 @@ test('a text that is one value for every language is not cut: too long, it is no
   );
 });
 
-test('a profile the page gives itself leaves the branding to the plan', () => {
-  const own = (change) =>
-    profileAppearance(
-      profile((item, element) => change(element)),
-      {},
-      [],
-      true
-    );
-  // Left out, or in other words: the line is the chat's own, and whether it
-  // is drawn is the subscription plan's word, as without a profile.
-  for (const look of [
-    own((element) => delete element('root').values.branding),
-    own((element) => {
-      element('branding').values = {
-        texts: 'Chat by',
-        name: 'Example Chat',
-        link_url: 'https://chat.example',
-      };
-    }),
-  ]) {
-    assert.equal(look.source, 'profile');
-    assert.deepEqual(look.branding, BRANDING);
-    assert.equal(look.isBrandingByPlan, true);
-  }
-  // The rest of the profile is the page's to give.
-  assert.equal(
-    own((element) => {
-      element('header').values.titles = 'From the page';
-    }).header.title,
-    'From the page'
+test('a profile the page gives itself decides the branding line too', () => {
+  const given = (branding) => ({
+    elements: [
+      {
+        name: 'root',
+        component: 'FloatingChat',
+        values: {header: 'header', ...(branding ? {branding: 'branding'} : {})},
+      },
+      {name: 'header', component: 'Header', values: {}},
+      ...(branding
+        ? [{name: 'branding', component: 'Branding', values: branding}]
+        : []),
+    ],
+  });
+  const look = (branding) =>
+    resolveAppearance(embedProfile(given(branding), 'cs'), {}, []);
+  // Left out, the chat has no branding line.
+  assert.equal(look(null).source, 'profile');
+  assert.equal(look(null).branding, null);
+  // Named with nothing of its own, it is the chat's own line.
+  assert.deepEqual(look({}).branding, BRANDING);
+  // In the page's words, and in the page's language.
+  assert.deepEqual(
+    look({
+      texts: {en: 'Chat by', cs: 'Provozuje'},
+      name: 'Example Chat',
+      link_url: 'https://chat.example',
+    }).branding,
+    {text: 'Provozuje', name: 'Example Chat', linkUrl: 'https://chat.example'}
   );
-  assert.equal(
-    resolveAppearance(profile(), {}, [], true).isBrandingByPlan,
-    true
-  );
-  assert.equal(resolveAppearance(profile(), {}, []).isBrandingByPlan, false);
 });
 
 // Every prop of the library, with a value that is not its default.
@@ -1441,18 +1433,45 @@ test('the branding line says what its look gives it', () => {
   );
 });
 
-test('the branding of a profile the page gives itself waits for the plan', () => {
-  const own = resolveAppearance(profile(), {}, [], true);
+test('a profile’s branding line is drawn as the profile has it, with no wait for the plan', () => {
+  const own = (branding) =>
+    resolveAppearance(
+      embedProfile(
+        {
+          elements: [
+            {
+              name: 'root',
+              component: 'FloatingChat',
+              values: branding ? {branding: 'branding'} : {},
+            },
+            ...(branding
+              ? [{name: 'branding', component: 'Branding', values: branding}]
+              : []),
+          ],
+        },
+        'en'
+      ),
+      {},
+      []
+    );
+  // The page's own profile leaves the line out: it is not drawn, whatever
+  // the subscription plan says.
   assert.doesNotMatch(
-    html(chat({appearance: own})),
+    html(chat({appearance: own(null)}, {shouldDisplayBranding: true})),
     /data-component="Branding"/
   );
-  assert.match(
-    html(chat({appearance: own}, {shouldDisplayBranding: true})),
-    /data-component="Branding"/
-  );
-  // The assistant's own profile lists the line, and it is drawn at once.
+  // It names the line, in its own words: drawn at once.
+  const named = html(chat({appearance: own({name: 'Example Chat'})}));
+  assert.match(named, /data-component="Branding"/);
+  assert.match(named, />Example Chat</);
+  // The assistant's own profile does the same.
   assert.match(html(chat({appearance: whole()})), /data-component="Branding"/);
+  // Without a profile the plan decides, as it always has.
+  assert.doesNotMatch(html(chat()), /data-component="Branding"/);
+  assert.match(
+    html(chat({}, {shouldDisplayBranding: true})),
+    /data-component="Branding"/
+  );
 });
 
 test('the contact form is never sent by the browser itself', () => {
@@ -2043,13 +2062,13 @@ test('the page’s own profile stands in front of the assistant’s, and goes wh
 
           wrapper.handleConfigUpdate({appearance: embedded()});
           assert.equal(shown(wrapper).header.title, 'Ze stránky');
-          // It is the page's, so it leaves the branding to the plan.
-          assert.equal(shown(wrapper).isBrandingByPlan, true);
+          // It names no branding line, so the chat has none.
+          assert.equal(shown(wrapper).branding, null);
 
           // What is no profile gives the assistant's own back.
           wrapper.handleConfigUpdate({appearance: nothing});
           assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
-          assert.equal(shown(wrapper).isBrandingByPlan, false);
+          assert.deepEqual(shown(wrapper).branding, BRANDING);
 
           // Another assistant on the same page is drawn in the page's
           // profile too: it is the page's, not the assistant's.
@@ -2110,7 +2129,6 @@ test('every setting reaches the look when there is no profile', () => {
       form: {...SETTINGS_CONTACT.form, isOffered: true},
     },
     branding: BRANDING,
-    isBrandingByPlan: true,
     messages: DEFAULT_MESSAGES,
   });
   assert.equal(

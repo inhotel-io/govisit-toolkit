@@ -895,7 +895,6 @@ export default function AppearancePlayground() {
               <p style={styles.note}>
                 What the admin API takes as a profile’s <code>elements</code>,
                 and what a page gives as <code>appearance</code> in its embed.
-                From a page the branding line stays the plan’s.
               </p>
               <div style={{...styles.inline, marginBottom: 8}}>
                 <button

@@ -1146,11 +1146,11 @@ class ChatWindow extends React.Component<Props, State> {
     const isFormOpen =
       this.state.isMailIconClicked &&
       (look.source === 'profile' ? hasContactForm : !!form);
-    // The assistant's profile lists the branding or leaves it out. For a chat
-    // drawn from its settings, or from a profile the page gives itself, the
-    // subscription plan decides, as it always has.
+    // A profile lists the branding or leaves it out, whether it is the
+    // assistant's own or one the page gives itself. For a chat drawn from its
+    // settings the subscription plan decides, as it always has.
     const hasBranding =
-      !!look.branding && (!look.isBrandingByPlan || shouldDisplayBranding);
+      !!look.branding && (look.source === 'profile' || shouldDisplayBranding);
 
     return (
       <Box

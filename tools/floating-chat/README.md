@@ -197,10 +197,8 @@ Each part the iframe draws carries its component's name as `data-component`.
 - **The page's own.** A page can give a whole profile itself, as `appearance`
   in `window.FloatingChatWindow.config`, in the shape above. It is drawn in
   place of the assistant's, and nothing is read from the API. A text is one
-  string for every language, or a map of languages as above. One part is not
-  the page's to give: the branding line. With a page's own profile it is the
-  chat's own line, drawn when the subscription plan says so, as it is without
-  a profile.
+  string for every language, or a map of languages as above. It decides every
+  part, the branding line too: a page can reword the line or leave it out.
 
 ```html
 <script>
