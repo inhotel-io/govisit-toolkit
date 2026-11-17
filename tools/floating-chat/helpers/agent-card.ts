@@ -56,7 +56,7 @@ export function webAddress(value: unknown, base?: string): string | null {
   }
 }
 
-export const isAgentCardUrl = (value: unknown): value is string =>
+export const isAgentCardUrl = (value: unknown): boolean =>
   webAddress(value) !== null;
 
 // Private, loopback and link-local IPv4 addresses, and 0.0.0.0/8.
