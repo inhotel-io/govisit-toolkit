@@ -151,6 +151,7 @@ const page = () => ({
             branding: 'branding',
             messages: 'messages',
             launcher: 'launcher',
+            suggestions: 'suggestions',
           },
         },
         {
@@ -158,6 +159,7 @@ const page = () => ({
           component: 'Launcher',
           values: {icon: 'outlined', has_greeting_preview: false},
         },
+        {name: 'suggestions', component: 'Suggestions', values: {limit: 3}},
         {
           name: 'header',
           component: 'Header',
@@ -281,6 +283,7 @@ test('without a profile the chat is as it is today', () => {
     composer: {placeholder: 'Start typing...'},
     contact: SETTINGS_CONTACT,
     branding: BRANDING,
+    suggestions: null,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -310,6 +313,7 @@ test('a whole profile fills every block', () => {
     composer: {placeholder: 'Zeptejte se na cokoli...'},
     contact: PROFILE_CONTACT,
     branding: BRANDING,
+    suggestions: {limit: 3},
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -725,6 +729,8 @@ const otherValue = (prop) => {
       return !prop.default;
     case 'option':
       return prop.options.find((option) => option !== prop.default);
+    case 'number':
+      return prop.default === prop.value_max ? prop.value_min : prop.value_max;
     default:
       return undefined;
   }
@@ -826,8 +832,8 @@ test('every prop of the library changes what the chat draws', () => {
       read++;
     }
   }
-  // 40 props in all: the launcher's two, and the two of the root it draws.
-  assert.equal(read, 36);
+  // 42 props in all: the launcher's two, and the two of the root it draws.
+  assert.equal(read, 38);
 });
 
 test('a profile the page gives in its embed is read in the page’s language', () => {
@@ -1138,15 +1144,21 @@ const conversation = () => [
 ];
 
 test('the chat draws the blocks its look lists, and only those', () => {
-  assert.deepEqual(blocksIn(html(chat({appearance: whole()}))), BLOCKS);
+  // The assistant's phone gives the contact line something to show.
+  const phone = {hotelPhone: '+420 111 111 111'};
   assert.deepEqual(
-    blocksIn(html(chat({appearance: {...whole(), header: null}}))),
+    blocksIn(html(chat({...phone, appearance: whole()}))),
+    BLOCKS
+  );
+  assert.deepEqual(
+    blocksIn(html(chat({...phone, appearance: {...whole(), header: null}}))),
     ['Messages', 'Composer', 'Contact', 'Branding']
   );
   assert.deepEqual(
     blocksIn(
       html(
         chat({
+          ...phone,
           appearance: {
             ...whole(),
             composer: null,
@@ -1158,6 +1170,14 @@ test('the chat draws the blocks its look lists, and only those', () => {
     ),
     ['Header', 'Messages']
   );
+  // A contact line with no phone, no e-mail and no form to offer is not
+  // drawn, although the profile lists it.
+  assert.deepEqual(blocksIn(html(chat({appearance: whole()}))), [
+    'Header',
+    'Messages',
+    'Composer',
+    'Branding',
+  ]);
 });
 
 test('each block says what the look gives it', () => {
@@ -1490,8 +1510,6 @@ test('the contact form is never sent by the browser itself', () => {
       email: '',
       message: '',
       clickedSubmit: false,
-      shouldSummarize: false,
-      primaryColor: '#465EA4',
       form,
     });
     assert.equal(element.props.as, 'form');
@@ -1963,7 +1981,17 @@ test('the chat is told while its profile is being read, and when the read is ove
         assert.equal(pending(idle), false);
         idle.componentWillUnmount();
       }
-      assert.equal(calls.length, 2);
+      // The profile was read twice. Its look offers the card's questions, so
+      // the card was read too.
+      const reads = calls.map((call) => call.url);
+      assert.equal(
+        reads.filter((url) => /appearance-profiles/.test(url)).length,
+        2
+      );
+      assert.equal(
+        reads.filter((url) => /agent-card\.json$/.test(url)).length,
+        1
+      );
     }
   );
 });
@@ -2129,6 +2157,7 @@ test('every setting reaches the look when there is no profile', () => {
       form: {...SETTINGS_CONTACT.form, isOffered: true},
     },
     branding: BRANDING,
+    suggestions: null,
     messages: DEFAULT_MESSAGES,
   });
   assert.equal(
@@ -2179,7 +2208,9 @@ test('a new language, and a newly named profile, are read again', async () => {
         update({title: 'Only a title'});
         await settle();
         assert.deepEqual(
-          calls.map((call) => call.url.split('?')[1]),
+          calls
+            .filter((call) => /appearance-profiles/.test(call.url))
+            .map((call) => call.url.split('?')[1]),
           [
             'ui=floating_chat&limit=200&locale=en',
             'ui=floating_chat&limit=200&locale=cs',
@@ -2388,6 +2419,21 @@ test('nothing is sent from the playground’s frame, and its profile read is ans
   assert.deepEqual(asked, [read]);
   assert.deepEqual(reached, []);
 
+  // The card the chat reads for its questions is the playground's, when it
+  // holds one, and never the agent's.
+  const cardRead = `https://${ASSISTANT}.agents.inhotel.io/.well-known/agent-card.json`;
+  const sample = {name: 'Preview', skills: [{examples: ['Is it far?']}]};
+  const withCard = guardedFetch(
+    frame,
+    () => draft,
+    (url) => (url === cardRead ? sample : undefined)
+  );
+  assert.deepEqual(await (await withCard(cardRead)).json(), sample);
+  assert.equal((await withCard(cardRead, {method: 'POST'})).ok, false);
+  assert.equal((await withCard(agent, {method: 'POST', body: '{}'})).ok, false);
+  assert.equal((await guarded(cardRead)).ok, false);
+  assert.deepEqual(reached, []);
+
   // Reads of other things go on as they are.
   assert.equal(
     await guarded(`${backend}/public/get_widget_settings`),
@@ -2411,7 +2457,7 @@ test('the playground runs on a local server only, and guards its frame before th
     /if \(!isLocal\) \{\s*return \(\s*<div[^>]*>This page runs only on a local server\.<\/div>/,
     // The guard goes in front of the frame's `fetch` when the frame loads,
     // and again before the chat is told anything.
-    /win\.fetch = guardedFetch\(win, answer\);/,
+    /win\.fetch = guardedFetch\(win, answer, card\);/,
     /onLoad=\{guard\}/,
     /const onChatLoaded = \(\) => \{\s*guard\(\);\s*push\(\);/,
   ]) {
@@ -2877,10 +2923,16 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
     .replace(/^\s*\(n\.fetchWidgetSettings = /, 'fetchWidgetSettings = ')
     .replace(/\),\s*$/, ';');
 
-  const handed = async ({props = {}, legacy, profiles, lang = ''}) => {
+  const handed = async ({
+    props = {},
+    legacy,
+    profiles,
+    lang = '',
+    queries = [],
+  }) => {
     const state = {};
     const context = {
-      ...launcherWorld({legacy, profiles}),
+      ...launcherWorld({legacy, profiles, queries}),
       // Names the mount step reads from the rest of the bundle.
       ob: {},
       di: {},
@@ -2956,6 +3008,9 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
         // `undefined` is left out here, as it is of the iframe's address.
         appearanceInline: state.config.appearanceInline,
         launcher: state.launcher,
+        inbox: state.config.inbox || undefined,
+        agentCard: state.config.agentCard,
+        contactHandler: state.config.contactHandler,
       })
     );
   };
@@ -2968,7 +3023,34 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
     title: 'Legacy title',
     locale: 'cs',
     embedKeys: '',
+    inbox: ASSISTANT,
   });
+  // Any other agent: its card, no inHotel ID, and whether the page takes the
+  // contact form. Nothing is read from the legacy service.
+  const queries = [];
+  const card = 'https://agent.example/.well-known/agent-card.json';
+  const forCard = await handed({
+    legacy,
+    profiles: twoProfiles(),
+    queries,
+    props: {inbox: '', agentCard: card, onContactFormSubmit: () => {}},
+  });
+  assert.equal(forCard.inbox, undefined);
+  assert.equal(forCard.agentCard, card);
+  assert.equal(forCard.contactHandler, 1);
+  assert.equal(forCard.title, undefined);
+  assert.equal(forCard.primaryColor, '#465ea4');
+  assert.deepEqual(queries, []);
+  assert.equal(
+    (
+      await handed({
+        legacy,
+        profiles: null,
+        props: {inbox: '', agentCard: card},
+      })
+    ).contactHandler,
+    undefined
+  );
   // The profile's colour and side stand in front of the legacy ones.
   assert.deepEqual(await handed({legacy, profiles: twoProfiles()}), {
     primaryColor: '#465EA4',
@@ -2977,6 +3059,7 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
     locale: 'en-US',
     embedKeys: '',
     launcher: BUTTON,
+    inbox: ASSISTANT,
   });
   // What the page set in its own embed stands in front of both, and is named.
   assert.deepEqual(
@@ -2997,6 +3080,7 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
       locale: 'en-US',
       embedKeys: 'title,primaryColor',
       launcher: BUTTON,
+      inbox: ASSISTANT,
     }
   );
   // A profile without the round button, and one the page gives itself: the
@@ -3018,6 +3102,7 @@ test('the launcher hands the iframe the colour, the side and what it needs to re
       embedKeys: '',
       appearanceInline: 1,
       launcher: {icon: 'filled', preview: false},
+      inbox: ASSISTANT,
     }
   );
 });
@@ -3143,7 +3228,7 @@ test('the launcher wires the profile into its settings and the iframe configurat
     /appearanceProfile: appearanceProfile,/,
     // which asks for it together with the legacy settings,
     /appearance_profile: e\.appearanceProfile/,
-    /cd\.fetchAppearanceOverlay\(\s*t\.inbox_id,\s*t\.appearance_profile,\s*t\.appearance\s*\)/,
+    /cd\.fetchAppearanceOverlay\(\s*t\.inbox_id,\s*t\.appearance_profile,\s*t\.appearance,\s*t\.agent_card\s*\)/,
     // and tells the iframe what it needs to read the profile itself.
     /T\.appearanceProfile = this\.props\.appearanceProfile/,
     /T\.locale = cd\.pageLanguage\(document, navigator\)/,

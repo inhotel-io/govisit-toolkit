@@ -4,11 +4,10 @@
   "scripts": {
     "dev": "next dev -p ${PORT:-3000}",
     "build": "next build",
-    "export": "next export",
-    "deploy": "npm run build && npm run export",
     "prettier": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "start": "next start -p ${PORT:-3000}",
-    "test": "npm run test:security && node tests/appearance.cjs && node tests/smoke.cjs",
+    "test": "npm run test:security && node tests/appearance.cjs && node tests/agent.cjs && node tests/smoke.cjs",
+    "agent:echo": "node dev/echo-agent.cjs",
     "test:security": "node tests/security.cjs"
   },
   "husky": {
@@ -28,10 +27,8 @@
     "dayjs": "^1.10.6",
     "framer-motion": "^2.3.0",
     "next": "^9.4.4",
-    "rc-upload": "^3.3.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-emoji-render": "^1.2.4",
     "react-markdown": "^5.0.3",
     "react-spinners": "^0.13.8",
     "react-syntax-highlighter": "^15.5.0",
@@ -46,10 +43,8 @@
   },
   "devDependencies": {
     "@types/node": "^14.0.23",
-    "@types/phoenix": "^1.5.0",
     "@types/react": "^16.9.43",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@types/superagent": "^4.1.8",
     "@types/theme-ui": "^0.3.6",
     "@types/tinycolor2": "^1.4.2",
     "husky": "^4.2.5",

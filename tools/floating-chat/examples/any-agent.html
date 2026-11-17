@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Floating Chat with any A2A agent</title>
+  </head>
+  <body>
+    <h1>Floating Chat with any A2A agent</h1>
+    <p>
+      The chat in the corner talks to the agent whose card this page names. Its
+      look is set below, every part of it, and its contact form is sent to this
+      page's own code. Nothing here uses a backend of inHotel's.
+    </p>
+    <p>
+      To try it on your computer, start the echo agent and the chat
+      (<code>npm run agent:echo</code> and <code>npm run dev</code>), then serve
+      this folder over http, for example with
+      <code>python3 -m http.server -d examples 8080</code>, and open
+      <code>http://localhost:8080/any-agent.html</code>. A page opened as a file
+      cannot frame the chat.
+    </p>
+
+    <script>
+      window.FloatingChatWindow = {
+        config: {
+          // The one thing the chat needs: the address of the agent's card.
+          // The agent must answer the origin that serves the chat.
+          agent_card_url: 'http://localhost:3300/.well-known/agent-card.json',
+
+          // The look of the chat, every part of it. Leave it out, and the chat
+          // takes the look the card publishes, or the card's name, description
+          // and picture. A part the profile does not name is not drawn.
+          appearance: {
+            elements: [
+              {
+                name: 'root',
+                component: 'FloatingChat',
+                values: {
+                  header: 'header',
+                  greeting: 'greeting',
+                  composer: 'composer',
+                  suggestions: 'suggestions',
+                  contact: 'contact',
+                  messages: 'messages',
+                  launcher: 'launcher',
+                  accent_color: '#0B6E4F',
+                  screen_side: 'right',
+                },
+              },
+              {
+                name: 'header',
+                component: 'Header',
+                values: {
+                  titles: {en: 'Ask us anything', cs: 'Zeptejte se nás'},
+                  subtitles: 'We answer in a minute.',
+                },
+              },
+              {
+                name: 'greeting',
+                component: 'Greeting',
+                values: {
+                  greetings: {en: 'Hello! How can I help?', cs: 'Dobrý den!'},
+                },
+              },
+              {
+                name: 'composer',
+                component: 'Composer',
+                values: {input_placeholders: 'Write your question…'},
+              },
+              // The questions in the agent's card, offered before the guest
+              // writes.
+              {
+                name: 'suggestions',
+                component: 'Suggestions',
+                values: {limit: 3},
+              },
+              {
+                name: 'contact',
+                component: 'Contact',
+                values: {
+                  phone: '+1 555 0100',
+                  email: 'front@example.com',
+                  form: 'form',
+                },
+              },
+              {
+                name: 'form',
+                component: 'ContactForm',
+                values: {
+                  titles: 'Write to the front desk',
+                  email: 'email',
+                  message: 'message',
+                  send_labels: 'Send',
+                  confirmations: 'Thank you! We will write back today.',
+                },
+              },
+              {
+                name: 'email',
+                component: 'FormField',
+                values: {labels: 'Your e-mail'},
+              },
+              {name: 'message', component: 'FormField', values: {}},
+              {
+                name: 'messages',
+                component: 'Messages',
+                values: {
+                  assistant_bubble_color: '#EEF6F2',
+                  has_feedback: false,
+                },
+              },
+              {
+                name: 'launcher',
+                component: 'Launcher',
+                values: {icon: 'filled'},
+              },
+            ],
+          },
+
+          // The contact form, sent to your own code. Answer `{ok: false,
+          // message}` to tell the guest it was not sent. Leave it out, and the
+          // chat offers no form.
+          onContactFormSubmit: async (form) => {
+            console.log('Contact form', form);
+            return {ok: true};
+          },
+        },
+      };
+    </script>
+    <script defer src="http://localhost:3000/widget.js"></script>
+  </body>
+</html>

@@ -1,14 +1,20 @@
 import React, {useEffect, useState} from 'react';
 import Head from 'next/head';
+import {inhotelProfileOf, isAgentCardUrl} from '../helpers/agent-card';
+import {isDev} from '../helpers/config';
 
 // The agent this page chats with when no ?agent_card_url= is given: the
 // inHotel Solutions Specialist.
 const EXAMPLE_AGENT_CARD_URL =
   'https://b6739ac5-af3d-4cf0-a980-6ad34122f58d.agents.inhotel.io/.well-known/agent-card.json';
 
-// The same check the launcher makes. It also means a link to this page cannot
-// put someone else's agent behind a govisit.ai address.
-const INHOTEL_AGENT_CARD = /^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.agents\.inhotel\.io\/\.well-known\/agent-card\.json$/i;
+// The agents this page chats with when it is asked for one. On a local server
+// any agent's card is taken. Where the page is hosted only an inHotel agent's
+// is, so a link to it cannot put someone else's agent behind its address.
+const isShownHere = (agentCardUrl: string): boolean =>
+  isDev(window)
+    ? isAgentCardUrl(agentCardUrl)
+    : !!inhotelProfileOf(agentCardUrl);
 
 const embedSnippet = (agentCardUrl: string) => `<script
   defer
@@ -26,9 +32,7 @@ export default function EmbedLanding() {
       'agent_card_url'
     );
     const url =
-      requested && INHOTEL_AGENT_CARD.test(requested)
-        ? requested
-        : EXAMPLE_AGENT_CARD_URL;
+      requested && isShownHere(requested) ? requested : EXAMPLE_AGENT_CARD_URL;
 
     setAgentCardUrl(url);
     const script = document.createElement('script');
@@ -54,8 +58,8 @@ export default function EmbedLanding() {
       </Head>
       <h1 style={{fontSize: 28, marginBottom: 8}}>Floating Chat</h1>
       <p>
-        A floating chat button for any page, talking to an A2A agent through its
-        agent card. It takes the agent the way Focus Chat does, as{' '}
+        A floating chat button for any page, talking to any A2A agent through
+        its agent card. It takes the agent the way Focus Chat does, as{' '}
         <code>agent_card_url</code>. The button in the corner is live.
       </p>
       <h2 style={{fontSize: 18, marginTop: 32}}>Embed it</h2>
@@ -71,8 +75,10 @@ export default function EmbedLanding() {
         {agentCardUrl ? embedSnippet(agentCardUrl) : ''}
       </pre>
       <p style={{fontSize: 14, color: '#595959'}}>
-        To try another inHotel agent here, open this page with{' '}
-        <code>?agent_card_url=</code> and its agent card URL.
+        To try another agent here, open this page with{' '}
+        <code>?agent_card_url=</code> and its agent card URL. On a local server
+        any A2A agent&rsquo;s card works; on this hosted page, an inHotel
+        agent&rsquo;s.
       </p>
     </main>
   );

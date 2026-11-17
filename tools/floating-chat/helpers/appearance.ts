@@ -23,6 +23,8 @@ type LibraryProp = {
   child_component?: string | null;
   options?: string[];
   length_max?: number | null;
+  value_min?: number | null;
+  value_max?: number | null;
   default?: unknown;
 };
 
@@ -107,6 +109,9 @@ export type Appearance = {
   composer: {placeholder: string} | null;
   contact: ContactAppearance | null;
   branding: BrandingAppearance | null;
+  // The example questions of the agent's card, offered before the guest
+  // writes: how many at most.
+  suggestions: {limit: number} | null;
   messages: MessagesAppearance;
 };
 
@@ -128,6 +133,13 @@ export type AppearanceSettings = {
   newMessagePlaceholder?: string;
   primaryColor?: string;
   shouldShowContactForm?: boolean;
+  // Whether the look offers the card's example questions. A card's chat
+  // does; an inHotel chat drawn from its settings does not.
+  suggestions?: boolean;
+  // A card's name and description: the header's title and subtitle when
+  // neither the page nor a profile gives them.
+  agentName?: string;
+  agentDescription?: string;
 };
 
 export type ProfileElement = {
@@ -222,6 +234,13 @@ const checked = (prop: LibraryProp, value: unknown): any => {
       return color(value);
     case 'boolean':
       return typeof value === 'boolean' ? value : null;
+    case 'number':
+      return typeof value === 'number' &&
+        isFinite(value) &&
+        (typeof prop.value_min !== 'number' || value >= prop.value_min) &&
+        (typeof prop.value_max !== 'number' || value <= prop.value_max)
+        ? value
+        : null;
     case 'option':
       return typeof value === 'string' && (prop.options || []).includes(value)
         ? value
@@ -251,6 +270,7 @@ const defaults = (name: string): {[prop: string]: any} =>
   );
 
 const HEADER = defaults('Header');
+const SUGGESTIONS = defaults('Suggestions');
 const CONTACT = defaults('Contact');
 const FORM = defaults('ContactForm');
 const BRANDING = defaults('Branding');
@@ -261,8 +281,6 @@ export const DEFAULT_PLACEHOLDER: string = defaults('Composer')
   .input_placeholders;
 export const DEFAULT_FORM_TITLE: string = FORM.titles;
 export const DEFAULT_FORM_CONFIRMATION: string = FORM.confirmations;
-export const DEFAULT_ASSISTANT_BUBBLE_COLOR: string = defaults('Messages')
-  .assistant_bubble_color;
 
 // What a field of the contact form says when its element gives it no words:
 // the field's own name, by the slot of the form it sits in.
@@ -362,11 +380,16 @@ const brandingOf = (values: {[prop: string]: any}): BrandingAppearance => ({
 });
 
 export function settingsAppearance(settings: AppearanceSettings): Appearance {
-  const {
-    title = DEFAULT_TITLE,
-    subtitle = DEFAULT_SUBTITLE,
-    newMessagePlaceholder = DEFAULT_PLACEHOLDER,
-  } = settings;
+  const {newMessagePlaceholder = DEFAULT_PLACEHOLDER} = settings;
+  // A title the settings give is kept, even an empty one, as it always was.
+  const title =
+    settings.title !== undefined
+      ? settings.title
+      : settings.agentName || DEFAULT_TITLE;
+  const subtitle =
+    settings.subtitle !== undefined
+      ? settings.subtitle
+      : settings.agentDescription || DEFAULT_SUBTITLE;
   const field = (label: string): FormFieldAppearance => ({
     label,
     isRequired: true,
@@ -405,6 +428,7 @@ export function settingsAppearance(settings: AppearanceSettings): Appearance {
     },
     // Whether it shows is still the subscription plan's word.
     branding: brandingOf(BRANDING),
+    suggestions: settings.suggestions ? {limit: SUGGESTIONS.limit} : null,
     messages: messagesOf(defaults('Messages')),
   };
 }
@@ -472,6 +496,7 @@ export function profileAppearance(
   const composer: Read | null = root.values.composer;
   const contact: Read | null = root.values.contact;
   const branding: Read | null = root.values.branding;
+  const suggestions: Read | null = root.values.suggestions;
   const messages: Read | null = root.values.messages;
   const greetingText =
     greeting && (own('greeting') || greeting.values.greetings);
@@ -483,8 +508,16 @@ export function profileAppearance(
     accentColor:
       own('primaryColor') || root.given.accent_color || settings.primaryColor,
     header: header && {
-      title: own('title') || header.values.titles,
-      subtitle: own('subtitle') || header.values.subtitles,
+      title:
+        own('title') ||
+        header.given.titles ||
+        settings.agentName ||
+        header.values.titles,
+      subtitle:
+        own('subtitle') ||
+        header.given.subtitles ||
+        settings.agentDescription ||
+        header.values.subtitles,
     },
     greeting: greetingText ? {text: greetingText} : null,
     composer: composer && {
@@ -501,6 +534,7 @@ export function profileAppearance(
       form: formOf(contact.values.form),
     },
     branding: branding && brandingOf(branding.values),
+    suggestions: suggestions && {limit: suggestions.values.limit},
     messages: messagesOf(messages ? messages.values : defaults('Messages')),
   };
 }

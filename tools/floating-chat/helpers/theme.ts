@@ -87,7 +87,6 @@ export const getThemeConfig = (settings: ThemeSettings) => {
         cursor: 'pointer',
         outline: 0,
         transition: '0.2s',
-        // background: 'transparent',
         background: base.lighten(40).toString(),
         color: overrides.primary,
         borderColor: overrides.primary,

@@ -105,32 +105,6 @@ export function getSessionId(assistantId: string): string | null {
 }
 
 /**
- * Set/update session ID for an assistant
- */
-export function setSessionId(assistantId: string, sessionId: string): void {
-  try {
-    const key = getStorageKey(assistantId);
-    const raw = localStorage.getItem(key);
-
-    if (raw) {
-      const data: StoredData = JSON.parse(raw);
-      data.sessionId = sessionId;
-      data.timestamp = Date.now();
-      localStorage.setItem(key, JSON.stringify(data));
-    } else {
-      const data: StoredData = {
-        messages: [],
-        sessionId,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-  } catch (error) {
-    console.warn('Failed to set session ID:', error);
-  }
-}
-
-/**
  * Get A2A context ID for session continuity (stored in sessionStorage)
  */
 export function getContextId(assistantId: string): string | null {
@@ -152,53 +126,4 @@ export function setContextId(assistantId: string, contextId: string): void {
   } catch (error) {
     console.warn('Failed to set context ID:', error);
   }
-}
-
-/**
- * Clear context ID for an assistant
- */
-export function clearContextId(assistantId: string): void {
-  try {
-    const key = `${CONTEXT_KEY}_${assistantId}`;
-    sessionStorage.removeItem(key);
-  } catch (error) {
-    console.warn('Failed to clear context ID:', error);
-  }
-}
-
-/**
- * Clear chat session for an assistant
- */
-export function clearChatSession(assistantId: string): void {
-  try {
-    const key = getStorageKey(assistantId);
-    localStorage.removeItem(key);
-    // Also clear context ID
-    clearContextId(assistantId);
-  } catch (error) {
-    console.warn('Failed to clear chat session:', error);
-  }
-}
-
-/**
- * Add a single message to history
- */
-export function addMessageToHistory(
-  assistantId: string,
-  message: StoredMessage
-): void {
-  const history = getChatHistory(assistantId);
-  history.push(message);
-  saveChatHistory(assistantId, history);
-}
-
-/**
- * Get the last N messages from history
- */
-export function getRecentHistory(
-  assistantId: string,
-  count: number = 20
-): StoredMessage[] {
-  const history = getChatHistory(assistantId);
-  return history.slice(-count);
 }

@@ -1,14 +1,7 @@
 import React, {useState} from 'react';
-import {Box, Button, Flex, Input, Text} from 'theme-ui';
-import Upload from 'rc-upload';
-import ResizableTextArea from './ResizableTextArea';
+import {Box, Button, Flex, Text} from 'theme-ui';
 import SendIcon from './SendIcon';
-import PaperclipIcon from './PaperclipIcon';
-import {Attachment, Message} from '../helpers/types';
 import MailIcon from './MailIcon';
-import styles from './ChatFooter.module.css';
-import CloseIcon from './CloseIcon';
-import displayContactForm from './ChatWindow';
 import PhoneIcon from './PhoneIcon';
 import DiscardIcon from './DiscardIcon';
 import Tippy from '@tippyjs/react';
@@ -26,10 +19,10 @@ const ChatFooterEmail = ({
   isSubmittedCF,
   hotelEmail,
   hotelPhone,
+  isPhoneShown = true,
   shouldShowContactForm,
   isLoading,
   statusMessageCF,
-  handleSummarize,
   look,
 }: {
   onClickMailIcon: () => void;
@@ -38,10 +31,12 @@ const ChatFooterEmail = ({
   isSubmittedCF: boolean;
   hotelEmail: string;
   hotelPhone: string;
+  // Whether the phone and its icon are drawn: with a phone, and always on a
+  // line drawn from inHotel's settings.
+  isPhoneShown?: boolean;
   shouldShowContactForm: boolean;
   isLoading: boolean;
   statusMessageCF: string;
-  handleSummarize: () => void;
   // What the look gives the contact line: its hints, and the words of its
   // form when it has one.
   look: ContactAppearance;
@@ -75,18 +70,6 @@ const ChatFooterEmail = ({
       }
     );
   };
-  const [clickedMailIcon, setClickedMailIcon] = useState(false);
-
-  const handleMailClick = () => {
-    // console.log("Mail was clicked!")
-    setClickedMailIcon(!clickedMailIcon);
-    if (clickedMailIcon === true) {
-      console.log('Open the tray');
-    } else {
-      console.log('Close');
-    }
-  };
-
   const [isDiscardFocused, setIsDiscardFocused] = useState(false);
   const useHoverStylesOnEnter = () => {
     setIsDiscardFocused(true);
@@ -96,14 +79,7 @@ const ChatFooterEmail = ({
   };
 
   return (
-    <Box
-      sx={
-        {
-          // minHeight: '90px',
-          // bg: '#f5f5f5',
-        }
-      }
-    >
+    <Box sx={{}}>
       {isMailIconClicked && (
         <Box>
           <Flex
@@ -111,7 +87,6 @@ const ChatFooterEmail = ({
               alignItems: 'center',
               justifyContent:
                 statusMessageCF === null ? 'space-between' : 'left',
-              // justifyContent:'left',
               flexDirection: 'row',
             }}
             py={2}
@@ -122,7 +97,6 @@ const ChatFooterEmail = ({
               sx={{flex: '0 0 auto', display: 'flex', alignItems: 'center'}}
             >
               <Tippy
-                // theme="dynamic-primary"
                 content={form ? form.discardHint : ''}
                 interactive={true}
                 interactiveBorder={20}
@@ -190,7 +164,6 @@ const ChatFooterEmail = ({
                   </Box>
                 )}
                 <Tippy
-                  // theme="dynamic-primary"
                   content={form ? form.sendHint : ''}
                   interactive={true}
                   interactiveBorder={20}
@@ -212,7 +185,6 @@ const ChatFooterEmail = ({
                     }}
                   >
                     {!isLoading && <SendIcon fill="background" />}
-                    {/* {isLoading && (<FadeLoader color="background" height={'16px'} width={'16px'} />)} */}
                     {isLoading && (
                       <div
                         style={{
@@ -273,12 +245,9 @@ const ChatFooterEmail = ({
         p={0}
         sx={{
           color: 'tertiary',
-          // bg: '#f8f8f8',
-          // variant: 'styles.input.transparent',
           flex: 1,
           fontSize: '14px',
           alignItems: 'center',
-          // justifyContent: 'space-between'
         }}
       >
         <Flex
@@ -288,8 +257,6 @@ const ChatFooterEmail = ({
             justifyContent: 'space-between',
             borderTop: isMailIconClicked ? '1px solid rgb(230, 230, 230)' : '',
             minHeight: '40px',
-            // TODO: only show shadow on focus TextArea below
-            // boxShadow: isMailIconClicked? 'rgba(0, 0, 0, 0.1) 0px 0px 100px 0px': '',
           }}
         >
           <Box
@@ -298,24 +265,26 @@ const ChatFooterEmail = ({
               alignItems: 'center',
             }}
           >
-            <PhoneIcon />
-            <Box
-              p={1}
-              sx={{
-                mr: 0,
-                wordWrap: 'break-word',
-                fontSize: '14px',
-              }}
-            >
-              <Tippy content={hintText(phoneHint)}>
-                <Text
-                  sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
-                  onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
-                >
-                  {hotelPhone}
-                </Text>
-              </Tippy>
-            </Box>
+            {isPhoneShown && <PhoneIcon />}
+            {isPhoneShown && (
+              <Box
+                p={1}
+                sx={{
+                  mr: 0,
+                  wordWrap: 'break-word',
+                  fontSize: '14px',
+                }}
+              >
+                <Tippy content={hintText(phoneHint)}>
+                  <Text
+                    sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
+                    onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
+                  >
+                    {hotelPhone}
+                  </Text>
+                </Tippy>
+              </Box>
+            )}
           </Box>
           <Box
             sx={{
@@ -348,7 +317,6 @@ const ChatFooterEmail = ({
               </Tippy>
             </Box>
             <Tippy
-              // theme="dynamic-primary"
               content={form ? form.openHint : ''}
               disabled={!form}
               interactive={true}
@@ -360,7 +328,7 @@ const ChatFooterEmail = ({
                   shouldShowContactForm ? 'true' : undefined
                 }
                 onClick={() => {
-                  onClickMailIcon(), handleSummarize();
+                  onClickMailIcon();
                 }}
                 sx={{
                   cursor: 'pointer',

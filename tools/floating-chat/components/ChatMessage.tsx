@@ -267,7 +267,6 @@ const ChatMessage = ({
     </span>
   );
 
-  // console.log("ShowLoader?: ",shouldShowLoader);
   if (isMe) {
     const isDarkBubble = isGuestBubbleDark;
     return (
@@ -335,7 +334,6 @@ export const PopupChatMessage = ({
   const {body, user, type} = message;
   const isBot = type === 'bot';
   const identifer = isBot ? 'Bot' : getAgentIdentifier(user);
-  // const identifer = isBot ? 'Bot' : null;
 
   return (
     <Box pr={0} pl={0} pb={2}>
