@@ -8,14 +8,21 @@
 // the database, and what the chat would send from here, a message or the
 // contact form, is stopped in the frame.
 //
-// The page can read an assistant's profile from the public API to start from.
-// It runs on a local server only.
+// The page can start from an inHotel assistant's profile, read from the public
+// API, or from the look an agent's card publishes. It runs on a local server
+// only.
 import React, {useEffect, useRef, useState} from 'react';
 import Head from 'next/head';
 import library from '../appearance-library.json';
 import {DEFAULT_BASE_URL, isDev} from '../helpers/config';
 import {GOVISIT_BLUE_600} from '../helpers/theme';
 import {guardedFetch} from '../helpers/playground';
+import {
+  APPEARANCE_EXTENSION,
+  inhotelCardUrl,
+  isAgentCardUrl,
+  readAgentCard,
+} from '../helpers/agent-card';
 import {
   FLOATING_CHAT_UI,
   embedProfile,
@@ -41,6 +48,8 @@ type Prop = {
   options?: string[];
   default?: any;
   length_max?: number;
+  value_min?: number;
+  value_max?: number;
 };
 type Component = {
   name: string;
@@ -58,6 +67,12 @@ const ROOT = COMPONENTS.find((component) => component.is_root);
 // The chat in the frame is no assistant's: its ID is no one's, so it has no
 // agent to talk to and no history but the sample one.
 const PREVIEW_INBOX = '00000000-0000-4000-8000-000000000000';
+// The questions the preview's card gives, when no card was read.
+const SAMPLE_QUESTIONS = [
+  'When is breakfast?',
+  'Is there parking?',
+  'What is there to see nearby?',
+];
 const HISTORY_KEY = `inhotel_chat_history_${PREVIEW_INBOX}`;
 // The version the launcher passes. Older ones are drawn without the close
 // control.
@@ -197,14 +212,18 @@ const sampleHistory = (greeting: string) => {
 
 // The guard goes in front of the frame's own `fetch`, once for each time the
 // frame loads.
-function guardFrame(win: any, answer: (url: string) => unknown) {
+function guardFrame(
+  win: any,
+  answer: (url: string) => unknown,
+  card: (url: string) => unknown
+) {
   if (!win || !win.fetch || win.__appearancePlayground) return;
   win.__appearancePlayground = true;
   // The dev server's badge would sit on the contact line.
   const style = win.document.createElement('style');
   style.textContent = DEV_BADGE_HIDDEN;
   win.document.head.appendChild(style);
-  win.fetch = guardedFetch(win, answer);
+  win.fetch = guardedFetch(win, answer, card);
 }
 
 export default function AppearancePlayground() {
@@ -219,6 +238,8 @@ export default function AppearancePlayground() {
   const [sample, setSample] = useState(true);
   const [hotelEmail, setHotelEmail] = useState('hotel@example.com');
   const [hotelPhone, setHotelPhone] = useState('+1 555 0100');
+  // The questions of the card the playground started from, for the preview.
+  const [questions, setQuestions] = useState<string[]>(SAMPLE_QUESTIONS);
   const [isOpen, setOpen] = useState(true);
   // A frame keeps the address it was made with: a new address would load it
   // again. Later languages reach it by message.
@@ -249,8 +270,15 @@ export default function AppearancePlayground() {
 
   // What the frame is told is read from `live`, so a handler set up once
   // still tells it the current values.
-  const live = useRef({isOpen, locale, hotelEmail, hotelPhone, profile});
-  live.current = {isOpen, locale, hotelEmail, hotelPhone, profile};
+  const live = useRef({
+    isOpen,
+    locale,
+    hotelEmail,
+    hotelPhone,
+    profile,
+    questions,
+  });
+  live.current = {isOpen, locale, hotelEmail, hotelPhone, profile, questions};
 
   const start = (from: Draft, said: string) => {
     parked.current = {};
@@ -259,12 +287,49 @@ export default function AppearancePlayground() {
     setStatus(said);
   };
 
+  // Start from the look an agent's card publishes.
+  const loadCard = (address: string) => {
+    setStatus('Reading the card…');
+    readAgentCard(address).then((card) => {
+      if (!card) {
+        setStatus('The card could not be read.');
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('assistant', address);
+      window.history.replaceState(null, '', url.toString());
+      setProfiles([]);
+      setQuestions(card.examples.length ? card.examples : SAMPLE_QUESTIONS);
+      const given = card.appearance as any;
+      const elements =
+        given && Array.isArray(given.elements) ? given.elements : null;
+      const name = card.name || 'this agent';
+      if (!elements || !elements.length) {
+        start(
+          blankDraft(),
+          `The card of ${name} publishes no look, so this starts from the library’s defaults.`
+        );
+        return;
+      }
+      start(
+        {code: 'card', elements: JSON.parse(JSON.stringify(elements))},
+        `The look the card of ${name} publishes.`
+      );
+    });
+  };
+
   const load = (id: string, code?: string) => {
-    const assistant = id.trim().toLowerCase();
-    if (!isAssistantId(assistant)) {
-      setStatus('An Assistant ID is a UUID.');
+    const given = id.trim();
+    if (isAgentCardUrl(given)) {
+      loadCard(given);
       return;
     }
+    const assistant = given.toLowerCase();
+    if (!isAssistantId(assistant)) {
+      setStatus('Give an Assistant ID, or the address of an agent card.');
+      return;
+    }
+    setQuestions(SAMPLE_QUESTIONS);
     setStatus('Reading the profile…');
     fetch(
       `${DEFAULT_BASE_URL}/api/v2/assistants/${assistant}/appearance-profiles?ui=${FLOATING_CHAT_UI}&locale=all&limit=200`,
@@ -326,7 +391,7 @@ export default function AppearancePlayground() {
     } else {
       start(
         blankDraft(),
-        'Every part, as the library’s defaults draw it. Give an Assistant ID to start from its profile.'
+        'Every part, as the library’s defaults draw it. Give an Assistant ID, or an agent card’s address, to start from its look.'
       );
     }
   }, []);
@@ -400,15 +465,26 @@ export default function AppearancePlayground() {
   };
 
   const guard = () =>
-    guardFrame(frameRef.current && frameRef.current.contentWindow, (url) => {
-      const asked = new URL(url).searchParams.get('locale') || 'en';
-      const read = embedProfile(live.current.profile, asked);
-      return {
-        items: read ? [{...read, code: `draft${turn.current}`}] : [],
-        next_cursor: null,
-        limit: 200,
-      };
-    });
+    guardFrame(
+      frameRef.current && frameRef.current.contentWindow,
+      (url) => {
+        const asked = new URL(url).searchParams.get('locale') || 'en';
+        const read = embedProfile(live.current.profile, asked);
+        return {
+          items: read ? [{...read, code: `draft${turn.current}`}] : [],
+          next_cursor: null,
+          limit: 200,
+        };
+      },
+      // The chat reads its agent's card for the questions it offers.
+      (url) =>
+        url === inhotelCardUrl(PREVIEW_INBOX)
+          ? {
+              name: 'Preview',
+              skills: [{id: 'preview', examples: live.current.questions}],
+            }
+          : undefined
+    );
 
   // The chat says when it has loaded; until then it hears nothing. It is
   // shown a moment later, drawn from the draft, if it is still the frame that
@@ -680,6 +756,34 @@ export default function AppearancePlayground() {
     );
   };
 
+  const numberField = (element: Element, prop: Prop) => {
+    const given = element.values[prop.name];
+    return (
+      <label style={styles.row} key={prop.name}>
+        <span style={styles.label}>{labelOf(prop.name)}</span>
+        <input
+          type="number"
+          name={`${element.name}.${prop.name}`}
+          min={typeof prop.value_min === 'number' ? prop.value_min : undefined}
+          max={typeof prop.value_max === 'number' ? prop.value_max : undefined}
+          value={typeof given === 'number' ? given : ''}
+          placeholder={
+            prop.default !== undefined ? `Default: ${prop.default}` : 'Not set'
+          }
+          onChange={(event) =>
+            setValue(
+              element.name,
+              prop.name,
+              event.target.value === '' ? undefined : Number(event.target.value)
+            )
+          }
+          style={styles.input}
+        />
+        {hint(prop)}
+      </label>
+    );
+  };
+
   const optionField = (element: Element, prop: Prop) => {
     const given = element.values[prop.name];
     const chosen =
@@ -743,6 +847,8 @@ export default function AppearancePlayground() {
           return booleanField(element, prop);
         case 'option':
           return optionField(element, prop);
+        case 'number':
+          return numberField(element, prop);
         default:
           return null;
       }
@@ -776,7 +882,7 @@ export default function AppearancePlayground() {
           <input
             value={assistantId}
             onChange={(event) => setAssistantId(event.target.value)}
-            placeholder="Assistant ID"
+            placeholder="Assistant ID, or an agent card’s address"
             aria-label="Assistant ID"
             spellCheck={false}
             style={styles.input}
@@ -894,7 +1000,9 @@ export default function AppearancePlayground() {
               </div>
               <p style={styles.note}>
                 What the admin API takes as a profile’s <code>elements</code>,
-                and what a page gives as <code>appearance</code> in its embed.
+                what a page gives as <code>appearance</code> in its embed, and
+                what an agent card publishes as the <code>params</code> of the
+                extension <code>{APPEARANCE_EXTENSION}</code>.
               </p>
               <div style={{...styles.inline, marginBottom: 8}}>
                 <button

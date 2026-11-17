@@ -62,6 +62,12 @@
           "type": "element",
           "child_component": "Launcher",
           "description": "The round button the chat opens from. Left out, the chat has none."
+        },
+        {
+          "name": "suggestions",
+          "type": "element",
+          "child_component": "Suggestions",
+          "description": "The questions the chat offers before the guest writes. Left out, it offers none."
         }
       ]
     },
@@ -166,6 +172,21 @@
           "length_max": 400,
           "default": {"en": "Start typing..."},
           "description": "The hint in the empty field."
+        }
+      ]
+    },
+    {
+      "name": "Suggestions",
+      "kind": "component",
+      "description": "Questions the guest can send with one click before writing: the examples in the agent's card.",
+      "props": [
+        {
+          "name": "limit",
+          "type": "number",
+          "value_min": 1,
+          "value_max": 6,
+          "default": 3,
+          "description": "The most questions offered."
         }
       ]
     },

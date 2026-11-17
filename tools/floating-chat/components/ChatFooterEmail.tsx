@@ -26,10 +26,10 @@ const ChatFooterEmail = ({
   isSubmittedCF,
   hotelEmail,
   hotelPhone,
+  isPhoneShown = true,
   shouldShowContactForm,
   isLoading,
   statusMessageCF,
-  handleSummarize,
   look,
 }: {
   onClickMailIcon: () => void;
@@ -38,10 +38,12 @@ const ChatFooterEmail = ({
   isSubmittedCF: boolean;
   hotelEmail: string;
   hotelPhone: string;
+  // Whether the phone and its icon are drawn: with a phone, and always on a
+  // line drawn from inHotel's settings.
+  isPhoneShown?: boolean;
   shouldShowContactForm: boolean;
   isLoading: boolean;
   statusMessageCF: string;
-  handleSummarize: () => void;
   // What the look gives the contact line: its hints, and the words of its
   // form when it has one.
   look: ContactAppearance;
@@ -298,24 +300,26 @@ const ChatFooterEmail = ({
               alignItems: 'center',
             }}
           >
-            <PhoneIcon />
-            <Box
-              p={1}
-              sx={{
-                mr: 0,
-                wordWrap: 'break-word',
-                fontSize: '14px',
-              }}
-            >
-              <Tippy content={hintText(phoneHint)}>
-                <Text
-                  sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
-                  onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
-                >
-                  {hotelPhone}
-                </Text>
-              </Tippy>
-            </Box>
+            {isPhoneShown && <PhoneIcon />}
+            {isPhoneShown && (
+              <Box
+                p={1}
+                sx={{
+                  mr: 0,
+                  wordWrap: 'break-word',
+                  fontSize: '14px',
+                }}
+              >
+                <Tippy content={hintText(phoneHint)}>
+                  <Text
+                    sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
+                    onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
+                  >
+                    {hotelPhone}
+                  </Text>
+                </Tippy>
+              </Box>
+            )}
           </Box>
           <Box
             sx={{
@@ -360,7 +364,7 @@ const ChatFooterEmail = ({
                   shouldShowContactForm ? 'true' : undefined
                 }
                 onClick={() => {
-                  onClickMailIcon(), handleSummarize();
+                  onClickMailIcon();
                 }}
                 sx={{
                   cursor: 'pointer',

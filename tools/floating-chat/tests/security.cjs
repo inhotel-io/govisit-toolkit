@@ -46,6 +46,7 @@ function bootstrapConfiguration({
                 name === 'data-agent-card-url' ? attribute : null,
             },
       },
+      URL,
       ACCOUNT_ID: -1,
     }
   );
@@ -103,17 +104,24 @@ test('an invalid Floating Chat card is rejected', () => {
     () =>
       bootstrapConfiguration({
         floatingConfig: {
-          agent_card_url:
-            'https://attacker.example/.well-known/agent-card.json',
+          agent_card_url: 'http://attacker.example/.well-known/agent-card.json',
         },
       }),
-    /must be an inHotel agent card/
+    /must be the https address of an A2A agent card/
   );
 });
-test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
+test('another agent’s card is no inHotel assistant', () => {
   for (const url of [
     'https://attacker.example/.well-known/agent-card.json',
     cardUrl(firstProfile) + '?override=1',
+  ]) {
+    assert.equal(bootstrapConfiguration({attribute: url}).profile, '');
+  }
+});
+test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
+  for (const url of [
+    'javascript:alert(1)',
+    'https://user:secret@attacker.example/.well-known/agent-card.json',
     'http://' + firstProfile + '.agents.inhotel.io/.well-known/agent-card.json',
   ]) {
     assert.throws(
@@ -122,7 +130,7 @@ test('an invalid explicit attribute is rejected even with valid Floating Chat co
           attribute: url,
           floatingConfig: {agent_card_url: cardUrl(firstProfile)},
         }),
-      /must be an inHotel agent card/
+      /must be the https address of an A2A agent card/
     );
   }
 });

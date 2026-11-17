@@ -6,9 +6,11 @@ import {QuickReply} from '../helpers/types';
 type Props = {
   replies: Array<QuickReply>;
   onSelect: (reply: QuickReply) => void;
+  // The component of the UI's library the replies are, when they are one.
+  component?: string;
 };
 
-const QuickReplies = ({replies, onSelect}: Props) => {
+const QuickReplies = ({replies, onSelect, component}: Props) => {
   if (!replies || !replies.length) {
     return null;
   }
@@ -16,6 +18,7 @@ const QuickReplies = ({replies, onSelect}: Props) => {
   return (
     <Flex
       pb={5}
+      data-component={component}
       sx={{
         justifyContent: 'flex-end',
         alignItems: 'flex-end',

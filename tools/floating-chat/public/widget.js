@@ -20134,19 +20134,23 @@ OD =
               return [
                 2,
                 Promise.all([
-                  $jn4M$$interop$default.d
-                    .get(Mq + '/public/get_widget_settings')
-                    .query({account_id: t.account_id, inbox_id: t.inbox_id})
-                    .then(function (t) {
-                      return t.body.data;
-                    })
-                    .catch(function () {
-                      return null;
-                    }),
+                  // Any other agent has no inHotel settings to read.
+                  t.inbox_id
+                    ? $jn4M$$interop$default.d
+                        .get(Mq + '/public/get_widget_settings')
+                        .query({account_id: t.account_id, inbox_id: t.inbox_id})
+                        .then(function (t) {
+                          return t.body.data;
+                        })
+                        .catch(function () {
+                          return null;
+                        })
+                    : Promise.resolve(null),
                   cd.fetchAppearanceOverlay(
                     t.inbox_id,
                     t.appearance_profile,
-                    t.appearance
+                    t.appearance,
+                    t.agent_card
                   ),
                 ]).then(function (r) {
                   var settings = r[0] || {},
@@ -20253,18 +20257,45 @@ OD =
     // Only a UUID is an Assistant ID the read knows. It has three seconds;
     // without an answer the launcher is drawn from the settings alone. It
     // never rejects and never throws, whatever the page has done to `fetch`.
-    cd.fetchAppearanceOverlay = function (assistantId, code, given) {
+    // The look a card publishes, in the extension the chat reads it from.
+    cd.cardOverlay = function (card) {
+      var extensions =
+          card &&
+          card.capabilities &&
+          Array.isArray(card.capabilities.extensions)
+            ? card.capabilities.extensions
+            : [],
+        i,
+        own;
+      for (i = 0; i < extensions.length; i++) {
+        if (
+          extensions[i] &&
+          'https://floating-chat.govisit.ai/extensions/appearance/v1' ===
+            extensions[i].uri
+        ) {
+          own = cd.embedProfileOf(extensions[i].params);
+          return own ? cd.appearanceOverlay({items: [own]}) : {};
+        }
+      }
+      return {};
+    };
+    cd.fetchAppearanceOverlay = function (assistantId, code, given, cardUrl) {
       // A profile the page gives in its own embed is the one drawn, and
       // nothing is read.
       var own = cd.embedProfileOf(given);
       if (own) return Promise.resolve(cd.appearanceOverlay({items: [own]}));
-      if (
-        'function' != typeof fetch ||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      // An inHotel assistant's profile is read from the API; any other
+      // agent's look, from its card.
+      var isAssistant = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           assistantId || ''
-        )
-      )
-        return Promise.resolve({});
+        ),
+        address = isAssistant
+          ? Mq +
+            '/api/v2/assistants/' +
+            String(assistantId).toLowerCase() +
+            '/appearance-profiles?ui=floating_chat&limit=200'
+          : cardUrl || '';
+      if ('function' != typeof fetch || !address) return Promise.resolve({});
       var timer;
       try {
         var controller =
@@ -20275,21 +20306,17 @@ OD =
               resolve({});
             }, 3000);
           }),
-          read = fetch(
-            Mq +
-              '/api/v2/assistants/' +
-              String(assistantId).toLowerCase() +
-              '/appearance-profiles?ui=floating_chat&limit=200',
-            {
-              credentials: 'omit',
-              signal: controller ? controller.signal : void 0,
-            }
-          )
+          read = fetch(address, {
+            credentials: 'omit',
+            signal: controller ? controller.signal : void 0,
+          })
             .then(function (response) {
               return response.ok ? response.json() : null;
             })
-            .then(function (page) {
-              return cd.appearanceOverlay(page, code);
+            .then(function (answer) {
+              return isAssistant
+                ? cd.appearanceOverlay(answer, code)
+                : cd.cardOverlay(answer);
             })
             .catch(function () {
               return {};
@@ -22685,6 +22712,7 @@ OD =
                           inbox_id: n,
                           appearance_profile: e.appearanceProfile,
                           appearance: e.appearance,
+                          agent_card: e.agentCard,
                         },
                         a
                       )
@@ -22789,6 +22817,8 @@ OD =
                   return n.handleUnseenMessages(s);
                 case 'messages:seen':
                   return n.handleMessagesSeen();
+                case 'contact:submit':
+                  return n.handleContactSubmit(s);
                 case 'inhotel:open':
                 case 'inhotel:close':
                   return n.handleToggleOpen();
@@ -22841,6 +22871,45 @@ OD =
                 n.send('notifications:display', {
                   shouldDisplayNotifications: !1,
                 });
+            }),
+            // The contact form of any other agent's chat, for the page's own
+            // handler. What it answers goes back to the chat.
+            (n.handleContactSubmit = function (e) {
+              var t = n.props.onContactFormSubmit,
+                r = function (a) {
+                  n.send('contact:result', a);
+                },
+                i = function (a) {
+                  return 'string' == typeof a ? a : '';
+                };
+              if ('function' != typeof t) return r({ok: !1});
+              try {
+                Promise.resolve(
+                  t({
+                    firstName: i(e && e.firstName),
+                    lastName: i(e && e.lastName),
+                    email: i(e && e.email),
+                    message: i(e && e.message),
+                  })
+                ).then(
+                  function (a) {
+                    r(
+                      a && !1 === a.ok
+                        ? {
+                            ok: !1,
+                            message:
+                              'string' == typeof a.message ? a.message : void 0,
+                          }
+                        : {ok: !0}
+                    );
+                  },
+                  function () {
+                    r({ok: !1});
+                  }
+                );
+              } catch (o) {
+                r({ok: !1});
+              }
             }),
             (n.shouldOpenByDefault = function () {
               var e = n.props,
@@ -23178,6 +23247,11 @@ OD =
                         this.props.appearance
                       )),
                       (T.appearanceInline = this.ownProfile ? 1 : void 0),
+                      // Any other agent: its card, and whether the page takes
+                      // the contact form itself.
+                      (T.agentCard = this.props.agentCard || void 0),
+                      (T.contactHandler =
+                        'function' == typeof this.props.onContactFormSubmit ? 1 : void 0),
                       (O = T),
                       (x = $FvpG$$interop$default.d.stringify(O, {
                         skipEmptyString: !0,
@@ -23519,6 +23593,21 @@ OD =
         agentCardUrl || ''
       ),
       DD = cardMatch ? cardMatch[1] : '',
+      // Any other agent, by its card: an https address, or http on this
+      // computer. The chat then reads nothing of inHotel's.
+      anyCard = (function (value) {
+        if (DD || 'string' != typeof value || !value) return '';
+        try {
+          var url = new URL(value),
+            isWeb =
+              'https:' === url.protocol ||
+              ('http:' === url.protocol &&
+                /^(localhost|127\.0\.0\.1|\[::1\])$/.test(url.hostname));
+          return isWeb && !url.username && !url.password ? url.href : '';
+        } catch (error) {
+          return '';
+        }
+      })(agentCardUrl),
       // The appearance profile to draw, by its code, when the page names one.
       appearanceProfile =
         (document.currentScript &&
@@ -23575,10 +23664,10 @@ OD =
       rr = ga.onMessageReceived,
       hE = void 0 === rr ? ye : rr;
     // A2A mode - the agent card names the assistant, account token not required
-    if (!DD)
+    if (!DD && !anyCard)
       throw new Error(
         agentCardUrl
-          ? 'agent_card_url must be an inHotel agent card: https://{assistant profile id}.agents.inhotel.io/.well-known/agent-card.json'
+          ? 'agent_card_url must be the https address of an A2A agent card, such as https://agent.example/.well-known/agent-card.json'
           : 'Set data-agent-card-url on the launcher script or set window.FloatingChatWindow.config.agent_card_url.'
       );
     var sr = document.createElement('div');
@@ -23591,6 +23680,8 @@ OD =
           inbox: DD,
           appearanceProfile: appearanceProfile,
           appearance: ownAppearance,
+          agentCard: anyCard,
+          onContactFormSubmit: ga.onContactFormSubmit,
           accountId: ar,
           title: ED,
           subtitle: FD,

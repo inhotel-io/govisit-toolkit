@@ -40,7 +40,11 @@ import {
   QuickReply,
 } from '../helpers/types';
 import Logger from '../helpers/logger';
-import {fetchAgentAvatar, AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
+import {
+  fetchAgentAvatar,
+  AVATAR_LOAD_TIMEOUT_MS,
+  webAddress,
+} from '../helpers/agent-card';
 import {
   Appearance,
   FormFieldAppearance,
@@ -62,8 +66,30 @@ import ContactForm from './ContactForm';
 import ChatFooterEmail from './ChatFooterEmail';
 // import Swal from 'sweetalert2';
 
+// How long the chat waits for the page to say it took the contact form.
+const CONTACT_TIMEOUT_MS = 60000;
+
+// Any agent that is not inHotel's, as its card describes it.
+export type CardAgent = {
+  cardUrl: string;
+  // Where messages go: null when the card did not answer, or named no
+  // address the chat may call.
+  endpoint: string | null;
+  streaming: boolean;
+  iconUrl: string | null;
+  // Whether the card is still being read.
+  isReading: boolean;
+};
+
 type Props = {
+  // An inHotel assistant's ID. It stands in front of `agent`.
   inboxId?: string;
+  // Any other agent, by its card.
+  agent?: CardAgent | null;
+  // Whether the page takes the contact form itself, for a card's chat.
+  hasContactHandler?: boolean;
+  // The questions the chat offers before the guest writes.
+  suggestions?: string[];
   accountId: string;
   customerId?: string;
   title?: string;
@@ -152,6 +178,10 @@ class ChatWindow extends React.Component<Props, State> {
   shownGreeting: string | undefined = undefined;
   shownFromProfile = false;
   // A2A mode - no legacy SDK instance
+  contactTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Whether the page has the contact form and has not yet said what came of
+  // it.
+  isAwaitingContact = false;
 
   constructor(props: Props) {
     super(props);
@@ -222,13 +252,15 @@ class ChatWindow extends React.Component<Props, State> {
 
   async componentDidMount() {
     // A2A mode - restore history from localStorage
-    const {inboxId} = this.props;
+    // A chat with no agent it may talk to still opens with its greeting; it
+    // has no history.
+    const key = this.conversationKey();
     const greeting = this.greetingText();
     this.shownGreeting = greeting;
     this.shownFromProfile = this.look().source === 'profile';
-    if (inboxId) {
-      const savedHistory = getChatHistory(inboxId);
-      const savedSessionId = getSessionId(inboxId);
+    if (key || this.props.inboxId) {
+      const savedHistory = key ? getChatHistory(key) : [];
+      const savedSessionId = key ? getSessionId(key) : null;
 
       // Convert StoredMessage to Message format
       const restoredMessages: Message[] = savedHistory.map((m, idx) => ({
@@ -363,7 +395,27 @@ class ChatWindow extends React.Component<Props, State> {
     return true;
   };
 
+  // The key of this conversation in the browser: the inHotel ID, or the
+  // agent's card. Null when the chat has no agent it may talk to.
+  conversationKey = (): string | null => {
+    const {inboxId, agent} = this.props;
+    if (inboxId) return isValidAssistantProfileId(inboxId) ? inboxId : null;
+    return agent && webAddress(agent.cardUrl) ? `card:${agent.cardUrl}` : null;
+  };
+
+  // Where messages go: an inHotel agent at its fixed address, any other at
+  // the address its card names. Null when there is none: then nothing is
+  // sent, and no history leaves the browser.
+  agentAddress = (): string | null => {
+    const {inboxId, agent} = this.props;
+    if (inboxId)
+      return isValidAssistantProfileId(inboxId) ? agentEndpoint(inboxId) : null;
+    return agent ? webAddress(agent.endpoint) : null;
+  };
+
   loadAgentAvatar = () => {
+    // A card's chat has its picture from the card it was given.
+    if (!this.props.inboxId) return;
     if (this.avatarRequest) this.avatarRequest.abort();
     if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
     const controller = new AbortController();
@@ -392,6 +444,7 @@ class ChatWindow extends React.Component<Props, State> {
     if (this.messageRequest) this.messageRequest.abort();
     if (this.avatarRequest) this.avatarRequest.abort();
     if (this.avatarTimeout) clearTimeout(this.avatarTimeout);
+    if (this.contactTimeout) clearTimeout(this.contactTimeout);
     // A2A mode - no legacy SDK to disconnect
     this.subscriptions.forEach((unsubscribe) => {
       if (typeof unsubscribe === 'function') {
@@ -428,6 +481,8 @@ class ChatWindow extends React.Component<Props, State> {
         return this.handleInhotelPlan(payload);
       case 'inhotel:ping':
         return this.logger.debug('Pong!');
+      case 'contact:result':
+        return this.handleContactResult(payload);
       default:
         return null;
     }
@@ -652,11 +707,11 @@ class ChatWindow extends React.Component<Props, State> {
     }
 
     const {body = ''} = message;
-    const {inboxId, baseUrl} = this.props;
-    if (!isValidAssistantProfileId(inboxId)) {
-      this.logger.error(
-        'Refusing to send with an invalid assistant profile ID'
-      );
+    const {inboxId, agent} = this.props;
+    const endpoint = this.agentAddress();
+    const key = this.conversationKey();
+    if (!endpoint || !key) {
+      this.logger.error('Refusing to send: this chat has no agent to send to');
       return;
     }
     const {messages, conversationId} = this.state;
@@ -694,17 +749,14 @@ class ChatWindow extends React.Component<Props, State> {
       timestamp: m.created_at || new Date().toISOString(),
     }));
 
-    // Build A2A endpoint URL using subdomain pattern
-    const a2aUrl = agentEndpoint(inboxId);
-
     // Get existing contextId for session continuity
-    const existingContextId = inboxId ? getContextId(inboxId) : null;
+    const existingContextId = getContextId(key);
 
     const controller = new AbortController();
     this.messageRequest = controller;
     try {
       await streamMessage(
-        a2aUrl,
+        endpoint,
         {
           message: body,
           assistant_id: inboxId || '',
@@ -718,8 +770,8 @@ class ChatWindow extends React.Component<Props, State> {
         (finalText, contextId) => {
           if (controller.signal.aborted) return;
           // Store contextId for future messages
-          if (contextId && inboxId) {
-            setContextId(inboxId, contextId);
+          if (contextId) {
+            setContextId(key, contextId);
           }
 
           const assistantMessage: Message = {
@@ -754,9 +806,7 @@ class ChatWindow extends React.Component<Props, State> {
             content: m.body || '',
             timestamp: m.created_at || new Date().toISOString(),
           }));
-          if (inboxId) {
-            saveChatHistory(inboxId, storedMessages);
-          }
+          saveChatHistory(key, storedMessages);
 
           this.emit('message:received', assistantMessage);
           this.scrollIntoView();
@@ -770,7 +820,12 @@ class ChatWindow extends React.Component<Props, State> {
             shouldShowMessageLoading: false,
           });
         },
-        controller.signal
+        controller.signal,
+        // An inHotel agent takes the conversation so far and inHotel's own
+        // metadata; any other, a plain A2A message.
+        inboxId
+          ? {dialect: 'inhotel'}
+          : {dialect: 'a2a', streaming: !!(agent && agent.streaming)}
       );
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -908,71 +963,47 @@ class ChatWindow extends React.Component<Props, State> {
     }));
     this.setState({statusMessageCF: null});
   };
-  handleSummarize = () => {
-    const updateMessages = this.greetingText()
-      ? this.state.messages.length - 1
-      : this.state.messages.length;
+  // What the page said of the contact form it was given: taken, or not, in
+  // its own words. An answer after the chat stopped waiting still counts.
+  handleContactResult = (payload: any = {}) => {
+    if (this.contactTimeout) clearTimeout(this.contactTimeout);
+    this.contactTimeout = null;
+    if (!this.isAwaitingContact) return;
+    this.isAwaitingContact = false;
+    if (payload && payload.ok === true) {
+      this.setState({
+        isContactFormSubmitted: true,
+        isLoading: false,
+        clickedSubmit: false,
+        statusMessageCF: null,
+      });
+      return;
+    }
+    const said =
+      payload && typeof payload.message === 'string' && payload.message.trim()
+        ? payload.message.trim().slice(0, 255)
+        : null;
+    this.setState({isLoading: false, statusMessageCF: said});
+  };
 
-    this.setState({numberOfMessages: updateMessages}, () => {
-      if (
-        Math.floor(this.state.numberOfMessages / 2) >= 5 &&
-        !this.state.isSummarizeGenerated
-      ) {
-        this.setState({shouldSummarize: true});
-        console.log('Call an API');
-        console.log('Conversation ID: ', this.state.conversationId);
-        fetch(
-          'https://backend.inhotel.io/contact_form/summarize_chat_history/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              conversation_id: this.state.conversationId,
-              inbox_id: this.props.inboxId,
-            }),
-            mode: 'cors',
-          }
-        )
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then((data) => {
-            // console.log('Success:', data);
-            // this.setState({clickedSubmit: false});
-            // console.log('Response data:', data.message); // This will log the actual data object
-            if (data.status === -1) {
-              console.log('Error');
-              this.setState({shouldSummarize: false});
-            } else {
-              // console.log("message before summarize: ", this.state.message);
-              this.setState({message: data.summarize_chat_message});
-              this.setState({email: data.email});
-              this.setState({firstName: data.first_name});
-              this.setState({lastName: data.last_name});
-              this.setState({isSummarizeGenerated: true});
-              // console.log("message after summarize: ", this.state.message);
-            }
-            this.setState({
-              shouldSummarize: false,
-            });
-          })
-          .catch((error) => {
-            console.error('Error:', error);
-            this.setState({
-              shouldSummarize: false,
-            });
-          });
-        // setTimeout(() => {
-        //   this.setState({ shouldSummarize: false });
-        //   console.log('State updated');
-        // }, 3000);
-      }
-    });
+  // The page has not answered in time: the form can be sent again.
+  handleContactTimeout = () => {
+    this.contactTimeout = null;
+    this.setState({isLoading: false});
+  };
+
+  // The card's questions, offered while the guest has not written.
+  suggestionReplies = (): Array<QuickReply> => {
+    const {suggestions = []} = this.props;
+    const hasWritten = this.state.messages.some(
+      (m) => m.type === 'customer' || !!m.customer_id
+    );
+    return hasWritten
+      ? []
+      : suggestions.map((text, index) => ({
+          text,
+          action: `suggestion:${index}`,
+        }));
   };
 
   handleChangeCF = (
@@ -992,6 +1023,8 @@ class ChatWindow extends React.Component<Props, State> {
 
   // };
   handleSubmitCF = () => {
+    // A form on its way is not sent again.
+    if (this.state.isLoading) return;
     this.setState({clickedSubmit: true});
     const contact = this.look().contact;
     const form = contact && contact.form;
@@ -1011,6 +1044,20 @@ class ChatWindow extends React.Component<Props, State> {
       fields.some(([field, written]) => field && field.isRequired && !written)
     ) {
       console.log('Missing value');
+      return;
+    }
+
+    if (!this.props.inboxId) {
+      // A card's chat: the page takes the form, when it said it would.
+      if (!this.props.hasContactHandler) return;
+      this.setState({isContactFormSubmitted: false, isLoading: true});
+      this.isAwaitingContact = true;
+      this.emit('contact:submit', {firstName, lastName, email, message});
+      if (this.contactTimeout) clearTimeout(this.contactTimeout);
+      this.contactTimeout = setTimeout(
+        this.handleContactTimeout,
+        CONTACT_TIMEOUT_MS
+      );
       return;
     }
 
@@ -1134,18 +1181,30 @@ class ChatWindow extends React.Component<Props, State> {
     const shouldAskForEmail = this.askForEmailUpfront();
     const hasAvailableAgents = availableAgents.length > 0;
     const replies = this.getQuickReplies(messages);
-    // A profile's contact form is sent to the assistant's e-mail. Without one
-    // there is nowhere to send it, so it is not offered. For a chat drawn from
-    // its settings the flag says so already: the service that gives it knows
-    // whether there is an e-mail.
+    // An inHotel chat's form is sent to the assistant's e-mail: a profile's
+    // is offered only when there is one, and from the settings the flag says
+    // so already. A card's chat's form is offered only when the page takes it.
     const form = look.contact ? look.contact.form : null;
-    const hasContactForm =
-      !!form &&
-      form.isOffered &&
-      (look.source !== 'profile' || !!this.props.hotelEmail);
+    const {inboxId, agent} = this.props;
+    const canSendForm = inboxId
+      ? look.source !== 'profile' || !!this.props.hotelEmail
+      : !!this.props.hasContactHandler;
+    const hasContactForm = !!form && form.isOffered && canSendForm;
+    const contactPhone =
+      (look.contact && look.contact.phone) || this.props.hotelPhone;
+    const contactEmail =
+      (look.contact && look.contact.email) || this.props.hotelEmail;
+    // An inHotel chat drawn from its settings has always drawn its contact
+    // line and the phone's icon, whatever they hold. Any other line is drawn
+    // when it has something to show, and the icon with a phone.
+    const isSettingsLine = look.source === 'settings' && !!inboxId;
+    const hasContactLine =
+      !!look.contact &&
+      (isSettingsLine || !!(contactPhone || contactEmail || hasContactForm));
     const isFormOpen =
       this.state.isMailIconClicked &&
-      (look.source === 'profile' ? hasContactForm : !!form);
+      (look.source === 'profile' || !inboxId ? hasContactForm : !!form);
+    const offered = replies.length ? [] : this.suggestionReplies();
     // A profile lists the branding or leaves it out, whether it is the
     // assistant's own or one the page gives itself. For a chat drawn from its
     // settings the subscription plan decides, as it always has.
@@ -1187,10 +1246,17 @@ class ChatWindow extends React.Component<Props, State> {
               isMine={(msg) => isCustomerMessage(msg, customerId)}
               companyName={companyName}
               isReplying={this.state.shouldShowMessageLoading}
-              avatarURL={this.state.agentCardAvatarURL}
-              isAvatarLoading={this.state.isAvatarLoading}
+              avatarURL={
+                inboxId || !agent
+                  ? this.state.agentCardAvatarURL
+                  : agent.iconUrl
+              }
+              isAvatarLoading={
+                inboxId || !agent ? this.state.isAvatarLoading : agent.isReading
+              }
               replyingAvatarURL={this.state.avatarURL}
-              replies={replies}
+              replies={replies.length ? replies : offered}
+              isSuggestions={!replies.length && offered.length > 0}
               onSelectReply={this.handleSelectQuickReply}
               scrollRef={(el) => (this.scrollToEl = el)}
               look={look.messages}
@@ -1236,14 +1302,16 @@ class ChatWindow extends React.Component<Props, State> {
                 baseUrl={baseUrl}
                 placeholder={look.composer.placeholder}
                 emailInputPlaceholder={emailInputPlaceholder}
-                isSending={isSending}
+                // With nowhere to send, the guest cannot write: nothing
+                // written is lost.
+                isSending={isSending || !this.agentAddress()}
                 shouldRequireEmail={shouldAskForEmail}
                 onSendMessage={this.handleSendMessage}
               />
             </Box>
           )}
 
-          {look.contact && (
+          {look.contact && hasContactLine && (
             <Box
               px={'20px'}
               sx={{
@@ -1257,12 +1325,12 @@ class ChatWindow extends React.Component<Props, State> {
                 isMailIconClicked={isFormOpen}
                 handleSubmitCF={this.handleSubmitCF}
                 isSubmittedCF={this.state.isContactFormSubmitted}
-                hotelEmail={look.contact.email || this.props.hotelEmail}
-                hotelPhone={look.contact.phone || this.props.hotelPhone}
+                hotelEmail={contactEmail}
+                hotelPhone={contactPhone}
+                isPhoneShown={isSettingsLine || !!contactPhone}
                 shouldShowContactForm={hasContactForm}
                 isLoading={this.state.isLoading}
                 statusMessageCF={this.state.statusMessageCF}
-                handleSummarize={this.handleSummarize}
                 look={look.contact}
               />
             </Box>

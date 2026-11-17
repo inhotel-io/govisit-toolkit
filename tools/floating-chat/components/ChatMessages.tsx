@@ -18,6 +18,9 @@ type Props = {
   // The picture of the row that shows the assistant writing.
   replyingAvatarURL?: string;
   replies: Array<QuickReply>;
+  // Whether the replies are the card's questions, offered before the guest
+  // writes: `Suggestions` in the UI's library.
+  isSuggestions?: boolean;
   onSelectReply: (reply: QuickReply) => void;
   scrollRef: (el: HTMLDivElement | null) => void;
   // The `Messages` values of the UI's library.
@@ -35,6 +38,7 @@ const ChatMessages = ({
   isAvatarLoading,
   replyingAvatarURL,
   replies,
+  isSuggestions,
   onSelectReply,
   scrollRef,
   look,
@@ -133,7 +137,11 @@ const ChatMessages = ({
       })}
 
       {replies && replies.length > 0 ? (
-        <QuickReplies replies={replies} onSelect={onSelectReply} />
+        <QuickReplies
+          replies={replies}
+          onSelect={onSelectReply}
+          component={isSuggestions ? 'Suggestions' : undefined}
+        />
       ) : null}
 
       <div ref={scrollRef} />

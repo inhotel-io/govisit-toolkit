@@ -17,8 +17,13 @@ type Frame = {
 export const NOT_SENT = 'Not sent: appearance playground';
 
 // The frame's `fetch` with the guard in front of it. `answer` gives what the
-// profile read is answered with, for the address the chat asked.
-export function guardedFetch(frame: Frame, answer: (url: string) => unknown) {
+// profile read is answered with, for the address the chat asked; `card`, the
+// agent card the chat reads for the questions it offers, when there is one.
+export function guardedFetch(
+  frame: Frame,
+  answer: (url: string) => unknown,
+  card: (url: string) => unknown = () => undefined
+) {
   const realFetch = frame.fetch.bind(frame);
   const reply = (status: number, body: unknown) =>
     Promise.resolve(
@@ -41,9 +46,13 @@ export function guardedFetch(frame: Frame, answer: (url: string) => unknown) {
       host = '';
     }
 
-    // An agent is never reached, not even for its card.
+    // An agent is never reached. Its card is the one the playground holds,
+    // when it holds one.
     if (/\.agents\.inhotel\.io$/.test(host)) {
-      return reply(503, {error: NOT_SENT});
+      const given = method === 'GET' ? card(url) : undefined;
+      return given === undefined
+        ? reply(503, {error: NOT_SENT})
+        : reply(200, given);
     }
     // Nothing that would change something is sent anywhere. The answer is
     // the one the contact form's service gives a form it took.
