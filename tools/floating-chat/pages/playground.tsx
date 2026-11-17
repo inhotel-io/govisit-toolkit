@@ -2,11 +2,11 @@
 // as you do. The controls are drawn from the UI's library,
 // `appearance-library.json`, so a prop added there shows here by itself.
 //
-// The chat beside them is the real one, the page the launcher frames. It is
-// given your draft the way a page gives a profile in its own embed, so it
-// draws it as it draws a profile from the database. Nothing is written to the
-// database, and what the chat would send from here, a message or the contact
-// form, is stopped in the frame.
+// The chat beside them is the real one, the page the launcher frames. Its
+// read of the assistant's profile is answered with your draft, so it draws
+// the draft as it draws a profile from the database. Nothing is written to
+// the database, and what the chat would send from here, a message or the
+// contact form, is stopped in the frame.
 //
 // The page can read an assistant's profile from the public API to start from.
 // It runs on a local server only.
@@ -15,6 +15,7 @@ import Head from 'next/head';
 import library from '../appearance-library.json';
 import {DEFAULT_BASE_URL, isDev} from '../helpers/config';
 import {GOVISIT_BLUE_600} from '../helpers/theme';
+import {guardedFetch} from '../helpers/playground';
 import {
   FLOATING_CHAT_UI,
   embedProfile,
@@ -194,48 +195,16 @@ const sampleHistory = (greeting: string) => {
   return {messages, sessionId: 'appearance-playground', timestamp: Date.now()};
 };
 
-// The frame's own `fetch`, so that nothing is sent from here: not a message
-// to an agent, and not the contact form to its service.
-function guardFrame(win: any) {
+// The guard goes in front of the frame's own `fetch`, once for each time the
+// frame loads.
+function guardFrame(win: any, answer: (url: string) => unknown) {
   if (!win || !win.fetch || win.__appearancePlayground) return;
   win.__appearancePlayground = true;
   // The dev server's badge would sit on the contact line.
   const style = win.document.createElement('style');
   style.textContent = DEV_BADGE_HIDDEN;
   win.document.head.appendChild(style);
-  const realFetch = win.fetch.bind(win);
-  const reply = (status: number, body: unknown) =>
-    Promise.resolve(
-      new win.Response(JSON.stringify(body), {
-        status,
-        headers: {'Content-Type': 'application/json'},
-      })
-    );
-
-  win.fetch = (input: any, init: any = {}) => {
-    const url =
-      typeof input === 'string' ? input : input && input.url ? input.url : '';
-    const method = String(
-      init.method || (input && input.method) || 'GET'
-    ).toUpperCase();
-    let host = '';
-    try {
-      host = new win.URL(url, win.location.href).host;
-    } catch (e) {
-      host = '';
-    }
-
-    if (/\.agents\.inhotel\.io$/.test(host)) {
-      return reply(503, {error: 'Not sent: appearance playground'});
-    }
-    if (host === 'backend.inhotel.io' && method !== 'GET') {
-      return reply(200, {
-        status: 1,
-        message: 'Not sent: appearance playground',
-      });
-    }
-    return realFetch(input, init);
-  };
+  win.fetch = guardedFetch(win, answer);
 }
 
 export default function AppearancePlayground() {
@@ -254,10 +223,18 @@ export default function AppearancePlayground() {
   // A frame keeps the address it was made with: a new address would load it
   // again. Later languages reach it by message.
   const [frame, setFrame] = useState({key: 0, ready: false, locale: 'en'});
+  // What the frame that is loaded now was loaded with: see `conversation`.
+  const [loadedWith, setLoadedWith] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const frameRef = useRef<HTMLIFrameElement>(null);
   const parked = useRef<{[slot: string]: string}>({});
+  // Each change of the draft is read by the chat under a new profile code.
+  const turn = useRef(0);
+  // The frame that is loaded now, and the timer that shows it.
+  const frameKey = useRef(0);
+  const readyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  frameKey.current = frame.key;
 
   // The profile as it is saved and as the chat is given it: the elements in
   // use, each with the values it was given.
@@ -409,11 +386,13 @@ export default function AppearancePlayground() {
     if (win) win.postMessage({event, payload}, window.location.origin);
   };
 
-  // The chat is given the draft as a page gives a profile in its own embed.
+  // The chat reads its profile again when the code it is told changes, and
+  // the read is answered with the draft, in the language the chat asks for.
   const push = () => {
-    const {locale, hotelEmail, hotelPhone, profile} = live.current;
+    turn.current += 1;
+    const {locale, hotelEmail, hotelPhone} = live.current;
     post('config:update', {
-      appearance: profile,
+      appearanceProfile: `draft${turn.current}`,
       locale,
       hotelEmail,
       hotelPhone,
@@ -421,13 +400,31 @@ export default function AppearancePlayground() {
   };
 
   const guard = () =>
-    guardFrame(frameRef.current && frameRef.current.contentWindow);
+    guardFrame(frameRef.current && frameRef.current.contentWindow, (url) => {
+      const asked = new URL(url).searchParams.get('locale') || 'en';
+      const read = embedProfile(live.current.profile, asked);
+      return {
+        items: read ? [{...read, code: `draft${turn.current}`}] : [],
+        next_cursor: null,
+        limit: 200,
+      };
+    });
 
-  // The chat says when it has loaded; until then it hears nothing.
+  // The chat says when it has loaded; until then it hears nothing. It is
+  // shown a moment later, drawn from the draft, if it is still the frame that
+  // is loaded then.
   const onChatLoaded = () => {
     guard();
     push();
-    setTimeout(() => setFrame((current) => ({...current, ready: true})), 300);
+    const loaded = frameKey.current;
+    if (readyTimer.current) clearTimeout(readyTimer.current);
+    readyTimer.current = setTimeout(
+      () =>
+        setFrame((current) =>
+          current.key === loaded ? {...current, ready: true} : current
+        ),
+      300
+    );
   };
 
   useEffect(() => {
@@ -457,8 +454,8 @@ export default function AppearancePlayground() {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
-  // The sample conversation is history the chat restores when it opens, so a
-  // change to it, or to the greeting it starts with, opens the chat again.
+  // The sample conversation is history the chat restores when it loads, so a
+  // change to it, or to the greeting it starts with, loads the chat again.
   const root = draft ? named(draft, 'root') : undefined;
   const greetingProp = ROOT.props.find((prop) => prop.name === 'greeting');
   const greetingElement =
@@ -468,8 +465,16 @@ export default function AppearancePlayground() {
   const greeting = greetingElement
     ? textIn(greetingElement.values.greetings, locale)
     : '';
+  // What the chat is loaded with. Without the sample, nothing of it matters.
+  const conversation = draft
+    ? JSON.stringify(sample ? [greeting, locale] : null)
+    : null;
   useEffect(() => {
-    if (!draft) return;
+    if (conversation === null || conversation === loadedWith) return;
+    // One frame loads at a time. A frame taken away while it is still
+    // loading can bring the whole page down, so one that is loading is left
+    // to finish, and the chat is loaded again after it.
+    if (frame.key > 0 && !frame.ready) return;
     const timer = setTimeout(
       () => {
         try {
@@ -482,6 +487,8 @@ export default function AppearancePlayground() {
         } catch (e) {
           // Without storage the chat starts from its greeting.
         }
+        if (readyTimer.current) clearTimeout(readyTimer.current);
+        setLoadedWith(conversation);
         setFrame((current) => ({
           key: current.key + 1,
           ready: false,
@@ -491,7 +498,22 @@ export default function AppearancePlayground() {
       frame.key === 0 ? 0 : 400
     );
     return () => clearTimeout(timer);
-  }, [!!draft, sample, sample ? greeting : '', sample ? locale : '']);
+  }, [conversation, loadedWith, frame.key, frame.ready]);
+
+  // A chat that never says it has loaded is shown as it is after a while, so
+  // it cannot hold the next load back for good.
+  useEffect(() => {
+    if (frame.key === 0 || frame.ready) return;
+    const loading = frame.key;
+    const timer = setTimeout(
+      () =>
+        setFrame((current) =>
+          current.key === loading ? {...current, ready: true} : current
+        ),
+      10000
+    );
+    return () => clearTimeout(timer);
+  }, [frame.key, frame.ready]);
 
   if (!isLocal) {
     return (
@@ -871,8 +893,9 @@ export default function AppearancePlayground() {
                 </span>
               </div>
               <p style={styles.note}>
-                What a page gives as <code>appearance</code> in its embed, and
-                what the admin API takes as a profile’s <code>elements</code>.
+                What the admin API takes as a profile’s <code>elements</code>,
+                and what a page gives as <code>appearance</code> in its embed.
+                From a page the branding line stays the plan’s.
               </p>
               <div style={{...styles.inline, marginBottom: 8}}>
                 <button
@@ -934,7 +957,7 @@ export default function AppearancePlayground() {
             key={frame.key}
             ref={frameRef}
             title="Floating chat"
-            src={`/?token=-1&inbox=${PREVIEW_INBOX}&version=${CHAT_VERSION}&disableAnalyticsTracking=1&appearanceInline=1&parentOrigin=${encodeURIComponent(
+            src={`/?token=-1&inbox=${PREVIEW_INBOX}&version=${CHAT_VERSION}&disableAnalyticsTracking=1&parentOrigin=${encodeURIComponent(
               window.location.origin
             )}&locale=${encodeURIComponent(frame.locale)}`}
             onLoad={guard}

@@ -25,6 +25,19 @@ oldExtensions.set('.css', require.extensions['.css']);
 require.extensions['.css'] = (module) => {
   module.exports = {btn_up_down: 'btn_up_down'};
 };
+// A hover text is not in static markup. A stand-in for the tooltip writes it
+// on the element it belongs to, where a check can read it.
+const tooltip = require.resolve('@tippyjs/react');
+require.cache[tooltip] = {
+  id: tooltip,
+  filename: tooltip,
+  loaded: true,
+  exports: {
+    __esModule: true,
+    default: ({content, children}) =>
+      require('react').cloneElement(children, {'data-hint': content}),
+  },
+};
 const appearanceModel = require('../helpers/appearance.ts');
 const {
   settingsAppearance,
@@ -37,12 +50,15 @@ const {
   localeTag,
   embedKeys,
   launcherAppearance,
+  readProfile,
 } = appearanceModel;
+const {guardedFetch} = require('../helpers/playground.ts');
 const library = require('../appearance-library.json');
 const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const ChatWindow = require('../components/ChatWindow.tsx').default;
+const ContactForm = require('../components/ContactForm.tsx').default;
 const Widget = require('../components/Widget.tsx').default;
 for (const [ext, previous] of oldExtensions) {
   if (previous) require.extensions[ext] = previous;
@@ -265,6 +281,7 @@ test('without a profile the chat is as it is today', () => {
     composer: {placeholder: 'Start typing...'},
     contact: SETTINGS_CONTACT,
     branding: BRANDING,
+    isBrandingByPlan: true,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -294,6 +311,7 @@ test('a whole profile fills every block', () => {
     composer: {placeholder: 'Zeptejte se na cokoli...'},
     contact: PROFILE_CONTACT,
     branding: BRANDING,
+    isBrandingByPlan: false,
     messages: DEFAULT_MESSAGES,
   });
 });
@@ -600,18 +618,106 @@ test('the branding line says what its profile gives it, and only a web address i
 });
 
 test('an element that holds itself is not followed', () => {
-  const look = profileAppearance(
-    profile((item, element) => {
-      // Not a tree: the form names the contact line it sits in.
-      element('form').component = 'Contact';
-      element('form').values = {form: 'form'};
-      element('contact').values.form = 'form';
-    }),
-    {},
-    []
+  // This UI's library gives every slot one component, so no profile of it can
+  // go round. A library may leave a slot open to any component; then one can.
+  const open = [
+    {
+      name: 'Box',
+      kind: 'component',
+      is_root: true,
+      props: [
+        {name: 'inside', type: 'element', child_component: null},
+        {name: 'words', type: 'text'},
+      ],
+    },
+  ];
+  const round = {
+    elements: [
+      {name: 'root', component: 'Box', values: {inside: 'a', words: 'root'}},
+      {name: 'a', component: 'Box', values: {inside: 'b', words: 'a'}},
+      {name: 'b', component: 'Box', values: {inside: 'a', words: 'b'}},
+    ],
+  };
+  const root = readProfile(round, open);
+  assert.equal(root.values.words, 'root');
+  assert.equal(root.values.inside.values.words, 'a');
+  assert.equal(root.values.inside.values.inside.values.words, 'b');
+  // `b` names `a`, which it sits in.
+  assert.equal(root.values.inside.values.inside.values.inside, null);
+
+  const self = {
+    elements: [{name: 'root', component: 'Box', values: {inside: 'root'}}],
+  };
+  assert.equal(readProfile(self, open).values.inside, null);
+});
+
+test('a text that is one value for every language is not cut: too long, it is not taken', () => {
+  const look = (values) =>
+    profileAppearance(
+      profile((item, element) => {
+        Object.assign(element('branding').values, values);
+        Object.assign(element('contact').values, values);
+      }),
+      {},
+      []
+    );
+  const address = 'https://chat.example/' + 'a'.repeat(250);
+  assert.equal(address.length > 255, true);
+  // A cut address would lead somewhere else, and a cut number would ring
+  // someone else.
+  assert.equal(look({link_url: address}).branding.linkUrl, BRANDING.linkUrl);
+  assert.equal(look({phone: '+420 ' + '1'.repeat(40)}).contact.phone, null);
+  assert.equal(look({name: 'N'.repeat(101)}).branding.name, 'inHotel');
+  assert.equal(look({name: 'N'.repeat(100)}).branding.name, 'N'.repeat(100));
+  // Words in a language are cut to what their prop takes.
+  assert.equal(
+    profileAppearance(
+      profile((item, element) => {
+        element('header').values.titles = 'T'.repeat(300);
+      }),
+      {},
+      []
+    ).header.title,
+    'T'.repeat(255)
   );
-  assert.equal(look.source, 'profile');
-  assert.equal(look.contact.form, null);
+});
+
+test('a profile the page gives itself leaves the branding to the plan', () => {
+  const own = (change) =>
+    profileAppearance(
+      profile((item, element) => change(element)),
+      {},
+      [],
+      true
+    );
+  // Left out, or in other words: the line is the chat's own, and whether it
+  // is drawn is the subscription plan's word, as without a profile.
+  for (const look of [
+    own((element) => delete element('root').values.branding),
+    own((element) => {
+      element('branding').values = {
+        texts: 'Chat by',
+        name: 'Example Chat',
+        link_url: 'https://chat.example',
+      };
+    }),
+  ]) {
+    assert.equal(look.source, 'profile');
+    assert.deepEqual(look.branding, BRANDING);
+    assert.equal(look.isBrandingByPlan, true);
+  }
+  // The rest of the profile is the page's to give.
+  assert.equal(
+    own((element) => {
+      element('header').values.titles = 'From the page';
+    }).header.title,
+    'From the page'
+  );
+  assert.equal(
+    resolveAppearance(profile(), {}, [], true).isBrandingByPlan,
+    true
+  );
+  assert.equal(resolveAppearance(profile(), {}, []).isBrandingByPlan, false);
 });
 
 // Every prop of the library, with a value that is not its default.
@@ -756,6 +862,18 @@ test('a profile the page gives in its embed is read in the page’s language', (
   assert.equal(title('cs'), 'Zeptejte se');
   assert.equal(title('cs-CZ'), 'Zeptejte se');
   assert.equal(title('pt-BR'), 'Pergunte');
+  assert.equal(title('pt_br'), 'Pergunte');
+  given.elements[1].values.titles = {
+    en: 'Ask us',
+    cs: 'Zeptejte se',
+    pt_BR: 'Pergunte',
+  };
+  assert.equal(title('pt-BR'), 'Pergunte');
+  given.elements[1].values.titles = {
+    en: 'Ask us',
+    cs: 'Zeptejte se',
+    'pt-BR': 'Pergunte',
+  };
   // A language the profile does not have falls back to English, then to any.
   assert.equal(title('de'), 'Ask us');
   assert.equal(title(undefined), 'Ask us');
@@ -1323,6 +1441,84 @@ test('the branding line says what its look gives it', () => {
   );
 });
 
+test('the branding of a profile the page gives itself waits for the plan', () => {
+  const own = resolveAppearance(profile(), {}, [], true);
+  assert.doesNotMatch(
+    html(chat({appearance: own})),
+    /data-component="Branding"/
+  );
+  assert.match(
+    html(chat({appearance: own}, {shouldDisplayBranding: true})),
+    /data-component="Branding"/
+  );
+  // The assistant's own profile lists the line, and it is drawn at once.
+  assert.match(html(chat({appearance: whole()})), /data-component="Branding"/);
+});
+
+test('the contact form is never sent by the browser itself', () => {
+  // A form with one single-line field is submitted by the browser on Enter,
+  // which would open the chat's address with what the guest wrote in it.
+  for (const form of [
+    whole().contact.form,
+    withForm({firstName: null, lastName: null}).contact.form,
+    settingsAppearance({}).contact.form,
+  ]) {
+    const element = ContactForm({
+      handleChange() {},
+      handleSubmit() {},
+      firstName: '',
+      lastName: '',
+      email: '',
+      message: '',
+      clickedSubmit: false,
+      shouldSummarize: false,
+      primaryColor: '#465EA4',
+      form,
+    });
+    assert.equal(element.props.as, 'form');
+    let prevented = 0;
+    element.props.onSubmit({preventDefault: () => prevented++});
+    assert.equal(prevented, 1);
+  }
+});
+
+const hints = (markup) =>
+  [...markup.matchAll(/data-hint="([^"]*)"/g)].map((hint) => hint[1]);
+
+test('what the contact line and its form say on hover is the look’s', () => {
+  const own = {hotelEmail: HOTEL_EMAIL, hotelPhone: '+420 111 111 111'};
+  const look = withForm(
+    {openHint: 'Napište nám', sendHint: 'Odeslat', discardHint: 'Zahodit'},
+    {firstCopyHint: 'Kliknutím zkopírujete'}
+  );
+  // The phone, the e-mail and the control that opens the form.
+  assert.deepEqual(hints(html(chat({appearance: look, ...own}))), [
+    'Kliknutím zkopírujete',
+    'Kliknutím zkopírujete',
+    'Napište nám',
+  ]);
+  // Open, the form's two buttons come first.
+  assert.deepEqual(hints(html(openForm(look))).slice(0, 2), [
+    'Zahodit',
+    'Odeslat',
+  ]);
+  // Without a profile they say what they always have.
+  assert.deepEqual(
+    hints(
+      html(
+        chat({shouldShowContactForm: true, ...own}, {isMailIconClicked: true})
+      )
+    ),
+    [
+      'Discard message',
+      'Send as email',
+      'Copy to clipboard',
+      'Copy to clipboard',
+      'Contact Us',
+    ]
+  );
+});
+
 test('the contact form cannot stay open once the look has no contact line', () => {
   const markup = html(
     chat({appearance: {...whole(), contact: null}}, {isMailIconClicked: true})
@@ -1626,6 +1822,133 @@ test('a greeting that goes away takes its preview with it', async () => {
   );
 });
 
+// A closed chat the launcher has asked to show its greeting above the button.
+async function previewed(props) {
+  const instance = chat(props, {isOpen: false});
+  const events = [];
+  instance.emit = (event) => events.push(event);
+  await instance.componentDidMount();
+  // What it says from here on is what it tells the launcher of the preview.
+  events.length = 0;
+  instance.handleDisplayNotifications({
+    shouldDisplayNotifications: true,
+    popUpInitialMessage: true,
+  });
+  const becomes = (next) => {
+    const previous = instance.props;
+    instance.props = {...previous, ...next};
+    instance.componentDidUpdate(previous);
+  };
+  return {instance, events, becomes};
+}
+
+test('a greeting only the profile has is shown above the button once the profile is read', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      const {instance, events, becomes} = await previewed({
+        appearance: settingsAppearance({}),
+        isAppearancePending: true,
+      });
+      try {
+        // There is nothing to show yet, and the look is still being read:
+        // the launcher is not told there is nothing, or it would stop.
+        assert.equal(instance.getUnreadMessages().length, 0);
+        assert.deepEqual(events, []);
+
+        becomes({appearance: whole(), isAppearancePending: false});
+        assert.equal(instance.getUnreadMessages().length, 1);
+        assert.match(html(instance), /Dobrý den, jak vám mohu pomoci\?/);
+        assert.deepEqual(events, []);
+      } finally {
+        instance.componentWillUnmount();
+      }
+    }
+  );
+});
+
+test('a read that brings no greeting tells the launcher there is nothing to show', async () => {
+  await withFetch(
+    async () => ({ok: false}),
+    async () => {
+      for (const arrived of [
+        // A profile without a greeting,
+        {appearance: {...whole(), greeting: null}, isAppearancePending: false},
+        // and a read that failed, or found no profile.
+        {isAppearancePending: false},
+      ]) {
+        const {instance, events, becomes} = await previewed({
+          appearance: settingsAppearance({}),
+          isAppearancePending: true,
+        });
+        try {
+          assert.deepEqual(events, []);
+          becomes(arrived);
+          assert.deepEqual(events, ['messages:seen']);
+          // It is told once.
+          becomes({});
+          assert.deepEqual(events, ['messages:seen']);
+        } finally {
+          instance.componentWillUnmount();
+        }
+      }
+
+      // With nothing being read it is told at once, as before.
+      const {instance, events} = await previewed({
+        appearance: settingsAppearance({}),
+      });
+      assert.deepEqual(events, ['messages:seen']);
+      instance.componentWillUnmount();
+    }
+  );
+});
+
+// Whether the wrapper tells the chat its profile is still being read.
+const pending = (wrapper) =>
+  quietly(() => wrapper.render()).props.children.props.isAppearancePending;
+
+test('the chat is told while its profile is being read, and when the read is over', async () => {
+  let answer;
+  await withFetch(
+    () => new Promise((resolve) => (answer = resolve)),
+    async (calls) => {
+      const wrapper = widget({inbox: ASSISTANT});
+      assert.equal(pending(wrapper), false);
+      try {
+        wrapper.componentDidMount();
+        assert.equal(pending(wrapper), true);
+        answer({ok: true, json: async () => page()});
+        await settle();
+        assert.equal(pending(wrapper), false);
+        assert.equal(shown(wrapper).source, 'profile');
+
+        // The page's own profile ends a read that is under way.
+        const before = wrapper.state;
+        wrapper.handleConfigUpdate({locale: 'cs'});
+        wrapper.componentDidUpdate(wrapper.props, before);
+        assert.equal(pending(wrapper), true);
+        wrapper.handleConfigUpdate({appearance: embedded()});
+        assert.equal(pending(wrapper), false);
+      } finally {
+        wrapper.componentWillUnmount();
+      }
+
+      // Nothing is read for an ID that is no Assistant ID, nor for a page
+      // that has a profile of its own.
+      for (const config of [
+        {inbox: 'hotel-paris'},
+        {inbox: ASSISTANT, appearanceInline: '1'},
+      ]) {
+        const idle = widget(config);
+        idle.componentDidMount();
+        assert.equal(pending(idle), false);
+        idle.componentWillUnmount();
+      }
+      assert.equal(calls.length, 2);
+    }
+  );
+});
+
 test('the chat is drawn from the profile of its assistant', async () => {
   await withFetch(
     async () => ({ok: true, json: async () => page()}),
@@ -1711,28 +2034,59 @@ test('the page’s own profile stands in front of the assistant’s, and goes wh
   await withFetch(
     async () => ({ok: true, json: async () => page()}),
     async () => {
-      const wrapper = widget({inbox: ASSISTANT, locale: 'cs'});
-      try {
-        wrapper.componentDidMount();
-        await settle();
-        assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
+      for (const nothing of ['root = FloatingChat()', {elements: []}, null]) {
+        const wrapper = widget({inbox: ASSISTANT, locale: 'cs'});
+        try {
+          wrapper.componentDidMount();
+          await settle();
+          assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
 
-        wrapper.handleConfigUpdate({appearance: embedded()});
-        assert.equal(shown(wrapper).header.title, 'Ze stránky');
-        // Another assistant on the same page is drawn in the page's profile
-        // too: it is the page's, not the assistant's.
-        wrapper.handleConfigUpdate({inbox: OTHER});
-        assert.equal(shown(wrapper).header.title, 'Ze stránky');
+          wrapper.handleConfigUpdate({appearance: embedded()});
+          assert.equal(shown(wrapper).header.title, 'Ze stránky');
+          // It is the page's, so it leaves the branding to the plan.
+          assert.equal(shown(wrapper).isBrandingByPlan, true);
 
-        for (const nothing of ['root = FloatingChat()', {elements: []}, null]) {
+          // What is no profile gives the assistant's own back.
+          wrapper.handleConfigUpdate({appearance: nothing});
+          assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
+          assert.equal(shown(wrapper).isBrandingByPlan, false);
+
+          // Another assistant on the same page is drawn in the page's
+          // profile too: it is the page's, not the assistant's.
+          wrapper.handleConfigUpdate({appearance: embedded()});
+          wrapper.handleConfigUpdate({inbox: OTHER});
+          assert.equal(shown(wrapper).header.title, 'Ze stránky');
           wrapper.handleConfigUpdate({appearance: nothing});
           assert.equal(shown(wrapper).source, 'settings');
+        } finally {
+          wrapper.componentWillUnmount();
         }
-      } finally {
-        wrapper.componentWillUnmount();
       }
     }
   );
+});
+
+test('what is no profile does not stop the assistant’s own from being read', async () => {
+  for (const nothing of [null, {elements: []}, 'root = FloatingChat()']) {
+    let answer;
+    await withFetch(
+      () => new Promise((resolve) => (answer = resolve)),
+      async (calls) => {
+        const wrapper = widget({inbox: ASSISTANT, locale: 'cs'});
+        try {
+          wrapper.componentDidMount();
+          wrapper.handleConfigUpdate({appearance: nothing});
+          assert.equal(calls[0].options.signal.aborted, false);
+          answer({ok: true, json: async () => page()});
+          await settle();
+          assert.equal(shown(wrapper).source, 'profile');
+          assert.equal(shown(wrapper).header.title, 'Zeptejte se nás');
+        } finally {
+          wrapper.componentWillUnmount();
+        }
+      }
+    );
+  }
 });
 
 test('every setting reaches the look when there is no profile', () => {
@@ -1756,6 +2110,7 @@ test('every setting reaches the look when there is no profile', () => {
       form: {...SETTINGS_CONTACT.form, isOffered: true},
     },
     branding: BRANDING,
+    isBrandingByPlan: true,
     messages: DEFAULT_MESSAGES,
   });
   assert.equal(
@@ -1943,6 +2298,7 @@ test('a read that does not answer in time leaves the chat as it is', async () =>
         );
         timers[0].run();
         assert.equal(calls[0].options.signal.aborted, true);
+        assert.equal(pending(wrapper), false);
         // An answer that comes after the limit is too late to be drawn.
         answers[0]({ok: true, json: async () => page()});
         await settle();
@@ -1953,6 +2309,96 @@ test('a read that does not answer in time leaves the chat as it is', async () =>
       }
     }
   );
+});
+
+// The playground frames the real chat. Its guard stands in front of the
+// frame's `fetch`, so nothing is sent from there.
+test('nothing is sent from the playground’s frame, and its profile read is answered with the draft', async () => {
+  const reached = [];
+  const frame = {
+    fetch: (input, init) => {
+      reached.push(typeof input === 'string' ? input : input.url);
+      return Promise.resolve('the network');
+    },
+    Response: class {
+      constructor(body, init) {
+        this.status = init.status;
+        this.ok = init.status >= 200 && init.status < 300;
+        this.json = async () => JSON.parse(body);
+      }
+    },
+    URL,
+    location: {href: 'http://localhost:3000/?token=-1'},
+  };
+  const draft = {items: [{ui: 'floating_chat', code: 'draft'}]};
+  const asked = [];
+  const guarded = guardedFetch(frame, (url) => {
+    asked.push(url);
+    return draft;
+  });
+  const agent = `https://${ASSISTANT}.agents.inhotel.io/`;
+  const backend = 'https://backend.inhotel.io';
+
+  // A message to an agent, in each way the chat could send one.
+  for (const send of [
+    () => guarded(agent, {method: 'POST', body: '{}'}),
+    () => guarded(agent),
+    () => guarded({url: agent, method: 'POST'}),
+    () => guarded(agent + '.well-known/agent-card.json'),
+  ]) {
+    assert.equal((await send()).ok, false);
+  }
+  // The contact form, and anything else that would change something.
+  for (const method of ['POST', 'post', 'PUT', 'PATCH', 'DELETE']) {
+    const answer = await guarded(`${backend}/contact_form/send_email`, {
+      method,
+      body: '{}',
+    });
+    assert.deepEqual(await answer.json(), {
+      status: 1,
+      message: 'Not sent: appearance playground',
+    });
+  }
+  assert.deepEqual(reached, []);
+
+  // The profile read is answered with the draft, whatever the assistant.
+  const read = `${backend}/api/v2/assistants/${ASSISTANT}/appearance-profiles?ui=floating_chat&limit=200&locale=cs`;
+  assert.deepEqual(
+    await (await guarded(read, {credentials: 'omit'})).json(),
+    draft
+  );
+  assert.deepEqual(asked, [read]);
+  assert.deepEqual(reached, []);
+
+  // Reads of other things go on as they are.
+  assert.equal(
+    await guarded(`${backend}/public/get_widget_settings`),
+    'the network'
+  );
+  assert.equal(await guarded('/_next/static/chunk.js'), 'the network');
+  assert.deepEqual(reached, [
+    `${backend}/public/get_widget_settings`,
+    '/_next/static/chunk.js',
+  ]);
+});
+
+test('the playground runs on a local server only, and guards its frame before the chat is told anything', () => {
+  const playground = fs.readFileSync(
+    path.join(__dirname, '../pages/playground.tsx'),
+    'utf8'
+  );
+  for (const wiring of [
+    // Off a local server nothing is read and no chat is framed.
+    /if \(!isDev\(window\)\) \{\s*setLocal\(false\);\s*return;\s*\}/,
+    /if \(!isLocal\) \{\s*return \(\s*<div[^>]*>This page runs only on a local server\.<\/div>/,
+    // The guard goes in front of the frame's `fetch` when the frame loads,
+    // and again before the chat is told anything.
+    /win\.fetch = guardedFetch\(win, answer\);/,
+    /onLoad=\{guard\}/,
+    /const onChatLoaded = \(\) => \{\s*guard\(\);\s*push\(\);/,
+  ]) {
+    assert.match(playground, wiring);
+  }
 });
 
 // The launcher, `public/widget.js`: a committed bundle, so its functions are

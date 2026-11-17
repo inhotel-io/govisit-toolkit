@@ -34,12 +34,13 @@ type LibraryComponent = {
 };
 
 const COMPONENTS: LibraryComponent[] = library.components;
-const componentNamed = (name: string) =>
-  COMPONENTS.find((component) => component.name === name);
+const componentNamed = (
+  name: string,
+  components: LibraryComponent[] = COMPONENTS
+) => components.find((component) => component.name === name);
 
 export const FLOATING_CHAT_UI: string = library.ui;
 const ROOT_ELEMENT = 'root';
-const ROOT_COMPONENT = COMPONENTS.find((component) => component.is_root).name;
 
 export const APPEARANCE_LOAD_TIMEOUT_MS = 3000;
 
@@ -106,6 +107,11 @@ export type Appearance = {
   composer: {placeholder: string} | null;
   contact: ContactAppearance | null;
   branding: BrandingAppearance | null;
+  // Whether the subscription plan decides if the branding line is drawn. It
+  // does for a chat drawn from its settings, as it always has, and for a
+  // profile a page gives itself. The assistant's own profile lists the line or
+  // leaves it out.
+  isBrandingByPlan: boolean;
   messages: MessagesAppearance;
 };
 
@@ -185,9 +191,17 @@ export const embedKeys = (value: unknown): string[] =>
 const color = (value: unknown): string | null =>
   typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 
-const text = (value: unknown, max?: number | null): string | null =>
+// Words in a language, cut to what their prop takes.
+const words = (value: unknown, max?: number | null): string | null =>
   typeof value === 'string' && value.trim()
     ? value.slice(0, max || TEXT_MAX)
+    : null;
+
+// One value for every language: a number, an address, a name. Cut, it would
+// be another one, so a value that is too long is not taken.
+const single = (value: unknown, max?: number | null): string | null =>
+  typeof value === 'string' && value.trim() && value.length <= (max || TEXT_MAX)
+    ? value
     : null;
 
 // Only an address of the web is a link, so no value can make the chat run a
@@ -206,8 +220,9 @@ const webAddress = (value: unknown): string | null => {
 const checked = (prop: LibraryProp, value: unknown): any => {
   switch (prop.type) {
     case 'text':
+      return single(value, prop.length_max);
     case 'texts':
-      return text(value, prop.length_max);
+      return words(value, prop.length_max);
     case 'color':
       return color(value);
     case 'boolean':
@@ -289,9 +304,13 @@ type Read = {
   given: {[prop: string]: any};
 };
 
-// The `root` of a profile read against the library, or null when the chat
-// cannot start from it: no `root`, or a root that is not this UI's.
-function readProfile(profile: unknown): Read | null {
+// The `root` of a profile read against a library, this UI's unless another is
+// given, or null when the chat cannot start from it: no `root`, or a root
+// that is not the library's.
+export function readProfile(
+  profile: unknown,
+  components: LibraryComponent[] = COMPONENTS
+): Read | null {
   const elements = elementsOf(profile);
   const named = (name: unknown) =>
     typeof name === 'string'
@@ -300,7 +319,7 @@ function readProfile(profile: unknown): Read | null {
 
   // `above` lists the elements this one sits in: none holds itself.
   const read = (element: ProfileElement, above: string[]): Read | null => {
-    const component = componentNamed(element.component);
+    const component = componentNamed(element.component, components);
     if (!component) return null;
     const values = {};
     const given = {};
@@ -312,8 +331,8 @@ function readProfile(profile: unknown): Read | null {
           given[prop.name] === null ? defaultOf(prop) : given[prop.name];
         return;
       }
-      // A slot takes one component; an element of another is not what it
-      // names.
+      // A slot takes one component, or any when its prop names none; an
+      // element of another is not what it names.
       const child = named(element.values[prop.name]);
       const fits =
         child &&
@@ -327,7 +346,8 @@ function readProfile(profile: unknown): Read | null {
   };
 
   const root = named(ROOT_ELEMENT);
-  return root && root.component === ROOT_COMPONENT
+  const start = components.find((component) => component.is_root);
+  return root && start && root.component === start.name
     ? read(root, [ROOT_ELEMENT])
     : null;
 }
@@ -390,6 +410,7 @@ export function settingsAppearance(settings: AppearanceSettings): Appearance {
     },
     // Whether it shows is still the subscription plan's word.
     branding: brandingOf(BRANDING),
+    isBrandingByPlan: true,
     messages: messagesOf(defaults('Messages')),
   };
 }
@@ -435,10 +456,16 @@ const formOf = (form: Read | null): ContactFormAppearance | null => {
 
 // The model a profile describes, or null when the chat cannot start from it:
 // no `root`, or a root that is not this UI's.
+//
+// `isPageOwn` says the profile is one a page gives in its own embed, not the
+// assistant's. Such a profile decides everything but the branding line: that
+// stays the chat's own, drawn when the subscription plan says so, so that no
+// page can take it away or put another name on it.
 export function profileAppearance(
   profile: AppearanceProfile,
   settings: AppearanceSettings,
-  explicit: string[]
+  explicit: string[],
+  isPageOwn = false
 ): Appearance | null {
   const root = readProfile(profile);
   if (!root) return null;
@@ -483,7 +510,10 @@ export function profileAppearance(
       copyFailedNote: contact.values.copy_failed_notes,
       form: formOf(contact.values.form),
     },
-    branding: branding && brandingOf(branding.values),
+    branding: isPageOwn
+      ? brandingOf(BRANDING)
+      : branding && brandingOf(branding.values),
+    isBrandingByPlan: isPageOwn,
     messages: messagesOf(messages ? messages.values : defaults('Messages')),
   };
 }
@@ -536,14 +566,15 @@ export function pickProfile(
 // of a profile it holds.
 const textFor = (value: unknown, locale: string): unknown => {
   if (!isRecord(value)) return value;
+  // A tag is matched whatever its case, and `_` is read as the `-` it
+  // stands for.
+  const plain = (tag: string) => tag.replace(/_/g, '-').toLowerCase();
   const tags = Object.keys(value);
-  const wanted = [locale, locale.split('-')[0], 'en'].map((tag) =>
-    tag.toLowerCase()
-  );
+  const wanted = [locale, locale.split('-')[0], 'en'].map(plain);
   const found = wanted
-    .map((tag) => tags.find((key) => key.toLowerCase() === tag))
+    .map((tag) => tags.find((key) => plain(key) === tag))
     .concat(tags)
-    .find((key) => key !== undefined && text(value[key]) !== null);
+    .find((key) => key !== undefined && words(value[key]) !== null);
 
   return found === undefined ? undefined : value[found];
 };
@@ -583,10 +614,11 @@ export function embedProfile(
 export function resolveAppearance(
   profile: AppearanceProfile | null,
   settings: AppearanceSettings,
-  explicit: string[]
+  explicit: string[],
+  isPageOwn = false
 ): Appearance {
   return (
-    (profile && profileAppearance(profile, settings, explicit)) ||
+    (profile && profileAppearance(profile, settings, explicit, isPageOwn)) ||
     settingsAppearance(settings)
   );
 }

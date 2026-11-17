@@ -135,6 +135,8 @@ type State = {
   // is the page's, so it stands in front of the assistant's, whichever
   // assistant the page shows.
   embed: unknown;
+  // Whether the assistant's profile is being read right now.
+  isReadingProfile: boolean;
 };
 
 class Wrapper extends React.Component<Props, State> {
@@ -156,6 +158,7 @@ class Wrapper extends React.Component<Props, State> {
       assistantRemount: false,
       profile: null,
       embed: null,
+      isReadingProfile: false,
     };
   }
 
@@ -203,15 +206,22 @@ class Wrapper extends React.Component<Props, State> {
     this.cancelAppearance();
     const {inbox, appearanceProfile, locale} = this.state.config;
     const hasOwnProfile =
-      !!Number(this.state.config.appearanceInline) || !!this.state.embed;
-    if (!isAssistantId(inbox) || hasOwnProfile) return;
+      !!Number(this.state.config.appearanceInline) ||
+      !!embedProfile(this.state.embed, locale);
+    if (!isAssistantId(inbox) || hasOwnProfile) {
+      if (this.state.isReadingProfile) this.setState({isReadingProfile: false});
+      return;
+    }
 
     const controller = new AbortController();
     this.appearanceRequest = controller;
-    this.appearanceTimeout = setTimeout(
-      () => controller.abort(),
-      APPEARANCE_LOAD_TIMEOUT_MS
-    );
+    this.appearanceTimeout = setTimeout(() => {
+      controller.abort();
+      // The read ran out of time: the chat keeps the look it has.
+      if (this.appearanceRequest === controller)
+        this.setState({isReadingProfile: false});
+    }, APPEARANCE_LOAD_TIMEOUT_MS);
+    this.setState({isReadingProfile: true});
     fetchAppearanceProfile({
       assistantId: inbox,
       code: appearanceProfile,
@@ -222,7 +232,7 @@ class Wrapper extends React.Component<Props, State> {
       if (this.appearanceRequest !== controller || controller.signal.aborted)
         return;
       this.cancelAppearance();
-      this.setState({profile});
+      this.setState({profile, isReadingProfile: false});
     });
   };
 
@@ -244,21 +254,31 @@ class Wrapper extends React.Component<Props, State> {
     // The page's own profile comes as it was given. It is checked when it is
     // read, like one from the network.
     const hasEmbed = isRecord(payload) && 'appearance' in payload;
+    // With a profile of the page's own, the assistant's is not waited for any
+    // longer. What is no profile leaves that read to go on.
+    const isOwnProfile =
+      hasEmbed &&
+      !!embedProfile(
+        payload.appearance,
+        {...this.state.config, ...updates}.locale
+      );
     this.logger.debug('Updating widget config:', updates);
 
-    // The assistant's own profile is not waited for any longer.
-    if (hasEmbed) this.cancelAppearance();
-    this.setState(({config, assistantRemount, profile, embed}) => {
-      const nextConfig = {...config, ...updates};
-      const isAnotherAssistant = config.inbox !== nextConfig.inbox;
-      return {
-        config: nextConfig,
-        assistantRemount: assistantRemount || isAnotherAssistant,
-        // One assistant is never drawn in the look of another.
-        profile: isAnotherAssistant ? null : profile,
-        embed: hasEmbed ? payload.appearance : embed,
-      };
-    });
+    if (isOwnProfile) this.cancelAppearance();
+    this.setState(
+      ({config, assistantRemount, profile, embed, isReadingProfile}) => {
+        const nextConfig = {...config, ...updates};
+        const isAnotherAssistant = config.inbox !== nextConfig.inbox;
+        return {
+          config: nextConfig,
+          assistantRemount: assistantRemount || isAnotherAssistant,
+          // One assistant is never drawn in the look of another.
+          profile: isAnotherAssistant ? null : profile,
+          embed: hasEmbed ? payload.appearance : embed,
+          isReadingProfile: isOwnProfile ? false : isReadingProfile,
+        };
+      }
+    );
   };
 
   render() {
@@ -313,8 +333,9 @@ class Wrapper extends React.Component<Props, State> {
     // What the chat looks like: the profile the page gives itself, else the
     // assistant's appearance profile when it has one, and otherwise the
     // settings above, as it has always been drawn.
+    const ownProfile = embedProfile(this.state.embed, config.locale);
     const appearance = resolveAppearance(
-      embedProfile(this.state.embed, config.locale) || this.state.profile,
+      ownProfile || this.state.profile,
       {
         title,
         subtitle,
@@ -323,7 +344,8 @@ class Wrapper extends React.Component<Props, State> {
         primaryColor: configuredPrimaryColor,
         shouldShowContactForm: shouldShowCF,
       },
-      embedKeys(config.embedKeys)
+      embedKeys(config.embedKeys),
+      !!ownProfile
     );
     const theme = getThemeConfig({primary: appearance.accentColor});
     const primaryColor = theme.colors.primary;
@@ -340,6 +362,7 @@ class Wrapper extends React.Component<Props, State> {
           inboxId={inbox}
           customerId={customerId}
           appearance={appearance}
+          isAppearancePending={this.state.isReadingProfile}
           awayMessage={awayMessage}
           companyName={companyName}
           emailInputPlaceholder={emailInputPlaceholder}

@@ -197,7 +197,10 @@ Each part the iframe draws carries its component's name as `data-component`.
 - **The page's own.** A page can give a whole profile itself, as `appearance`
   in `window.FloatingChatWindow.config`, in the shape above. It is drawn in
   place of the assistant's, and nothing is read from the API. A text is one
-  string for every language, or a map of languages as above.
+  string for every language, or a map of languages as above. One part is not
+  the page's to give: the branding line. With a page's own profile it is the
+  chat's own line, drawn when the subscription plan says so, as it is without
+  a profile.
 
 ```html
 <script>
@@ -231,7 +234,9 @@ Each part the iframe draws carries its component's name as `data-component`.
   inHotel backend to the assistant's own e-mail, so it is offered only when the
   assistant has one. A field the form leaves out is sent empty.
 - A value that is not of its prop's type is not drawn: the library's default
-  stands in. A link is drawn only for an `http` or `https` address.
+  stands in. Words in a language are cut to the length their prop takes; a
+  phone, an address or a name that is too long is not taken at all. A link is
+  drawn only for an `http` or `https` address.
 - A profile that leaves the header out still has the control that closes the
   chat.
 
@@ -239,9 +244,10 @@ Each part the iframe draws carries its component's name as `data-component`.
 
 `npm run dev`, then open `http://localhost:3000/playground`. Every prop of the
 library is a control there, and the chat beside the controls redraws as you
-change them. Add `?assistant=ASSISTANT_ID` to start from an assistant's
-profile. Nothing is saved and nothing is sent: the page shows the profile to
-copy. It runs on a local server only.
+change them: its read of the assistant's profile is answered with your draft.
+Add `?assistant=ASSISTANT_ID` to start from an assistant's profile. Nothing is
+saved and nothing is sent, not a message and not the contact form: the page
+shows the profile to copy. It runs on a local server only.
 
 To see one assistant's profile as the iframe draws it, open
 `http://localhost:3000/?token=-1&inbox=ASSISTANT_ID&version=1.0.0&locale=cs`.
@@ -287,6 +293,7 @@ maintenance follow-up.
 | `helpers/a2a-client.ts` | A2A JSON-RPC/SSE communication |
 | `helpers/appearance.ts` | The look the chat draws from: a profile read against the library, or the settings |
 | `helpers/appearance-api.ts` | Reads the assistant's appearance profile |
+| `helpers/playground.ts` | Keeps the playground's chat from sending anything |
 | `helpers/storage.ts` | Browser conversation and context persistence |
 | `helpers/embed-security.ts` | Parent-message validation and fixed-origin agent URLs |
 | `styles/` | Global and emoji styling |

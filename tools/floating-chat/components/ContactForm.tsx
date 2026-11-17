@@ -40,6 +40,10 @@ const ContactForm = ({
   return (
     <Box
       as="form"
+      // The form is sent by the button under it, never by the browser: a form
+      // with one single-line field would be submitted on Enter, to the chat's
+      // own address with what the guest wrote in it.
+      onSubmit={(event: React.FormEvent) => event.preventDefault()}
       sx={{
         display: 'flex',
         flexDirection: 'column',

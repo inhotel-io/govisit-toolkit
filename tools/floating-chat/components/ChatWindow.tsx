@@ -97,6 +97,10 @@ type Props = {
   // What the chat looks like: its blocks and their values. Left out, it is
   // the look the flat settings above describe.
   appearance?: Appearance;
+  // Whether the assistant's appearance profile is still being read. Until
+  // that is over, the greeting the launcher may show above its button is not
+  // known.
+  isAppearancePending?: boolean;
 };
 
 type State = {
@@ -278,7 +282,17 @@ class ChatWindow extends React.Component<Props, State> {
       this.setState({agentCardAvatarURL: undefined, isAvatarLoading: true});
       this.loadAgentAvatar();
     }
-    this.followGreeting();
+    const followed = this.followGreeting();
+    // The read of the profile is over and changed no greeting. If the
+    // launcher is waiting to show one above its button and there is none, it
+    // is told so now.
+    if (
+      previous.isAppearancePending &&
+      !this.props.isAppearancePending &&
+      !followed
+    ) {
+      this.setState(null, this.settlePreview);
+    }
   }
 
   // What the chat looks like. `Widget` passes the model it resolved from the
@@ -327,39 +341,26 @@ class ChatWindow extends React.Component<Props, State> {
   // chat has loaded, or changes, the greeting follows it while the guest has
   // not written. A conversation under way is left as it is, and so is a
   // greeting that changes in the settings alone, as it always was.
-  followGreeting = () => {
+  // Whether the conversation was asked to follow a greeting that changed.
+  followGreeting = (): boolean => {
     const greeting = this.greetingText();
     const fromProfile = this.look().source === 'profile';
     const follows =
       greeting !== this.shownGreeting && (fromProfile || this.shownFromProfile);
     this.shownGreeting = greeting;
     this.shownFromProfile = fromProfile;
-    if (!follows) return;
+    if (!follows) return false;
 
-    this.setState(
-      ({messages}) => {
-        const isUntouched =
-          messages.length === 0 ||
-          (messages.length === 1 && messages[0].id === 'greeting');
+    this.setState(({messages}) => {
+      const isUntouched =
+        messages.length === 0 ||
+        (messages.length === 1 && messages[0].id === 'greeting');
 
-        return isUntouched
-          ? {messages: greeting ? [this.greetingMessage(greeting)] : []}
-          : null;
-      },
-      () => {
-        // The launcher may be showing the greeting above its button. When
-        // none is left to show it is told so, as it is when the chat loads
-        // with nothing unread; it would otherwise hold an empty frame open.
-        const {shouldDisplayNotifications, popUpInitialMessage} = this.state;
-        if (
-          shouldDisplayNotifications &&
-          popUpInitialMessage &&
-          this.getUnreadMessages().length === 0
-        ) {
-          this.markMessagesAsSeen();
-        }
-      }
-    );
+      return isUntouched
+        ? {messages: greeting ? [this.greetingMessage(greeting)] : []}
+        : null;
+    }, this.settlePreview);
+    return true;
   };
 
   loadAgentAvatar = () => {
@@ -451,18 +452,24 @@ class ChatWindow extends React.Component<Props, State> {
         shouldDisplayNotifications,
         popUpInitialMessage,
       },
-      () => {
-        const unread = this.getUnreadMessages();
-
-        if (
-          shouldDisplayNotifications &&
-          popUpInitialMessage &&
-          unread.length === 0
-        ) {
-          this.markMessagesAsSeen();
-        }
-      }
+      this.settlePreview
     );
+  };
+
+  // The launcher may be showing the greeting above its button. When there is
+  // none to show it is told so, as it is when the chat loads with nothing
+  // unread; it would otherwise hold an empty frame open. While the profile is
+  // still being read the greeting is not known yet, so the launcher waits.
+  settlePreview = () => {
+    const {shouldDisplayNotifications, popUpInitialMessage} = this.state;
+    if (
+      shouldDisplayNotifications &&
+      popUpInitialMessage &&
+      !this.props.isAppearancePending &&
+      this.getUnreadMessages().length === 0
+    ) {
+      this.markMessagesAsSeen();
+    }
   };
 
   onWidgetSettingsLoaded = (settings: WidgetSettings) => {
@@ -1139,10 +1146,11 @@ class ChatWindow extends React.Component<Props, State> {
     const isFormOpen =
       this.state.isMailIconClicked &&
       (look.source === 'profile' ? hasContactForm : !!form);
-    // A profile lists the branding or leaves it out. For a chat drawn from
-    // its settings the subscription plan decides, as it always has.
+    // The assistant's profile lists the branding or leaves it out. For a chat
+    // drawn from its settings, or from a profile the page gives itself, the
+    // subscription plan decides, as it always has.
     const hasBranding =
-      !!look.branding && (look.source === 'profile' || shouldDisplayBranding);
+      !!look.branding && (!look.isBrandingByPlan || shouldDisplayBranding);
 
     return (
       <Box
