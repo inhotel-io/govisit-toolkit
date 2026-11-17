@@ -39,10 +39,7 @@ type Config = {
   title?: string;
   subtitle?: string;
   primaryColor?: string;
-  baseUrl?: string;
   greeting?: string;
-  awayMessage?: string;
-  customerId?: string;
   newMessagePlaceholder?: string;
   emailInputPlaceholder?: string;
   newMessagesNotificationText?: string;
@@ -108,9 +105,7 @@ const sanitizeConfigPayload = (payload: any): Config => {
     'title',
     'subtitle',
     'primaryColor',
-    'baseUrl',
     'greeting',
-    'awayMessage',
     'companyName',
     'requireEmailUpfront',
     'newMessagePlaceholder',
@@ -434,17 +429,12 @@ class Wrapper extends React.Component<Props, State> {
     }
 
     const {
-      token,
       inbox,
-      accountId,
-      customerId,
-      awayMessage,
       companyName,
       agentAvailableText,
       agentUnavailableText,
       emailInputPlaceholder = 'Enter your email',
       newMessagesNotificationText = 'View new messages',
-      baseUrl = 'https://backend.inhotel.io',
       requireEmailUpfront = '0',
       showAgentAvailability = '0',
       disableAnalyticsTracking = '0',
@@ -472,7 +462,6 @@ class Wrapper extends React.Component<Props, State> {
           key={isCardMode ? `card:${webAddress(config.agentCard)}` : inbox}
           assistantRemount={this.state.assistantRemount}
           parentOrigin={this.parentOrigin}
-          accountId={token || accountId}
           inboxId={isCardMode ? undefined : inbox}
           agent={
             isCardMode
@@ -491,12 +480,10 @@ class Wrapper extends React.Component<Props, State> {
               ? card.examples.slice(0, appearance.suggestions.limit)
               : []
           }
-          customerId={customerId}
           appearance={appearance}
           isAppearancePending={
             isCardMode ? this.state.isReadingCard : this.state.isReadingProfile
           }
-          awayMessage={awayMessage}
           companyName={companyName}
           emailInputPlaceholder={emailInputPlaceholder}
           newMessagesNotificationText={newMessagesNotificationText}
@@ -508,7 +495,6 @@ class Wrapper extends React.Component<Props, State> {
           isCloseable={!!Number(closeable)}
           debug={!!Number(debug)}
           disableAnalyticsTracking={!!Number(disableAnalyticsTracking)}
-          baseUrl={baseUrl}
           customer={customer}
           version={version}
           ts={ts}

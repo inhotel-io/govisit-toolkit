@@ -1,6 +1,5 @@
 import React from 'react';
 import {Box, Input, Textarea, Flex, Heading} from 'theme-ui';
-import {BeatLoader} from 'react-spinners';
 import {ContactFormAppearance} from '../helpers/appearance';
 
 type Props = {
@@ -13,8 +12,6 @@ type Props = {
   email: string;
   message: string;
   clickedSubmit: boolean;
-  shouldSummarize: boolean;
-  primaryColor: string;
   // What the look gives the form: its heading and the fields it has.
   form: ContactFormAppearance;
 };
@@ -26,8 +23,6 @@ const ContactForm = ({
   email,
   message,
   clickedSubmit,
-  shouldSummarize,
-  primaryColor,
   form,
 }: Props) => {
   // A field is marked once the guest tries to send the form without what it
@@ -156,8 +151,6 @@ const ContactForm = ({
                 ? 'red'
                 : 'transparent',
               resize: 'none',
-              opacity: shouldSummarize ? 0.1 : 1, // Apply fading effect based on shouldSummarize
-              pointerEvents: shouldSummarize ? 'none' : 'auto', // Prevent interaction when faded/disabled
             }}
             px="12px"
             py="4px"
@@ -168,28 +161,7 @@ const ContactForm = ({
             value={message}
             placeholder={form.message.label}
             onChange={handleChange}
-            disabled={shouldSummarize} // Disable based on shouldSummarize
           />
-          {shouldSummarize && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                color: 'black',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                zIndex: 1,
-              }}
-            >
-              <BeatLoader color={primaryColor} />
-            </div>
-          )}
         </Box>
       )}
     </Box>

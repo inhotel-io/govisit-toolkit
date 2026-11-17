@@ -1,23 +1,18 @@
-import React, {useState} from 'react';
-import {Box, Flex, Heading, Text, ThemeProvider} from 'theme-ui';
+import React from 'react';
+import {Box, Flex} from 'theme-ui';
 
-import {motion} from 'framer-motion';
-import {
-  streamMessage,
-  ChatMessage as A2AChatMessage,
-} from '../helpers/a2a-client';
+import {streamMessage} from '../helpers/a2a-client';
 import {
   getChatHistory,
   saveChatHistory,
   getSessionId,
   getContextId,
   setContextId,
-  clearChatSession,
   StoredMessage,
 } from '../helpers/storage';
 
 // Local helper functions (A2A mode)
-const isCustomerMessage = (msg: any, customerId?: string): boolean => {
+const isCustomerMessage = (msg: any): boolean => {
   return !!(msg?.customer_id || msg?.type === 'customer');
 };
 
@@ -28,11 +23,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatFooter from './ChatFooter';
 import InhotelBranding from './InhotelBranding';
-import {
-  shorten,
-  shouldActivateGameMode,
-  setupPostMessageHandlers,
-} from '../helpers/utils';
+import {shorten, setupPostMessageHandlers} from '../helpers/utils';
 import {
   Message,
   CustomerMetadata,
@@ -60,11 +51,9 @@ import {
   addVisibilityEventListener,
 } from '../helpers/visibility';
 import analytics from '../helpers/analytics';
-import EmbeddedGame from './EmbeddedGame';
 import UnreadMessages from './UnreadMessages';
 import ContactForm from './ContactForm';
 import ChatFooterEmail from './ChatFooterEmail';
-// import Swal from 'sweetalert2';
 
 // How long the chat waits for the page to say it took the contact form.
 const CONTACT_TIMEOUT_MS = 60000;
@@ -90,13 +79,9 @@ type Props = {
   hasContactHandler?: boolean;
   // The questions the chat offers before the guest writes.
   suggestions?: string[];
-  accountId: string;
-  customerId?: string;
   title?: string;
   subtitle?: string;
-  baseUrl?: string;
   greeting?: string;
-  awayMessage?: string;
   newMessagePlaceholder?: string;
   emailInputPlaceholder?: string;
   newMessagesNotificationText?: string;
@@ -131,14 +116,12 @@ type Props = {
 
 type State = {
   messages: Array<Message>;
-  customerId: string;
   conversationId: string | null;
   availableAgents: Array<any>;
   settings: WidgetSettings;
   isSending: boolean;
   isOpen: boolean;
   isTransitioning: boolean;
-  isGameMode?: boolean;
   shouldDisplayNotifications: boolean;
   popUpInitialMessage?: boolean;
   shouldDisplayBranding: boolean;
@@ -149,17 +132,8 @@ type State = {
   email: string;
   message: string;
   clickedSubmit: boolean;
-  errors: {
-    firstName: '';
-    lastName: '';
-    email: '';
-    message: '';
-  };
   isLoading: boolean;
   statusMessageCF: string;
-  numberOfMessages: number;
-  shouldSummarize: boolean;
-  isSummarizeGenerated: boolean;
   shouldShowMessageLoading: boolean;
   avatarURL: string;
   agentCardAvatarURL: string | null | undefined;
@@ -211,17 +185,12 @@ class ChatWindow extends React.Component<Props, State> {
 
     this.state = {
       messages: [],
-      // TODO: figure out how to determine these, either by IP or localStorage
-      // (eventually we will probably use cookies for this)
-      // TODO: remove this from state if possible, just use props instead?
-      customerId: null,
       availableAgents: [],
       settings: {} as WidgetSettings,
       conversationId: null,
       isSending: false,
       isOpen: false,
       isTransitioning: false,
-      isGameMode: false,
       shouldDisplayNotifications: false,
       popUpInitialMessage: false,
       shouldDisplayBranding: false,
@@ -232,17 +201,8 @@ class ChatWindow extends React.Component<Props, State> {
       email: null,
       message: null,
       clickedSubmit: false,
-      errors: {
-        firstName: '',
-        lastName: '',
-        email: '',
-        message: '',
-      },
       isLoading: false,
       statusMessageCF: '',
-      numberOfMessages: 0,
-      shouldSummarize: false,
-      isSummarizeGenerated: false,
       shouldShowMessageLoading: false,
       avatarURL: props.avatarURL,
       agentCardAvatarURL: undefined,
@@ -468,11 +428,6 @@ class ChatWindow extends React.Component<Props, State> {
     this.logger.debug('Handling in iframe:', msg.data);
 
     switch (event) {
-      case 'customer:set:id':
-        // A2A mode - customer ID handling is local
-        return this.setState({customerId: payload});
-      case 'customer:update':
-        return this.handleCustomerUpdated(payload);
       case 'notifications:display':
         return this.handleDisplayNotifications(payload);
       case 'inhotel:toggle':
@@ -485,14 +440,6 @@ class ChatWindow extends React.Component<Props, State> {
         return this.handleContactResult(payload);
       default:
         return null;
-    }
-  };
-
-  handleCustomerUpdated = (payload: any) => {
-    const {customerId, metadata = {}} = payload;
-    // A2A mode - just update local state, no remote call
-    if (customerId) {
-      this.setState({customerId});
     }
   };
 
@@ -524,51 +471,6 @@ class ChatWindow extends React.Component<Props, State> {
       this.getUnreadMessages().length === 0
     ) {
       this.markMessagesAsSeen();
-    }
-  };
-
-  onWidgetSettingsLoaded = (settings: WidgetSettings) => {
-    this.setState({settings});
-  };
-
-  onSetCustomerId = (customerId: string) => {
-    this.logger.debug('Setting customer ID:', customerId);
-
-    if (customerId !== this.state.customerId) {
-      this.setState({customerId});
-      this.emit('customer:updated', {customerId});
-    }
-  };
-
-  onSetConversationId = (conversationId: string) => {
-    this.setState({conversationId});
-    this.emit('conversation:join', {
-      conversationId,
-      customerId: this.state.customerId,
-    });
-  };
-
-  onConversationCreated = (customerId: string, data: any) => {
-    this.logger.debug('Handling conversation created:', data);
-  };
-
-  onMessagesUpdated = (messages: Array<Message>) => {
-    this.setState({messages}, () => this.scrollIntoView());
-
-    const unseenMessages = messages.filter(
-      (msg: Message) => !msg.seen_at && !!msg.user_id
-    );
-
-    if (unseenMessages.length > 0) {
-      const [firstUnseenMessage] = unseenMessages;
-
-      this.emitUnseenMessage(firstUnseenMessage);
-    }
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.user !== null) {
-      // console.log("LAst Message: ", messages[messages.length-1]);
-      this.setState({shouldShowMessageLoading: false});
-      // console.log("shouldShowMessageLoading: ", this.state.shouldShowMessageLoading);
     }
   };
 
@@ -618,66 +520,16 @@ class ChatWindow extends React.Component<Props, State> {
     });
   };
 
-  getDefaultGreeting = (overrides = {}): Array<Message> => {
-    const {greeting, awayMessage} = this.props;
-
-    if (!greeting && !awayMessage) {
-      return [];
-    }
-
-    const {settings, availableAgents = []} = this.state;
-    const hasAvailableAgents = availableAgents.length > 0;
-    const hasAwayMessage = awayMessage && awayMessage.length > 0;
-    const isOutsideWorkingHours = settings.account?.is_outside_working_hours;
-    const shouldDisplayAwayMessage =
-      hasAwayMessage && isOutsideWorkingHours && !hasAvailableAgents;
-    const body = shouldDisplayAwayMessage ? awayMessage : greeting;
-    const hasValidMessage = body && body.trim().length > 0;
-
-    if (!hasValidMessage) {
-      return [];
-    }
-
-    return [
-      {
-        type: 'bot',
-        customer_id: 'bot',
-        body: shouldDisplayAwayMessage ? awayMessage : greeting,
-        created_at: new Date().toISOString(), // TODO: what should this be?
-        ...overrides,
-      },
-    ];
-  };
-
-  emitUnseenMessage = (message: Message) => {
-    this.emit('messages:unseen', {message});
-  };
-
-  emitOpenWindow = (e: any) => {
+  emitOpenWindow = () => {
     this.emit('inhotel:open', {});
     // This is the state where we are waiting for parent window to reply,
     // letting us know when the transition from closed to open is over
     this.setState({isTransitioning: true});
   };
 
-  emitCloseWindow = (e: any) => {
+  emitCloseWindow = () => {
     this.setState({statusMessageCF: null});
     this.emit('inhotel:close', {});
-  };
-
-  handleNewMessage = (message: Message) => {
-    if (isAgentMessage(message)) {
-      this.emit('message:received', message);
-    } else {
-      this.emit('message:sent', message);
-    }
-
-    if (this.shouldMarkAsSeen(message)) {
-      this.markMessagesAsSeen();
-    } else if (isAgentMessage(message)) {
-      this.emitUnseenMessage(message);
-      this.playNotificationSound();
-    }
   };
 
   shouldMarkAsSeen = (message: Message) => {
@@ -693,15 +545,11 @@ class ChatWindow extends React.Component<Props, State> {
   };
 
   markMessagesAsSeen = () => {
-    const {customerId, conversationId} = this.state;
-
     this.logger.debug('Marking messages as seen!');
     this.emit('messages:seen', {});
-
-    // A2A mode - no remote marking needed, just emit event
   };
 
-  handleSendMessage = async (message: Partial<Message>, email?: string) => {
+  handleSendMessage = async (message: Partial<Message>) => {
     if (this.state.isSending || this.messageRequest) {
       return;
     }
@@ -715,11 +563,6 @@ class ChatWindow extends React.Component<Props, State> {
       return;
     }
     const {messages, conversationId} = this.state;
-
-    if (shouldActivateGameMode(body)) {
-      this.setState({isGameMode: true});
-      return;
-    }
 
     // A2A mode - send via streaming API
     const userMessage: Message = {
@@ -736,7 +579,6 @@ class ChatWindow extends React.Component<Props, State> {
       {
         messages: updatedMessages,
         isSending: true,
-        isSummarizeGenerated: false,
         shouldShowMessageLoading: true,
       },
       () => this.scrollIntoView()
@@ -843,7 +685,7 @@ class ChatWindow extends React.Component<Props, State> {
   // until they enter an email address in the chat widget.
   askForEmailUpfront = () => {
     const {customer, shouldRequireEmail} = this.props;
-    const {customerId, messages = []} = this.state;
+    const {messages = []} = this.state;
 
     if (!shouldRequireEmail) {
       return false;
@@ -855,32 +697,10 @@ class ChatWindow extends React.Component<Props, State> {
 
     // TODO: figure out what this actual logic should be...
     const previouslySentMessages = messages.find((msg) =>
-      isCustomerMessage(msg, customerId)
+      isCustomerMessage(msg)
     );
 
     return !previouslySentMessages;
-  };
-
-  playNotificationSound = async (volume = 0.2) => {
-    try {
-      const file = '/alert.mp3';
-      const audio = new Audio(file);
-      audio.volume = volume;
-
-      await audio?.play();
-    } catch (err) {
-      this.logger.error('Failed to play notification sound:', err);
-    }
-  };
-
-  handleGameLoaded = (e: any) => {
-    if (e.currentTarget && e.currentTarget.focus) {
-      e.currentTarget.focus();
-    }
-  };
-
-  handleLeaveGameMode = () => {
-    this.setState({isGameMode: false}, () => this.scrollIntoView());
   };
 
   isOnDeprecatedVersion = (): boolean => {
@@ -921,7 +741,7 @@ class ChatWindow extends React.Component<Props, State> {
 
   getUnreadMessages = () => {
     const MAX_CHARS = 140;
-    const {customerId, popUpInitialMessage, messages = []} = this.state;
+    const {popUpInitialMessage, messages = []} = this.state;
     const [initialMessage] = messages;
     const hasOnlyBotMessage =
       messages.length === 1 &&
@@ -942,7 +762,7 @@ class ChatWindow extends React.Component<Props, State> {
 
         // NB: `msg.type` doesn't come from the server, it's just a way to
         // help identify unsent messages in the frontend for now
-        const isMe = isCustomerMessage(msg, customerId);
+        const isMe = isCustomerMessage(msg);
 
         return !isMe;
       })
@@ -958,9 +778,7 @@ class ChatWindow extends React.Component<Props, State> {
     this.setState((prevState) => ({
       isMailIconClicked: !prevState.isMailIconClicked,
     }));
-    this.setState((prevState) => ({
-      isContactFormSubmitted: false,
-    }));
+    this.setState({isContactFormSubmitted: false});
     this.setState({statusMessageCF: null});
   };
   // What the page said of the contact form it was given: taken, or not, in
@@ -1014,14 +832,6 @@ class ChatWindow extends React.Component<Props, State> {
     this.setState(updatedValue as Pick<State, keyof State>);
   };
 
-  // handleSubmitCF = () => {
-  //   const {firstName, lastName, email, message} = this.state;
-  //   this.setState({
-  //     isContactFormSubmitted: true,
-  //   });
-  //   console.log('Submitted!');
-
-  // };
   handleSubmitCF = () => {
     // A form on its way is not sent again.
     if (this.state.isLoading) return;
@@ -1130,30 +940,16 @@ class ChatWindow extends React.Component<Props, State> {
       isMobile = false,
       isCloseable = true,
       showAgentAvailability = false,
-      accountId,
-      baseUrl,
     } = this.props;
     const {
-      customerId,
       messages = [],
       availableAgents = [],
       isSending,
       isOpen,
       isTransitioning,
-      isGameMode,
       shouldDisplayNotifications,
       shouldDisplayBranding,
     } = this.state;
-
-    if (isGameMode) {
-      return (
-        <EmbeddedGame
-          isMobile={isMobile}
-          onLoadGame={this.handleGameLoaded}
-          onLeaveGame={this.handleLeaveGameMode}
-        />
-      );
-    }
 
     if (isTransitioning) {
       return null; // TODO: need to figure out the best way to handle this
@@ -1226,7 +1022,6 @@ class ChatWindow extends React.Component<Props, State> {
             flexDirection: 'column',
             height: '100%',
             width: '100%',
-            // minWidth: '376px',
             flex: 1,
           }}
         >
@@ -1243,7 +1038,7 @@ class ChatWindow extends React.Component<Props, State> {
           {!isFormOpen && (
             <ChatMessages
               messages={messages}
-              isMine={(msg) => isCustomerMessage(msg, customerId)}
+              isMine={(msg) => isCustomerMessage(msg)}
               companyName={companyName}
               isReplying={this.state.shouldShowMessageLoading}
               avatarURL={
@@ -1273,8 +1068,6 @@ class ChatWindow extends React.Component<Props, State> {
                 email={this.state.email}
                 message={this.state.message}
                 clickedSubmit={this.state.clickedSubmit}
-                shouldSummarize={this.state.shouldSummarize}
-                primaryColor={this.props.primaryColor}
                 form={form}
               />
             </Box>
@@ -1298,8 +1091,6 @@ class ChatWindow extends React.Component<Props, State> {
             */}
               <ChatFooter
                 key={isOpen ? 1 : 0}
-                accountId={accountId}
-                baseUrl={baseUrl}
                 placeholder={look.composer.placeholder}
                 emailInputPlaceholder={emailInputPlaceholder}
                 // With nowhere to send, the guest cannot write: nothing

@@ -281,8 +281,6 @@ export const DEFAULT_PLACEHOLDER: string = defaults('Composer')
   .input_placeholders;
 export const DEFAULT_FORM_TITLE: string = FORM.titles;
 export const DEFAULT_FORM_CONFIRMATION: string = FORM.confirmations;
-export const DEFAULT_ASSISTANT_BUBBLE_COLOR: string = defaults('Messages')
-  .assistant_bubble_color;
 
 // What a field of the contact form says when its element gives it no words:
 // the field's own name, by the slot of the form it sits in.

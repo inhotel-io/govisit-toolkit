@@ -1510,8 +1510,6 @@ test('the contact form is never sent by the browser itself', () => {
       email: '',
       message: '',
       clickedSubmit: false,
-      shouldSummarize: false,
-      primaryColor: '#465EA4',
       form,
     });
     assert.equal(element.props.as, 'form');

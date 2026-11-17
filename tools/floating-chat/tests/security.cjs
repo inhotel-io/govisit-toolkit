@@ -369,13 +369,13 @@ test('late replies after an assistant unmount cannot write history or emit event
 
 test('chat state messages reject unrelated sender windows', () => {
   const f = chatFixture();
-  f.chat.state.customerId = 'original';
+  f.chat.state.isOpen = false;
   f.chat.postMessageHandlers({
     source: {},
     origin: parentOrigin,
-    data: {event: 'customer:set:id', payload: 'intruder'},
+    data: {event: 'inhotel:toggle', payload: {isOpen: true}},
   });
-  assert.equal(f.chat.state.customerId, 'original');
+  assert.equal(f.chat.state.isOpen, false);
 });
 test('chat events target only the expected parent origin', () => {
   const f = chatFixture();

@@ -512,35 +512,3 @@ export async function streamMessage(
     if (signal) signal.removeEventListener('abort', stop);
   }
 }
-
-/**
- * Send a message without streaming (simple POST)
- */
-export async function sendMessage(
-  baseUrl: string,
-  request: ChatRequest,
-  options: SendOptions = {}
-): Promise<string> {
-  const payload = buildJsonRpcPayload(request, options);
-
-  const response = await fetch(baseUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(payload),
-    mode: 'cors',
-    credentials: 'omit',
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    throw new Error(`API error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  const error = errorOf(data);
-  if (error) throw error;
-  return extractAssistantText(data);
-}
