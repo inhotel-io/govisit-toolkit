@@ -24,6 +24,7 @@
 [![Listed on OpenAgentSkill](https://www.openagentskill.com/api/badge/inhotel-io-govisit-toolkit-govisit-search-places?metric=listed&label=Listed)](https://www.openagentskill.com/skills/inhotel-io-govisit-toolkit-govisit-search-places)
 [![ToolSDK MCP Registry](https://badges.toolsdk.ai/badge/@toolsdk-remote/govisit-tools)](https://toolsdk-ai.github.io/toolsdk-mcp-registry/#%40toolsdk-remote%2Fgovisit-tools)
 [![Listed on PickAPlugin](https://pickaplugin.com/badge/govisit-toolkit.svg)](https://pickaplugin.com/p/govisit-toolkit)
+[![Listed on mcp.site](https://mcp.site/badge/govisit-tools)](https://mcp.site/servers/govisit-tools)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
