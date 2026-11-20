@@ -1,4 +1,6 @@
 // Set data-agent-card-url on this script or use FloatingChatWindow.config.
+// data-appearance-profile, or appearance_profile in that config, names the
+// appearance profile to draw; without one the assistant's default is drawn.
 // Configuration is read synchronously in the bootstrap at the bottom of this file.
 
 // ACCOUNT_ID no longer needed - using A2A protocol
@@ -20119,6 +20121,10 @@ OD =
             };
           }
         },
+      // The assistant's legacy widget settings, with the two values of its
+      // appearance profile that the launcher itself draws laid over them: the
+      // accent colour and the side of the screen. A failed read of either
+      // leaves the other, so this never rejects.
       Pq = function (t, e) {
         return (
           void 0 === e && (e = Mq),
@@ -20127,18 +20133,238 @@ OD =
               var $jn4M$$interop$default = za(Jj);
               return [
                 2,
-                $jn4M$$interop$default.d
-                  .get(Mq + '/public/get_widget_settings')
-                  .query(t)
-                  .then(function (t) {
-                    return t.body.data;
-                  }),
+                Promise.all([
+                  // Any other agent has no inHotel settings to read.
+                  t.inbox_id
+                    ? $jn4M$$interop$default.d
+                        .get(Mq + '/public/get_widget_settings')
+                        .query({account_id: t.account_id, inbox_id: t.inbox_id})
+                        .then(function (t) {
+                          return t.body.data;
+                        })
+                        .catch(function () {
+                          return null;
+                        })
+                    : Promise.resolve(null),
+                  cd.fetchAppearanceOverlay(
+                    t.inbox_id,
+                    t.appearance_profile,
+                    t.appearance,
+                    t.agent_card
+                  ),
+                ]).then(function (r) {
+                  var settings = r[0] || {},
+                    overlay = r[1] || {},
+                    key;
+                  for (key in overlay)
+                    Object.prototype.hasOwnProperty.call(overlay, key) &&
+                      (settings[key] = overlay[key]);
+                  return settings;
+                }),
               ];
             });
           })
         );
       };
     cd.fetchWidgetSettings = Pq;
+    // An assistant's appearance profile for this UI, as the public read of the
+    // v2 API answers it. The iframe application reads the profile itself for
+    // everything it draws; the launcher takes only what it draws.
+    //
+    // The profile is the one the embed names by code, else the assistant's
+    // default. Its `root` element is a `FloatingChat`.
+    cd.appearanceOverlay = function (page, code) {
+      var items = page && Array.isArray(page.items) ? page.items : [],
+        named = null,
+        byDefault = null,
+        out = {},
+        i,
+        j,
+        item,
+        element,
+        button,
+        values;
+      for (i = 0; i < items.length; i++) {
+        item = items[i];
+        if (
+          !item ||
+          'floating_chat' !== item.ui ||
+          !Array.isArray(item.elements)
+        )
+          continue;
+        code && item.code === code && !named && (named = item);
+        !0 === item.is_default && !byDefault && (byDefault = item);
+      }
+      item = named || byDefault;
+      if (!item) return out;
+      for (i = 0; i < item.elements.length; i++) {
+        element = item.elements[i];
+        if (
+          !element ||
+          'root' !== element.name ||
+          'FloatingChat' !== element.component
+        )
+          continue;
+        values = element.values || {};
+        'string' == typeof values.accent_color &&
+          /^#[0-9a-f]{6}$/i.test(values.accent_color) &&
+          (out.color = values.accent_color);
+        ('left' === values.screen_side || 'right' === values.screen_side) &&
+          (out.position = values.screen_side);
+        // The round button is the `Launcher` the root names. A profile that
+        // names none has no button. A picture the launcher does not have is
+        // left to the embed.
+        out.launcher = !1;
+        for (j = 0; j < item.elements.length; j++) {
+          button = item.elements[j];
+          if (
+            !button ||
+            'string' != typeof values.launcher ||
+            values.launcher !== button.name ||
+            'Launcher' !== button.component
+          )
+            continue;
+          button = button.values || {};
+          out.launcher = {
+            icon:
+              'outlined' === button.icon || 'filled' === button.icon
+                ? button.icon
+                : null,
+            preview: !0 === button.has_greeting_preview,
+          };
+          break;
+        }
+        break;
+      }
+      return out;
+    };
+    // The profile a page gives in its own embed, as plain data the iframe can
+    // be sent, or null when it gives none. A profile is a list of elements.
+    cd.embedProfileOf = function (given) {
+      if (!given || !Array.isArray(given.elements) || !given.elements.length)
+        return null;
+      try {
+        return {
+          ui: 'floating_chat',
+          code: 'embed',
+          is_default: !0,
+          elements: JSON.parse(JSON.stringify(given.elements)),
+        };
+      } catch (error) {
+        return null;
+      }
+    };
+    // Only a UUID is an Assistant ID the read knows. It has three seconds;
+    // without an answer the launcher is drawn from the settings alone. It
+    // never rejects and never throws, whatever the page has done to `fetch`.
+    // The look a card publishes, in the extension the chat reads it from.
+    cd.cardOverlay = function (card) {
+      var extensions =
+          card &&
+          card.capabilities &&
+          Array.isArray(card.capabilities.extensions)
+            ? card.capabilities.extensions
+            : [],
+        i,
+        own;
+      for (i = 0; i < extensions.length; i++) {
+        if (
+          extensions[i] &&
+          'https://floating-chat.govisit.ai/extensions/appearance/v1' ===
+            extensions[i].uri
+        ) {
+          own = cd.embedProfileOf(extensions[i].params);
+          return own ? cd.appearanceOverlay({items: [own]}) : {};
+        }
+      }
+      return {};
+    };
+    cd.fetchAppearanceOverlay = function (assistantId, code, given, cardUrl) {
+      // A profile the page gives in its own embed is the one drawn, and
+      // nothing is read.
+      var own = cd.embedProfileOf(given);
+      if (own) return Promise.resolve(cd.appearanceOverlay({items: [own]}));
+      // An inHotel assistant's profile is read from the API; any other
+      // agent's look, from its card.
+      var isAssistant = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          assistantId || ''
+        ),
+        address = isAssistant
+          ? Mq +
+            '/api/v2/assistants/' +
+            String(assistantId).toLowerCase() +
+            '/appearance-profiles?ui=floating_chat&limit=200'
+          : cardUrl || '';
+      if ('function' != typeof fetch || !address) return Promise.resolve({});
+      var timer;
+      try {
+        var controller =
+            'function' == typeof AbortController ? new AbortController() : null,
+          late = new Promise(function (resolve) {
+            timer = setTimeout(function () {
+              controller && controller.abort();
+              resolve({});
+            }, 3000);
+          }),
+          read = fetch(address, {
+            credentials: 'omit',
+            signal: controller ? controller.signal : void 0,
+          })
+            .then(function (response) {
+              return response.ok ? response.json() : null;
+            })
+            .then(function (answer) {
+              return isAssistant
+                ? cd.appearanceOverlay(answer, code)
+                : cd.cardOverlay(answer);
+            })
+            .catch(function () {
+              return {};
+            });
+        return Promise.race([read, late]).then(function (overlay) {
+          clearTimeout(timer);
+          return overlay;
+        });
+      } catch (error) {
+        clearTimeout(timer);
+        return Promise.resolve({});
+      }
+    };
+    // The page's language, for the texts of the profile: the page's own
+    // `lang`, else the browser's. The read takes a language and two more parts
+    // at most, and `_` is read as the `-` it stands for.
+    cd.pageLanguage = function (doc, nav) {
+      var given = [
+          doc && doc.documentElement && doc.documentElement.lang,
+          nav && nav.language,
+        ],
+        i,
+        tag;
+      for (i = 0; i < given.length; i++) {
+        if ('string' != typeof given[i]) continue;
+        tag = given[i].replace(/_/g, '-').split('-').slice(0, 3).join('-');
+        if (/^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(tag)) return tag;
+      }
+      return '';
+    };
+    // Which of the settings a profile also gives the page set in its own
+    // embed. Those stand in front of the profile in the iframe. A setting is
+    // the embed's own when it is truthy, which is when the launcher sends it
+    // on instead of the legacy one.
+    cd.embedKeysOf = function (props) {
+      var keys = [
+          'title',
+          'subtitle',
+          'greeting',
+          'newMessagePlaceholder',
+          'primaryColor',
+        ],
+        set = [],
+        i;
+      for (i = 0; i < keys.length; i++)
+        props && props[keys[i]] && set.push(keys[i]);
+      return set.join(',');
+    };
     // STUB: Removed Papercups metadata update - using A2A protocol instead
     var Qq = function (t, e) {
       return Promise.resolve({});
@@ -22480,7 +22706,16 @@ OD =
                     (i = {}),
                     [
                       2,
-                      Pq({account_id: r || t, inbox_id: n}, a)
+                      Pq(
+                        {
+                          account_id: r || t,
+                          inbox_id: n,
+                          appearance_profile: e.appearanceProfile,
+                          appearance: e.appearance,
+                          agent_card: e.agentCard,
+                        },
+                        a
+                      )
                         .then(function (e) {
                           return e || i;
                         })
@@ -22582,6 +22817,8 @@ OD =
                   return n.handleUnseenMessages(s);
                 case 'messages:seen':
                   return n.handleMessagesSeen();
+                case 'contact:submit':
+                  return n.handleContactSubmit(s);
                 case 'inhotel:open':
                 case 'inhotel:close':
                   return n.handleToggleOpen();
@@ -22635,6 +22872,45 @@ OD =
                   shouldDisplayNotifications: !1,
                 });
             }),
+            // The contact form of any other agent's chat, for the page's own
+            // handler. What it answers goes back to the chat.
+            (n.handleContactSubmit = function (e) {
+              var t = n.props.onContactFormSubmit,
+                r = function (a) {
+                  n.send('contact:result', a);
+                },
+                i = function (a) {
+                  return 'string' == typeof a ? a : '';
+                };
+              if ('function' != typeof t) return r({ok: !1});
+              try {
+                Promise.resolve(
+                  t({
+                    firstName: i(e && e.firstName),
+                    lastName: i(e && e.lastName),
+                    email: i(e && e.email),
+                    message: i(e && e.message),
+                  })
+                ).then(
+                  function (a) {
+                    r(
+                      a && !1 === a.ok
+                        ? {
+                            ok: !1,
+                            message:
+                              'string' == typeof a.message ? a.message : void 0,
+                          }
+                        : {ok: !0}
+                    );
+                  },
+                  function () {
+                    r({ok: !1});
+                  }
+                );
+              } catch (o) {
+                r({ok: !1});
+              }
+            }),
             (n.shouldOpenByDefault = function () {
               var e = n.props,
                 t = e.defaultIsOpen,
@@ -22652,7 +22928,11 @@ OD =
                 t = (void 0 === e ? {} : e).subscriptionPlan,
                 r = void 0 === t ? null : t,
                 a = n.props,
-                i = a.popUpInitialMessage,
+                // The greeting shows above the button when the embed asks for
+                // it, or the profile's button does.
+                i =
+                  a.popUpInitialMessage ||
+                  !(!n.state.launcher || !0 !== n.state.launcher.preview),
                 o = a.onChatLoaded,
                 s = void 0 === o ? ed : o;
               if (!assistantRemount && s && typeof s === 'function') {
@@ -22683,6 +22963,10 @@ OD =
                 );
               }
               n.send('inhotel:plan', {plan: r});
+              // A profile the page gives in its own embed is the iframe's to
+              // draw. It is sent each time the chat loads.
+              n.ownProfile &&
+                n.send('config:update', {appearance: n.ownProfile});
             }),
             (n.formatCustomerMetadata = function (e) {
               return e
@@ -22951,12 +23235,31 @@ OD =
                       (T.hotelEmail = a.hotel_email),
                       (T.hotelPhone = a.hotel_phone),
                       (T.assistantType = a.assistant_type),
+                      // What the iframe needs to read the appearance profile
+                      // itself: the profile the embed names, the page's
+                      // language, and which settings the embed set itself.
+                      (T.appearanceProfile = this.props.appearanceProfile),
+                      (T.locale = cd.pageLanguage(document, navigator)),
+                      (T.embedKeys = cd.embedKeysOf(this.props)),
+                      // A page with a profile of its own says so, and the
+                      // iframe then reads none: it is sent the page's.
+                      (this.ownProfile = cd.embedProfileOf(
+                        this.props.appearance
+                      )),
+                      (T.appearanceInline = this.ownProfile ? 1 : void 0),
+                      // Any other agent: its card, and whether the page takes
+                      // the contact form itself.
+                      (T.agentCard = this.props.agentCard || void 0),
+                      (T.contactHandler =
+                        'function' == typeof this.props.onContactFormSubmit ? 1 : void 0),
                       (O = T),
                       (x = $FvpG$$interop$default.d.stringify(O, {
                         skipEmptyString: !0,
                         skipNull: !0,
                       })),
-                      this.setState({config: O, query: x}),
+                      // The round button as the profile has it: `false` when
+                      // it has none. Without a profile this is not set.
+                      this.setState({config: O, query: x, launcher: a.launcher}),
                       [4, this.updateWidgetSettingsMetadata()]
                     );
                   case 5:
@@ -23072,6 +23375,7 @@ OD =
                 iframeUrl: g,
                 query: r,
                 shouldDisplayNotifications: i,
+                launcher: this.state.launcher,
                 setIframeRef: this.setIframeRef,
                 onToggleOpen: this.handleToggleOpen,
               })
@@ -23197,8 +23501,10 @@ OD =
               l = e.shouldDisplayNotifications,
               h = e.setIframeRef,
               u = e.onToggleOpen,
-              O = t.hideToggleButton,
-              c = t.iconVariant,
+              // The button is the profile's: none when the profile has none,
+              // and its picture unless the page's own embed names one.
+              O = t.hideToggleButton || !1 === e.launcher,
+              c = t.iconVariant || (e.launcher && e.launcher.icon) || void 0,
               d = t.renderToggleButton,
               p = t.position,
               X = void 0 === p ? 'right' : p,
@@ -23287,6 +23593,29 @@ OD =
         agentCardUrl || ''
       ),
       DD = cardMatch ? cardMatch[1] : '',
+      // Any other agent, by its card: an https address, or http on this
+      // computer. The chat then reads nothing of inHotel's.
+      anyCard = (function (value) {
+        if (DD || 'string' != typeof value || !value) return '';
+        try {
+          var url = new URL(value),
+            isWeb =
+              'https:' === url.protocol ||
+              ('http:' === url.protocol &&
+                /^(localhost|127\.0\.0\.1|\[::1\])$/.test(url.hostname));
+          return isWeb && !url.username && !url.password ? url.href : '';
+        } catch (error) {
+          return '';
+        }
+      })(agentCardUrl),
+      // The appearance profile to draw, by its code, when the page names one.
+      appearanceProfile =
+        (document.currentScript &&
+          document.currentScript.getAttribute('data-appearance-profile')) ||
+        ga.appearance_profile,
+      // A whole profile the page gives itself, drawn in place of the
+      // assistant's: `config.appearance`, a list of elements.
+      ownAppearance = ga.appearance,
       ar = ga.accountId,
       ED = ga.title,
       FD = ga.subtitle,
@@ -23302,7 +23631,6 @@ OD =
       RD = ga.agentUnavailableText,
       SD = ga.showAgentAvailability,
       br = ga.iconVariant,
-      TD = void 0 === br ? 'outlined' : br,
       cr = ga.hideToggleButton,
       UD = void 0 !== cr && cr,
       dr = ga.requireEmailUpfront,
@@ -23336,10 +23664,10 @@ OD =
       rr = ga.onMessageReceived,
       hE = void 0 === rr ? ye : rr;
     // A2A mode - the agent card names the assistant, account token not required
-    if (!DD)
+    if (!DD && !anyCard)
       throw new Error(
         agentCardUrl
-          ? 'agent_card_url must be an inHotel agent card: https://{assistant profile id}.agents.inhotel.io/.well-known/agent-card.json'
+          ? 'agent_card_url must be the https address of an A2A agent card, such as https://agent.example/.well-known/agent-card.json'
           : 'Set data-agent-card-url on the launcher script or set window.FloatingChatWindow.config.agent_card_url.'
       );
     var sr = document.createElement('div');
@@ -23350,6 +23678,10 @@ OD =
         Q.d.createElement(Zq, {
           token: _q,
           inbox: DD,
+          appearanceProfile: appearanceProfile,
+          appearance: ownAppearance,
+          agentCard: anyCard,
+          onContactFormSubmit: ga.onContactFormSubmit,
           accountId: ar,
           title: ED,
           subtitle: FD,
@@ -23370,7 +23702,7 @@ OD =
           defaultIsOpen: WD,
           isOpenByDefault: XD,
           persistOpenState: YD,
-          iconVariant: TD,
+          iconVariant: br,
           hideToggleButton: UD,
           hideOutsideWorkingHours: ZD,
           popUpInitialMessage: $D,

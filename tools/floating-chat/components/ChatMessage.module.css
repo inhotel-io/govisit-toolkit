@@ -30,3 +30,10 @@
 .timestamp[data-mine='true'] {
   color: rgba(255, 255, 255, 0.85);
 }
+/* On a bubble of a colour the look sets, the time is whichever reads. */
+.timestamp[data-on='light'] {
+  color: rgba(0, 0, 0, 0.6);
+}
+.timestamp[data-on='dark'] {
+  color: rgba(255, 255, 255, 0.85);
+}

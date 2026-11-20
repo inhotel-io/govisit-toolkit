@@ -1,13 +1,7 @@
 /** @jsx jsx */
 import {jsx} from 'theme-ui';
 
-export const PhoneIcon = ({
-  width,
-  height,
-}: {
-  width?: number;
-  height?: number;
-}) => {
+export const PhoneIcon = () => {
   return (
     <svg
       focusable="false"

@@ -46,6 +46,7 @@ function bootstrapConfiguration({
                 name === 'data-agent-card-url' ? attribute : null,
             },
       },
+      URL,
       ACCOUNT_ID: -1,
     }
   );
@@ -103,17 +104,24 @@ test('an invalid Floating Chat card is rejected', () => {
     () =>
       bootstrapConfiguration({
         floatingConfig: {
-          agent_card_url:
-            'https://attacker.example/.well-known/agent-card.json',
+          agent_card_url: 'http://attacker.example/.well-known/agent-card.json',
         },
       }),
-    /must be an inHotel agent card/
+    /must be the https address of an A2A agent card/
   );
 });
-test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
+test('another agent’s card is no inHotel assistant', () => {
   for (const url of [
     'https://attacker.example/.well-known/agent-card.json',
     cardUrl(firstProfile) + '?override=1',
+  ]) {
+    assert.equal(bootstrapConfiguration({attribute: url}).profile, '');
+  }
+});
+test('an invalid explicit attribute is rejected even with valid Floating Chat configuration', () => {
+  for (const url of [
+    'javascript:alert(1)',
+    'https://user:secret@attacker.example/.well-known/agent-card.json',
     'http://' + firstProfile + '.agents.inhotel.io/.well-known/agent-card.json',
   ]) {
     assert.throws(
@@ -122,7 +130,7 @@ test('an invalid explicit attribute is rejected even with valid Floating Chat co
           attribute: url,
           floatingConfig: {agent_card_url: cardUrl(firstProfile)},
         }),
-      /must be an inHotel agent card/
+      /must be the https address of an A2A agent card/
     );
   }
 });
@@ -361,13 +369,13 @@ test('late replies after an assistant unmount cannot write history or emit event
 
 test('chat state messages reject unrelated sender windows', () => {
   const f = chatFixture();
-  f.chat.state.customerId = 'original';
+  f.chat.state.isOpen = false;
   f.chat.postMessageHandlers({
     source: {},
     origin: parentOrigin,
-    data: {event: 'customer:set:id', payload: 'intruder'},
+    data: {event: 'inhotel:toggle', payload: {isOpen: true}},
   });
-  assert.equal(f.chat.state.customerId, 'original');
+  assert.equal(f.chat.state.isOpen, false);
 });
 test('chat events target only the expected parent origin', () => {
   const f = chatFixture();

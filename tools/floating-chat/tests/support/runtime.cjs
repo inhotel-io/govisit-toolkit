@@ -73,7 +73,8 @@ function synchronousState(component) {
   return component;
 }
 
-function bundledLauncherHandler(name, bridge) {
+// `scope` supplies what a handler reads from outside itself, such as `fetch`.
+function bundledLauncherHandler(name, bridge, scope = {}) {
   const source = ts.createSourceFile(
     'widget.js',
     fs.readFileSync(path.join(root, 'public/widget.js'), 'utf8'),
@@ -100,6 +101,7 @@ function bundledLauncherHandler(name, bridge) {
     n: bridge,
     URL,
     ed: () => {},
+    ...scope,
   });
 }
 

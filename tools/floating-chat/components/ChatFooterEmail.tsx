@@ -1,18 +1,16 @@
 import React, {useState} from 'react';
-import {Box, Button, Flex, Input, Text} from 'theme-ui';
-import Upload from 'rc-upload';
-import ResizableTextArea from './ResizableTextArea';
+import {Box, Button, Flex, Text} from 'theme-ui';
 import SendIcon from './SendIcon';
-import PaperclipIcon from './PaperclipIcon';
-import {Attachment, Message} from '../helpers/types';
 import MailIcon from './MailIcon';
-import styles from './ChatFooter.module.css';
-import CloseIcon from './CloseIcon';
-import displayContactForm from './ChatWindow';
 import PhoneIcon from './PhoneIcon';
 import DiscardIcon from './DiscardIcon';
 import Tippy from '@tippyjs/react';
 import {FadeLoader} from 'react-spinners';
+import {ContactAppearance} from '../helpers/appearance';
+
+// Where the hint of the phone, or of the e-mail, stands: before the first
+// copy, after one, or just after a copy that worked or failed.
+type CopyHint = 'first' | 'again' | 'copied' | 'failed';
 
 const ChatFooterEmail = ({
   onClickMailIcon,
@@ -21,10 +19,11 @@ const ChatFooterEmail = ({
   isSubmittedCF,
   hotelEmail,
   hotelPhone,
+  isPhoneShown = true,
   shouldShowContactForm,
   isLoading,
   statusMessageCF,
-  handleSummarize,
+  look,
 }: {
   onClickMailIcon: () => void;
   isMailIconClicked: boolean;
@@ -32,46 +31,45 @@ const ChatFooterEmail = ({
   isSubmittedCF: boolean;
   hotelEmail: string;
   hotelPhone: string;
+  // Whether the phone and its icon are drawn: with a phone, and always on a
+  // line drawn from inHotel's settings.
+  isPhoneShown?: boolean;
   shouldShowContactForm: boolean;
   isLoading: boolean;
   statusMessageCF: string;
-  handleSummarize: () => void;
+  // What the look gives the contact line: its hints, and the words of its
+  // form when it has one.
+  look: ContactAppearance;
 }) => {
-  const [tooltipContentEmail, setTooltipContentEmail] = useState(
-    'Copy to clipboard'
-  );
-  const [tooltipContentPhone, setTooltipContentPhone] = useState(
-    'Copy to clipboard'
-  );
+  const {form} = look;
+  const [emailHint, setEmailHint] = useState<CopyHint>('first');
+  const [phoneHint, setPhoneHint] = useState<CopyHint>('first');
+  // The words are read from the look each time, so a look that arrives late
+  // is the one the hint speaks in.
+  const hintText = (hint: CopyHint): string =>
+    ({
+      first: look.firstCopyHint,
+      again: look.copyHint,
+      copied: look.copiedNote,
+      failed: look.copyFailedNote,
+    }[hint]);
 
   const copyToClipboard = (
     text: string,
-    setTooltipContent: React.Dispatch<React.SetStateAction<string>>
+    setHint: React.Dispatch<React.SetStateAction<CopyHint>>
   ) => {
     navigator.clipboard.writeText(text).then(
       () => {
-        setTooltipContent('Copied!');
-        setTimeout(() => setTooltipContent('Click to copy'), 1500);
+        setHint('copied');
+        setTimeout(() => setHint('again'), 1500);
       },
       (err) => {
         console.error('Failed to copy:', err);
-        setTooltipContent('Failed to copy');
-        setTimeout(() => setTooltipContent('Click to copy'), 1500);
+        setHint('failed');
+        setTimeout(() => setHint('again'), 1500);
       }
     );
   };
-  const [clickedMailIcon, setClickedMailIcon] = useState(false);
-
-  const handleMailClick = () => {
-    // console.log("Mail was clicked!")
-    setClickedMailIcon(!clickedMailIcon);
-    if (clickedMailIcon === true) {
-      console.log('Open the tray');
-    } else {
-      console.log('Close');
-    }
-  };
-
   const [isDiscardFocused, setIsDiscardFocused] = useState(false);
   const useHoverStylesOnEnter = () => {
     setIsDiscardFocused(true);
@@ -81,14 +79,7 @@ const ChatFooterEmail = ({
   };
 
   return (
-    <Box
-      sx={
-        {
-          // minHeight: '90px',
-          // bg: '#f5f5f5',
-        }
-      }
-    >
+    <Box sx={{}}>
       {isMailIconClicked && (
         <Box>
           <Flex
@@ -96,7 +87,6 @@ const ChatFooterEmail = ({
               alignItems: 'center',
               justifyContent:
                 statusMessageCF === null ? 'space-between' : 'left',
-              // justifyContent:'left',
               flexDirection: 'row',
             }}
             py={2}
@@ -107,8 +97,7 @@ const ChatFooterEmail = ({
               sx={{flex: '0 0 auto', display: 'flex', alignItems: 'center'}}
             >
               <Tippy
-                // theme="dynamic-primary"
-                content="Discard message"
+                content={form ? form.discardHint : ''}
                 interactive={true}
                 interactiveBorder={20}
                 delay={100}
@@ -145,7 +134,7 @@ const ChatFooterEmail = ({
                     marginLeft: '8px',
                   }}
                 >
-                  Discard
+                  {form && form.discardLabel}
                 </Box>
               )}
             </Box>
@@ -160,7 +149,7 @@ const ChatFooterEmail = ({
                       marginRight: '8px',
                     }}
                   >
-                    Send
+                    {form && form.sendLabel}
                   </Box>
                 )}
                 {isLoading && (
@@ -171,12 +160,11 @@ const ChatFooterEmail = ({
                       marginRight: '8px',
                     }}
                   >
-                    Sending
+                    {form && form.sendingLabel}
                   </Box>
                 )}
                 <Tippy
-                  // theme="dynamic-primary"
-                  content="Send as email"
+                  content={form ? form.sendHint : ''}
                   interactive={true}
                   interactiveBorder={20}
                   delay={100}
@@ -197,7 +185,6 @@ const ChatFooterEmail = ({
                     }}
                   >
                     {!isLoading && <SendIcon fill="background" />}
-                    {/* {isLoading && (<FadeLoader color="background" height={'16px'} width={'16px'} />)} */}
                     {isLoading && (
                       <div
                         style={{
@@ -235,8 +222,7 @@ const ChatFooterEmail = ({
                   marginLeft: '8px', // Ensure some space between the button and text, adjust as needed
                 }}
               >
-                Thank you for your message! Please expect our reply within 1
-                working day.
+                {form && form.confirmation}
               </Box>
             )}
 
@@ -259,12 +245,9 @@ const ChatFooterEmail = ({
         p={0}
         sx={{
           color: 'tertiary',
-          // bg: '#f8f8f8',
-          // variant: 'styles.input.transparent',
           flex: 1,
           fontSize: '14px',
           alignItems: 'center',
-          // justifyContent: 'space-between'
         }}
       >
         <Flex
@@ -274,8 +257,6 @@ const ChatFooterEmail = ({
             justifyContent: 'space-between',
             borderTop: isMailIconClicked ? '1px solid rgb(230, 230, 230)' : '',
             minHeight: '40px',
-            // TODO: only show shadow on focus TextArea below
-            // boxShadow: isMailIconClicked? 'rgba(0, 0, 0, 0.1) 0px 0px 100px 0px': '',
           }}
         >
           <Box
@@ -284,26 +265,26 @@ const ChatFooterEmail = ({
               alignItems: 'center',
             }}
           >
-            <PhoneIcon />
-            <Box
-              p={1}
-              sx={{
-                mr: 0,
-                wordWrap: 'break-word',
-                fontSize: '14px',
-              }}
-            >
-              <Tippy content={tooltipContentPhone}>
-                <Text
-                  sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
-                  onClick={() =>
-                    copyToClipboard(hotelPhone, setTooltipContentPhone)
-                  }
-                >
-                  {hotelPhone}
-                </Text>
-              </Tippy>
-            </Box>
+            {isPhoneShown && <PhoneIcon />}
+            {isPhoneShown && (
+              <Box
+                p={1}
+                sx={{
+                  mr: 0,
+                  wordWrap: 'break-word',
+                  fontSize: '14px',
+                }}
+              >
+                <Tippy content={hintText(phoneHint)}>
+                  <Text
+                    sx={{ml: 0, whiteSpace: 'nowrap', cursor: 'pointer'}}
+                    onClick={() => copyToClipboard(hotelPhone, setPhoneHint)}
+                  >
+                    {hotelPhone}
+                  </Text>
+                </Tippy>
+              </Box>
+            )}
           </Box>
           <Box
             sx={{
@@ -318,7 +299,7 @@ const ChatFooterEmail = ({
                 fontSize: '14px',
               }}
             >
-              <Tippy content={tooltipContentEmail}>
+              <Tippy content={hintText(emailHint)}>
                 <Text
                   sx={{
                     ml: 2,
@@ -329,24 +310,25 @@ const ChatFooterEmail = ({
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
                   }}
-                  onClick={() =>
-                    copyToClipboard(hotelEmail, setTooltipContentEmail)
-                  }
+                  onClick={() => copyToClipboard(hotelEmail, setEmailHint)}
                 >
                   {hotelEmail}
                 </Text>
               </Tippy>
             </Box>
             <Tippy
-              // theme="dynamic-primary"
-              content="Contact Us"
+              content={form ? form.openHint : ''}
+              disabled={!form}
               interactive={true}
               interactiveBorder={20}
               delay={100}
             >
               <Box
+                data-contact-form-control={
+                  shouldShowContactForm ? 'true' : undefined
+                }
                 onClick={() => {
-                  onClickMailIcon(), handleSummarize();
+                  onClickMailIcon();
                 }}
                 sx={{
                   cursor: 'pointer',

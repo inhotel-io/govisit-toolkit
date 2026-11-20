@@ -11,13 +11,3 @@ export const isDev = (w: any) => {
       hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
   );
 };
-
-export const getWebsocketUrl = (baseUrl) => {
-  // TODO: handle this parsing better
-  const url = baseUrl || DEFAULT_BASE_URL;
-  const [protocol, host] = url.split('://');
-  const isHttps = protocol === 'https';
-
-  // TODO: not sure how websockets work with subdomains
-  return `${isHttps ? 'wss' : 'ws'}://${host}/socket`;
-};

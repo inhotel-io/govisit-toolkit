@@ -7,6 +7,7 @@ import ChatMessageBody from './ChatMessageBody';
 import {Message, User} from '../helpers/types';
 import styles from './ChatMessage.module.css';
 import {AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
+import {isLightColor} from '../helpers/theme';
 
 dayjs.extend(utc);
 
@@ -116,6 +117,11 @@ type Props = {
   loader?: React.ReactNode;
   avatarURL?: string | null;
   isAvatarLoading?: boolean;
+  // What the look gives the message list. Left out, the chat's own values.
+  assistantBubbleColor?: string;
+  guestBubbleColor?: string | null;
+  hasAvatar?: boolean;
+  hasFeedback?: boolean;
 };
 
 const ChatMessage = ({
@@ -128,14 +134,33 @@ const ChatMessage = ({
   loader,
   avatarURL,
   isAvatarLoading,
+  assistantBubbleColor = 'rgb(245, 245, 245)',
+  guestBubbleColor,
+  hasAvatar = true,
+  hasFeedback = true,
 }: Props) => {
   const {body, created_at, user, type, attachments = []} = message;
   const created = created_at ? dayjs.utc(created_at) : null;
   const timestamp = created ? formatRelativeTime(created) : null;
+  // White on the accent colour and dark on the grey, as ever. On a colour the
+  // look sets, the text and the time are whichever of the two reads.
+  const isGuestBubbleDark =
+    !guestBubbleColor || !isLightColor(guestBubbleColor);
+  const isAssistantBubbleDark = !isLightColor(assistantBubbleColor);
+  // The styles know the time's colour on the chat's own two bubbles. `data-on`
+  // names the bubble only where the look makes it the other kind.
+  const timeOn = isMe
+    ? isGuestBubbleDark
+      ? undefined
+      : 'light'
+    : isAssistantBubbleDark
+    ? 'dark'
+    : undefined;
   const timestampNode = shouldDisplayTimestamp ? (
     <time
       className={styles.timestamp}
       data-mine={isMe || undefined}
+      data-on={timeOn}
       dateTime={created ? created.toISOString() : undefined}
     >
       {isMe ? (timestamp ? `Sent ${timestamp}` : 'Sending...') : timestamp}
@@ -242,16 +267,16 @@ const ChatMessage = ({
     </span>
   );
 
-  // console.log("ShowLoader?: ",shouldShowLoader);
   if (isMe) {
+    const isDarkBubble = isGuestBubbleDark;
     return (
       <Box pr={0} pl={4} pb={isLastInGroup ? 3 : 2}>
         <Flex sx={{justifyContent: 'flex-end'}}>
           <ChatMessageBody
-            className="Text--white"
+            className={isDarkBubble ? 'Text--white' : undefined}
             sx={{
-              color: 'background',
-              bg: 'primary',
+              color: isDarkBubble ? 'background' : 'text',
+              bg: guestBubbleColor || 'primary',
               whiteSpace: 'pre-wrap',
             }}
             content={body}
@@ -263,27 +288,33 @@ const ChatMessage = ({
     );
   }
 
+  const isDarkBubble = isAssistantBubbleDark;
+  const canRate = hasFeedback && type === 'agent';
+
   return (
     <Box pr={4} pl={0} pb={isLastInGroup ? 3 : 2}>
       <Flex sx={{justifyContent: 'flex-start', alignItems: 'flex-end'}}>
-        <SenderAvatar
-          name={identifer}
-          user={user}
-          isBot={isBot}
-          avatarURL={avatarURL}
-          isAvatarLoading={isAvatarLoading}
-        />
+        {hasAvatar && (
+          <SenderAvatar
+            name={identifer}
+            user={user}
+            isBot={isBot}
+            avatarURL={avatarURL}
+            isAvatarLoading={isAvatarLoading}
+          />
+        )}
         {!shouldShowLoader && (
           <ChatMessageBody
+            className={isDarkBubble ? 'Text--white' : undefined}
             sx={{
-              color: 'text',
-              bg: 'rgb(245, 245, 245)',
+              color: isDarkBubble ? 'background' : 'text',
+              bg: assistantBubbleColor,
               whiteSpace: 'pre-wrap',
             }}
             content={body}
             attachments={attachments}
-            thumbsup={type === 'agent' ? thumbsup : undefined}
-            thumbsdown={type === 'agent' ? thumbsdown : undefined}
+            thumbsup={canRate ? thumbsup : undefined}
+            thumbsdown={canRate ? thumbsdown : undefined}
             timestamp={timestampNode}
             tail
           />
@@ -303,7 +334,6 @@ export const PopupChatMessage = ({
   const {body, user, type} = message;
   const isBot = type === 'bot';
   const identifer = isBot ? 'Bot' : getAgentIdentifier(user);
-  // const identifer = isBot ? 'Bot' : null;
 
   return (
     <Box pr={0} pl={0} pb={2}>

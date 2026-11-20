@@ -1,0 +1,355 @@
+{
+  "ui": "floating_chat",
+  "name": "Floating chat",
+  "components": [
+    {
+      "name": "FloatingChat",
+      "kind": "component",
+      "is_root": true,
+      "description": "The chat as a whole: the round button, the window and the list of messages.",
+      "props": [
+        {
+          "name": "header",
+          "type": "element",
+          "child_component": "Header",
+          "description": "The header the chat shows. Left out, the chat has none."
+        },
+        {
+          "name": "greeting",
+          "type": "element",
+          "child_component": "Greeting",
+          "description": "The greeting the chat opens with. Left out, it opens empty."
+        },
+        {
+          "name": "composer",
+          "type": "element",
+          "child_component": "Composer",
+          "description": "The composer the guest writes in. Left out, the guest cannot write."
+        },
+        {
+          "name": "accent_color",
+          "type": "color",
+          "default": "#465EA4",
+          "description": "The colour of the button, the header and the guest's messages."
+        },
+        {
+          "name": "screen_side",
+          "type": "option",
+          "options": ["left", "right"],
+          "default": "right",
+          "description": "The side of the screen the chat sits on."
+        },
+        {
+          "name": "contact",
+          "type": "element",
+          "child_component": "Contact",
+          "description": "The contact line the chat shows. Left out, it has none."
+        },
+        {
+          "name": "branding",
+          "type": "element",
+          "child_component": "Branding",
+          "description": "The branding line the chat shows. Left out, it has none."
+        },
+        {
+          "name": "messages",
+          "type": "element",
+          "child_component": "Messages",
+          "description": "How the messages look. Left out, the defaults apply."
+        },
+        {
+          "name": "launcher",
+          "type": "element",
+          "child_component": "Launcher",
+          "description": "The round button the chat opens from. Left out, the chat has none."
+        },
+        {
+          "name": "suggestions",
+          "type": "element",
+          "child_component": "Suggestions",
+          "description": "The questions the chat offers before the guest writes. Left out, it offers none."
+        }
+      ]
+    },
+    {
+      "name": "Launcher",
+      "kind": "component",
+      "description": "The round button the chat opens from.",
+      "props": [
+        {
+          "name": "icon",
+          "type": "option",
+          "options": ["outlined", "filled"],
+          "default": "outlined",
+          "description": "The picture on the button."
+        },
+        {
+          "name": "has_greeting_preview",
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the greeting shows above the button before the chat is opened."
+        }
+      ]
+    },
+    {
+      "name": "Header",
+      "kind": "component",
+      "description": "The bar at the top of the window, with a title and a line under it.",
+      "props": [
+        {
+          "name": "titles",
+          "type": "texts",
+          "length_max": 255,
+          "default": {"en": "Welcome!"},
+          "description": "The title."
+        },
+        {
+          "name": "subtitles",
+          "type": "texts",
+          "length_max": 255,
+          "default": {"en": "How can we help you?"},
+          "description": "The line under the title."
+        }
+      ]
+    },
+    {
+      "name": "Greeting",
+      "kind": "component",
+      "description": "The first message, shown before the guest writes.",
+      "props": [
+        {
+          "name": "greetings",
+          "type": "texts",
+          "length_max": 255,
+          "description": "What the first message says."
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "kind": "object",
+      "description": "How the list of messages looks.",
+      "props": [
+        {
+          "name": "assistant_bubble_color",
+          "type": "color",
+          "default": "#F5F5F5",
+          "description": "The background of the assistant's messages."
+        },
+        {
+          "name": "guest_bubble_color",
+          "type": "color",
+          "description": "The background of the guest's messages. Without one, the accent colour."
+        },
+        {
+          "name": "has_avatars",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the assistant's picture stands beside its messages."
+        },
+        {
+          "name": "has_feedback",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether thumbs up and down stand under the assistant's replies."
+        },
+        {
+          "name": "has_timestamps",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the time stands under the last message."
+        }
+      ]
+    },
+    {
+      "name": "Composer",
+      "kind": "component",
+      "description": "The field the guest writes in, with the send button.",
+      "props": [
+        {
+          "name": "input_placeholders",
+          "type": "texts",
+          "length_max": 400,
+          "default": {"en": "Start typing..."},
+          "description": "The hint in the empty field."
+        }
+      ]
+    },
+    {
+      "name": "Suggestions",
+      "kind": "component",
+      "description": "Questions the guest can send with one click before writing: the examples in the agent's card.",
+      "props": [
+        {
+          "name": "limit",
+          "type": "number",
+          "value_min": 1,
+          "value_max": 6,
+          "default": 3,
+          "description": "The most questions offered."
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "kind": "component",
+      "description": "The line under the composer with the phone, the e-mail and the contact form.",
+      "props": [
+        {
+          "name": "phone",
+          "type": "text",
+          "length_max": 40,
+          "description": "The phone number the line shows. Left out, the assistant's own."
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "length_max": 255,
+          "description": "The e-mail address the line shows. Left out, the assistant's own."
+        },
+        {
+          "name": "form",
+          "type": "element",
+          "child_component": "ContactForm",
+          "description": "The contact form the guest can open. Left out, the line has none."
+        },
+        {
+          "name": "copy_hints",
+          "type": "texts",
+          "length_max": 100,
+          "default": {"en": "Click to copy"},
+          "description": "What the phone and the e-mail say on hover."
+        },
+        {
+          "name": "copied_notes",
+          "type": "texts",
+          "length_max": 100,
+          "default": {"en": "Copied!"},
+          "description": "What they say once copied."
+        },
+        {
+          "name": "copy_failed_notes",
+          "type": "texts",
+          "length_max": 100,
+          "default": {"en": "Failed to copy"},
+          "description": "What they say when copying fails."
+        }
+      ]
+    },
+    {
+      "name": "ContactForm",
+      "kind": "component",
+      "description": "The form a guest sends a message with, opened from the contact line.",
+      "props": [
+        {
+          "name": "titles",
+          "type": "texts",
+          "length_max": 255,
+          "default": {"en": "Contact Us"},
+          "description": "The heading of the contact form."
+        },
+        {
+          "name": "first_name",
+          "type": "element",
+          "child_component": "FormField",
+          "description": "The field for the guest's first name. Left out, the form has none."
+        },
+        {
+          "name": "last_name",
+          "type": "element",
+          "child_component": "FormField",
+          "description": "The field for the guest's last name. Left out, the form has none."
+        },
+        {
+          "name": "email",
+          "type": "element",
+          "child_component": "FormField",
+          "description": "The field for the guest's e-mail address. Left out, the form has none."
+        },
+        {
+          "name": "message",
+          "type": "element",
+          "child_component": "FormField",
+          "description": "The field for the message. Left out, the form has none."
+        },
+        {
+          "name": "send_labels",
+          "type": "texts",
+          "length_max": 40,
+          "default": {"en": "Send"},
+          "description": "The word beside the send button."
+        },
+        {
+          "name": "sending_labels",
+          "type": "texts",
+          "length_max": 40,
+          "default": {"en": "Sending"},
+          "description": "The word beside the send button while the form is sent."
+        },
+        {
+          "name": "discard_labels",
+          "type": "texts",
+          "length_max": 40,
+          "default": {"en": "Discard"},
+          "description": "The word beside the button that closes the form."
+        },
+        {
+          "name": "confirmations",
+          "type": "texts",
+          "length_max": 255,
+          "default": {
+            "en": "Thank you for your message! Please expect our reply within 1 working day."
+          },
+          "description": "What the form says once it is sent."
+        }
+      ]
+    },
+    {
+      "name": "FormField",
+      "kind": "component",
+      "description": "One field of the contact form.",
+      "props": [
+        {
+          "name": "labels",
+          "type": "texts",
+          "length_max": 100,
+          "description": "What the empty field says. Left out, the field's own name."
+        },
+        {
+          "name": "is_required",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the form is sent only when the field is filled."
+        }
+      ]
+    },
+    {
+      "name": "Branding",
+      "kind": "component",
+      "description": "The \"Powered by\" line at the bottom.",
+      "props": [
+        {
+          "name": "texts",
+          "type": "texts",
+          "length_max": 100,
+          "default": {"en": "Powered by"},
+          "description": "The words before the name."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "length_max": 100,
+          "default": "inHotel",
+          "description": "The name the line ends with."
+        },
+        {
+          "name": "link_url",
+          "type": "text",
+          "length_max": 255,
+          "default": "https://www.inhotel.io",
+          "description": "Where the name leads."
+        }
+      ]
+    }
+  ]
+}
