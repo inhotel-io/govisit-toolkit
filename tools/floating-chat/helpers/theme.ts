@@ -10,6 +10,16 @@ type ThemeSettings = {primary?: string};
 export const isLightColor = (color: string): boolean =>
   tinycolor(color).isLight();
 
+// The guest's bubble: the colour the look sets, else the accent colour, written
+// on in whichever of white and dark reads. White on the accent colour, as ever.
+export const guestBubbleColors = (bubbleColor?: string | null) => {
+  const isDark = !bubbleColor || !isLightColor(bubbleColor);
+  return {
+    isDark,
+    sx: {color: isDark ? 'background' : 'text', bg: bubbleColor || 'primary'},
+  };
+};
+
 export const getThemeConfig = (settings: ThemeSettings) => {
   const baseColor = tinycolor(settings.primary);
   const base = baseColor.isValid() ? baseColor : tinycolor(GOVISIT_BLUE_600);
@@ -77,25 +87,6 @@ export const getThemeConfig = (settings: ThemeSettings) => {
         '&:hover': {
           background: overrides.light,
           borderColor: overrides.light,
-        },
-        '&:active': {
-          background: overrides.dark,
-          borderColor: overrides.dark,
-        },
-      },
-      secondary: {
-        cursor: 'pointer',
-        outline: 0,
-        transition: '0.2s',
-        background: base.lighten(40).toString(),
-        color: overrides.primary,
-        borderColor: overrides.primary,
-        borderWidth: 1,
-        borderStyle: 'solid',
-        '&:hover': {
-          color: '#fff',
-          background: overrides.primary,
-          borderColor: overrides.primary,
         },
         '&:active': {
           background: overrides.dark,

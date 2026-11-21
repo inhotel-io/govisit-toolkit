@@ -141,6 +141,7 @@ const ChatMessages = ({
           replies={replies}
           onSelect={onSelectReply}
           component={isSuggestions ? 'Suggestions' : undefined}
+          guestBubbleColor={look.guestBubbleColor}
         />
       ) : null}
 
