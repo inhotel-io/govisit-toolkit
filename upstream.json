@@ -2,9 +2,9 @@
   "formatVersion": 1,
   "source": {
     "repository": "inhotel-io/govisit-web",
-    "revision": "ecd9cc2e0e5d383f6f11624205a4acdfae40ba65"
+    "revision": "01d3091cefbabb4b9c39c6caa54b489389858e9d"
   },
-  "sourceDigest": "sha256:61cad3cadd4f66ca0f003c8b3bb7def45b8b2dca7e1749b7b137cda1b04a9d1d",
+  "sourceDigest": "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697",
   "packages": [
     {
       "name": "govisit-get-blog-post",
@@ -14,7 +14,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:72afd0437477e482b9e6de39c900f185db6b2d66fde541eb24f3d8cbc6aec730"
+      "digest": "sha256:00a7aa1cd62e987f64ca87eefbacd56c8dd16cca9274dd2f370d420b0feb57bc"
     },
     {
       "name": "govisit-get-category-overview",
@@ -24,7 +24,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:94157f411561f3bbd83c30e700160732437113e8bcacf23f905c534e33e83e72"
+      "digest": "sha256:99c5ffcaa251748f509fc51a369081cd2f665709857ad8d6f073a96c7f10eda3"
     },
     {
       "name": "govisit-get-category-section",
@@ -34,7 +34,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:0c7aa4730b2d71969ec6211366540b71600730c24ed40de832a9e71faeb7bcd1"
+      "digest": "sha256:2d7e9b7aa9f7d4b3f41d6c8d9a80866643224691b32de98d6bbdba735d179500"
     },
     {
       "name": "govisit-get-collection-overview",
@@ -44,7 +44,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:cabe719c0a11c1d0bccb1993ce85e454fcd0e8422501c881d1ef2dc4e111fc3e"
+      "digest": "sha256:ea9ec27c6e21973316c62585ee9d04aecbce6cfa795e7d1b3d19efe881d7524a"
     },
     {
       "name": "govisit-get-collection-section",
@@ -54,7 +54,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:17ac005f28554330309a85cefd36d8ae2980a4cf07ca132c478a296c0154f19c"
+      "digest": "sha256:848ff16075e21ceb6d2bbfd4c97fe9d86c59a320fab05098403ed2363e4d0c69"
     },
     {
       "name": "govisit-get-destination-overview",
@@ -64,7 +64,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:86a9d391c06378b76ed0bb79085e036bae12dc393d9f8e6fcbcc3ec87ee19d79"
+      "digest": "sha256:03144419e43c5ff3ac3a0af9e5e64c60de945ecf0f1d863b59862e519e15bd4f"
     },
     {
       "name": "govisit-get-destination-section",
@@ -74,7 +74,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:9b6fa6750eb5c1768e51efeab2372dd7b3d5f21f38290a40950820ffeee97597"
+      "digest": "sha256:d1f9d12ad29d47dc06da3c35d8323c87746bf6f9c83f4430539e5eea9e7031df"
     },
     {
       "name": "govisit-get-documentation-page",
@@ -84,7 +84,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:3e345a281ba38b319d9be3a8ddffa72d9cf1f01adf893ff0caccda8632abc9ca"
+      "digest": "sha256:c2436328e89c131e40457c6d749b89f0a937cb14486485f301d713c1651afe99"
     },
     {
       "name": "govisit-get-page-faq",
@@ -94,7 +94,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:18de6492b96e52aaaf0db3a23810a5d43fcb5cd69870b7fc33894cd7804e7c17"
+      "digest": "sha256:faf103ca4491bd3c79743d3999f7476dfb526674b071ef4a21bf8adb1a48d835"
     },
     {
       "name": "govisit-get-place-overview",
@@ -104,7 +104,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:7310d0bbe88f004f0934d507114d40dca4f3c917ea5c257db8907f5e886b579a"
+      "digest": "sha256:a600cc3c2add9d970a5058c3e6409d22a28ed22575bd101be77aec01c665ae4b"
     },
     {
       "name": "govisit-get-place-section",
@@ -114,7 +114,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:5b70de7bb28ff31e0daa130fde018651435ccf8b2f7fc318db5787699d927687"
+      "digest": "sha256:e2dce4fb4578922cc53bd3f12df458a19931588837acb09681577c1a2ccf9048"
     },
     {
       "name": "govisit-get-place-visit-facts",
@@ -124,7 +124,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:be4c2dec53b36578550540d1f8b5e3fb7a31043d38801d6e5df2f80aba9d1527"
+      "digest": "sha256:fee3f9c767ff48d8ad779bc6df9e0ce45cef8ea20be75d8ddb02428220f1df69"
     },
     {
       "name": "govisit-get-statistics",
@@ -134,7 +134,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:040d51d0325997e4394d0aa23a306f56dbeccd088f581f788b2ffd20ddae0448"
+      "digest": "sha256:a1180d326fd92e08e2aae594ee921c40907a58e95ff2a3cbf091638f71f8e866"
     },
     {
       "name": "govisit-list-category-places",
@@ -144,7 +144,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:8b0f926b85c800e6e0b36176879d9e660c3b5c21fde27ecbc5274b4a5b37b782"
+      "digest": "sha256:fb6af8ad696e4cd4720ff2e5ebbe03171c85b17e9422c8971ee14afae10ffe18"
     },
     {
       "name": "govisit-list-collection-places",
@@ -154,7 +154,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:f044b9727bc875a61ec95c91c3424580a772ec3fa3cc3ac1b5cfecd76583ae11"
+      "digest": "sha256:87ff3ff0c07c804518623dac7ef59eb5a9f56eca00b87dd968029ca98fda87d9"
     },
     {
       "name": "govisit-list-destination-activities",
@@ -164,7 +164,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:92b18eeaeceb5843ff96cde2ac8fd4b9d2d8072d3524fbb534a54ef1ae7d6acd"
+      "digest": "sha256:270d641cb9ab42be87707502867554b96929195b46340efe6f0133d46e0de34a"
     },
     {
       "name": "govisit-list-destination-categories",
@@ -174,7 +174,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:0c178308db174744e4bb02567095c4d6eb158edffceeb6b8bd298be4fb162e91"
+      "digest": "sha256:54e026a2bf62f2f499fba0308de13e23fd8169ac016a7a25bcc913215eec826b"
     },
     {
       "name": "govisit-list-destination-highlights",
@@ -184,7 +184,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:04f76678c246ec483c5c8824b160c340b7c9af2418a5ce499cc1940f7aa2c12d"
+      "digest": "sha256:b70379052e7b3553d15242c12c430acd52f655f604e328030ee1a8131627adcd"
     },
     {
       "name": "govisit-list-destination-places",
@@ -194,7 +194,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:c3964152927abe63aa5047e07a89675832cf38f05d0d65a674536af1a7e72a2a"
+      "digest": "sha256:627e7c8d143e7114f61b60195580bb553861d81fc1db47da507f3a55a06e5bf2"
     },
     {
       "name": "govisit-list-related-places",
@@ -204,7 +204,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:c144ddc53bb5b7999b5f5a7d76c764fdc999a63d8a062828e31c2bbe96809724"
+      "digest": "sha256:5131f7a9999f5ea526f7a98df83affc4b1dbcba885303949bcf73a68eea7352a"
     },
     {
       "name": "govisit-search-blog-posts",
@@ -214,7 +214,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:ab092cfdda9cd689e7fa2fe59d1317889fab1d85887e039a8d7c93b2ef3586f1"
+      "digest": "sha256:010e681372c68fddc41fa41f758f29638e47f23225c7852e112b5824cdb047fd"
     },
     {
       "name": "govisit-search-destinations",
@@ -224,7 +224,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:7fbe58dd1ded8e70b961185d8044d0ec6780835d14114f954e1a7fb82edd5c0f"
+      "digest": "sha256:0af1101ae3d28c394c2a8b6d5b8ae419d7edc20df41dec29c80392555dadaeb9"
     },
     {
       "name": "govisit-search-documentation",
@@ -234,7 +234,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:d7301340ebe724c221a7f03a969e8f9c6c94bf3acc39f3af151dd71b58ff2a76"
+      "digest": "sha256:62ba76883b1cdacca210cc2a37246f5917f53d2ba82730c95a27e1ffc8c64677"
     },
     {
       "name": "govisit-search-places",
@@ -244,7 +244,7 @@
         "SKILL.md",
         "references/contract.json"
       ],
-      "digest": "sha256:2c0b77e6f6b824958d6d753f8892799a52c7f0d8db7fd045b757d89a376c4274"
+      "digest": "sha256:e4807e3a5452d8a06d31240f743f92fb03b27eacfa953e4fcb600b66c99333ee"
     }
   ]
 }

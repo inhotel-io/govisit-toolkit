@@ -419,6 +419,18 @@
               "$ref": "#/$defs/image"
             },
             "maxItems": 20
+          },
+          "keywords": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "maxItems": 10
           }
         },
         "required": [
@@ -432,7 +444,8 @@
           "updatedAt",
           "status",
           "authors",
-          "images"
+          "images",
+          "keywords"
         ],
         "additionalProperties": false
       },
@@ -484,6 +497,6 @@
     "readOnlyHint": true,
     "untrustedContentHint": true
   },
-  "sourceDigest": "sha256:61cad3cadd4f66ca0f003c8b3bb7def45b8b2dca7e1749b7b137cda1b04a9d1d",
-  "version": "1-61cad3cadd4f66ca"
+  "sourceDigest": "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697",
+  "version": "1-d1e56bc603df5552"
 }

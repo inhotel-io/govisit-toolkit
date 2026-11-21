@@ -165,11 +165,11 @@ claude --version
 On Windows, use the [official Claude Code installation guide](https://code.claude.com/docs/en/getting-started) for the PowerShell or Command Prompt installer. Then add the marketplace and install a plugin:
 
 ```sh
-claude plugin marketplace add inhotel-io/govisit-toolkit#v0.3.0
+claude plugin marketplace add inhotel-io/govisit-toolkit#v0.2.2
 claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 ```
 
-The marketplace command selects the immutable `v0.3.0` release tag.
+The marketplace command selects the immutable `v0.2.2` release tag.
 
 Codex:
 
@@ -180,7 +180,7 @@ npm install -g @openai/codex@latest
 ```
 
 ```sh
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.3.0
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.2
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
@@ -222,13 +222,13 @@ live prices or availability. The example performs reads and makes no reservation
 
 ## Updates and diagnostics
 
-To upgrade an existing Codex marketplace to release `v0.3.0`, remove and re-add
+To upgrade an existing Codex marketplace to release `v0.2.2`, remove and re-add
 it at the release tag, then install the selected package again. Existing plugin
 snapshots are updated by the final command:
 
 ```sh
 codex plugin marketplace remove govisit-toolkit
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.3.0
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.2
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
@@ -236,9 +236,9 @@ Use your audience package name in the last command. Re-adding an existing
 marketplace with a different `--ref` requires removing its old marketplace
 declaration first. Each marketplace entry reads its plugin from that checkout,
 so selecting a release tag also selects the plugin contents. For an exact commit,
-replace `v0.3.0` with the full reviewed commit SHA. Include `plugins/` if you use
+replace `v0.2.2` with the full reviewed commit SHA. Include `plugins/` if you use
 `--sparse`. To follow development changes explicitly, use `--ref main` for Codex
-or omit `#v0.3.0` from the Claude marketplace source.
+or omit `#v0.2.2` from the Claude marketplace source.
 
 For an existing Claude marketplace, run `claude plugin marketplace remove govisit-toolkit`,
 re-add the tagged source shown above, and reinstall the selected
