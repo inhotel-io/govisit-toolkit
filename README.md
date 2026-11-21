@@ -3,7 +3,6 @@
 [![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Listed on AgentSkillsHub](https://agentskillshub.dev/badges/listed-on-agentskillshub.svg)](https://agentskillshub.dev/skills/govisit-toolkit/)
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
-[![Featured in the Suede AI Directory](https://suedeai.directory/badges/featured.svg)](https://suedeai.directory/featured/#govisit)
 
 [![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg?theme=dark)](https://neuronto.com/ard-publishers/govisit.ai)
