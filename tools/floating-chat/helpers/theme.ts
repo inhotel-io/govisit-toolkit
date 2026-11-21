@@ -93,6 +93,22 @@ export const getThemeConfig = (settings: ThemeSettings) => {
           borderColor: overrides.dark,
         },
       },
+      // What the guest can send with one click. `QuickReplies` gives it the
+      // shape and colours of the guest's bubble; this is the rest of it.
+      bubble: {
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        whiteSpace: 'pre-wrap',
+        cursor: 'pointer',
+        transition: 'filter 0.2s',
+        '&:hover': {filter: 'brightness(0.92)'},
+        '&:active': {filter: 'brightness(0.85)'},
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'text',
+          outlineOffset: '2px',
+        },
+      },
       link: {
         cursor: 'pointer',
         outline: 0,

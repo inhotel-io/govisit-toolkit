@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, Flex} from 'theme-ui';
+import {Button, Flex} from 'theme-ui';
 import {motion} from 'framer-motion';
 import {bubbleShape} from './ChatMessageBody';
 import {QuickReply} from '../helpers/types';
@@ -40,36 +40,16 @@ const QuickReplies = ({
             transition={{duration: 0.2, ease: 'easeIn'}}
           >
             <Flex pl={4} mb={2} sx={{justifyContent: 'flex-end'}}>
-              <Box
-                as="button"
+              {/* The theme's `bubble` button: the chat's type, a pointer, a
+                  darker hover and press, and a ring for the keyboard. */}
+              <Button
                 type="button"
+                variant="bubble"
                 onClick={() => onSelect(reply)}
-                sx={{
-                  ...bubbleShape,
-                  ...colors,
-                  whiteSpace: 'pre-wrap',
-                  // A button's own frame, type and centred text give way to
-                  // the bubble's.
-                  appearance: 'none',
-                  border: 0,
-                  fontFamily: 'inherit',
-                  lineHeight: 'inherit',
-                  textAlign: 'left',
-                  // It is still a button: it answers the pointer and the
-                  // keyboard.
-                  cursor: 'pointer',
-                  transition: 'filter 0.2s',
-                  '&:hover': {filter: 'brightness(0.92)'},
-                  '&:active': {filter: 'brightness(0.85)'},
-                  '&:focus-visible': {
-                    outline: '2px solid',
-                    outlineColor: 'text',
-                    outlineOffset: '2px',
-                  },
-                }}
+                sx={{...bubbleShape, ...colors}}
               >
                 {text}
-              </Box>
+              </Button>
             </Flex>
           </motion.div>
         );
