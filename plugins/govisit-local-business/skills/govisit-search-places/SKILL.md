@@ -5,10 +5,10 @@ license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "search_places"
-  version: "1-61cad3cadd4f66ca"
+  version: "1-d1e56bc603df5552"
   contract-version: "1"
-  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.3.0/skills/govisit-search-places/SKILL.md"
-  source-digest: "sha256:61cad3cadd4f66ca0f003c8b3bb7def45b8b2dca7e1749b7b137cda1b04a9d1d"
+  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-search-places/SKILL.md"
+  source-digest: "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697"
 ---
 
 # Search places
@@ -33,7 +33,7 @@ SSE connection, cookies, or session is required.
 
 Read [references/contract.json](references/contract.json) for the exact input and
 output JSON schemas, supported fields, and defaults. On the website this reference
-is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.3.0/skills/govisit-search-places/references/contract.json.
+is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-search-places/references/contract.json.
 
 The HTTP default language is English and its default scope is all indexed records. There is no current page or inferred traveler location. Supply language and scope explicitly when the traveler has established them.
 
@@ -65,15 +65,15 @@ defaults above. Browser WebMCP uses `document.modelContext`, not an SSE server.
 
 ## Source and updates
 
-Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.3.0/skills/govisit-search-places/SKILL.md
+Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-search-places/SKILL.md
 
-Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.3.0/govisit-skill-search-places.tar.gz
+Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.2/govisit-skill-search-places.tar.gz
 
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-61cad3cadd4f66ca`; its source digest is
-`sha256:61cad3cadd4f66ca0f003c8b3bb7def45b8b2dca7e1749b7b137cda1b04a9d1d`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-d1e56bc603df5552`; its source digest is
+`sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

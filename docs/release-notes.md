@@ -1,4 +1,4 @@
-# GoVisit Toolkit v0.3.0
+# GoVisit Toolkit v0.2.2
 
 Adds two public blog skills to the All and Travel Planner packages:
 `govisit-search-blog-posts` searches eligible cards on a rendered company or
@@ -6,8 +6,8 @@ place blog index, and `govisit-get-blog-post` reads an article or one heading
 section. Both use the existing `/api/tools/v1/` interface and published
 `pagePath` context.
 
-Article results include public metadata, authors, images, language alternates,
-citations, rich content, FAQs and related posts. Content blocks preserve links,
+Article results include public metadata, nullable localized keywords, authors,
+images, language alternates, citations, rich content, FAQs and related posts. Content blocks preserve links,
 lists, tables, code, quotes, images, media, disclosures and text templates.
 Coverage flags report limits and unsupported content. Missing values remain
 null where the contract declares them nullable.
