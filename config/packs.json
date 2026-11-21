@@ -5,7 +5,7 @@
     "icon": "govisit.svg",
     "description": "Read published GoVisit travel information with all available toolkit skills.",
     "shortDescription": "Explore GoVisit travel data",
-    "longDescription": "Discover destinations and places, inspect published profiles and visit facts, and read GoVisit documentation and catalog statistics. Includes all 22 public read skills and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
+    "longDescription": "Discover destinations and places, inspect published profiles and visit facts, and read GoVisit blog articles, documentation and catalog statistics. Includes all 24 public read skills and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
     "include": "all",
     "exclude": [],
     "requires": []
@@ -16,7 +16,7 @@
     "icon": "travel-planner.svg",
     "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
     "shortDescription": "Research trips with GoVisit",
-    "longDescription": "Research travel ideas using GoVisit destination and place profiles, categories, collections, activities, and visit facts. Includes 18 public read skills for travel planners and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
+    "longDescription": "Research travel ideas using GoVisit destination and place profiles, categories, collections, activities, visit facts and published blog articles. Includes 20 public read skills for travel planners and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
     "include": "all",
     "exclude": [
       "govisit-get-statistics",

@@ -1,6 +1,6 @@
 {
   "name": "govisit-destination",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Find and inspect destination profiles and their published inventory. Destination updates are planned.",
   "author": {
     "name": "inHotel Sàrl"

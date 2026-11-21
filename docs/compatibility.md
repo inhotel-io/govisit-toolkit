@@ -1,5 +1,23 @@
 # Verification record
 
+## v0.3.0 candidate scope
+
+Checked locally on 2026-11-21. Canonical skills were exported from the reviewed
+GoVisit web source tree at public PR commit
+[`ecd9cc2e0e5d383f6f11624205a4acdfae40ba65`](https://github.com/inhotel-io/govisit-web/pull/679).
+The public commit tree was verified against the tested local source tree before
+recording it in `upstream.json`.
+
+| Component | Version | Observed result |
+|---|---|---|
+| Toolkit | 0.3.0 candidate | All 12 tests pass; build and generated-output checks pass |
+| Native selections | 0.3.0 candidate | All (24), Travel Planner (20), Destination (13), Local Business (10); blog readers appear in All and Travel Planner |
+| Candidate archives | 0.3.0 candidate | Local SHA-256, size, discovery and metadata verification passes for all 35 assets |
+| Hosted tools and client installs | 0.3.0 candidate | No new live client installation or production API conversation was performed for this candidate |
+
+No v0.3.0 tag or public release has been created, and website discovery has not
+been promoted. Earlier verification below applies to its named release.
+
 ## v0.2.1 packaging checks
 
 Checked on 2026-11-13 before publication, from release branch commit
