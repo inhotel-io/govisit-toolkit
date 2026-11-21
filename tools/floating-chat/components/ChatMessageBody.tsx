@@ -139,6 +139,16 @@ const ChatMessageAttachment = ({attachment}: {attachment: Attachment}) => {
   );
 };
 
+// The shape of a bubble: what a message is drawn in and, in `QuickReplies`,
+// what the guest can send with one click.
+export const bubbleShape = {
+  px: '14px',
+  py: 2,
+  borderRadius: '16px',
+  fontSize: '16px',
+  maxWidth: '80%',
+};
+
 type ChatMessageBodyProps = {
   className?: string;
   content: string;
@@ -161,10 +171,7 @@ const ChatMessageBody = ({
   tail,
 }: ChatMessageBodyProps) => {
   const parsedSx: SxStyleProp = {
-    px: '14px',
-    py: 2,
-    borderRadius: '16px',
-    fontSize: '16px',
+    ...bubbleShape,
     position: 'relative',
     ...(tail
       ? {
@@ -181,7 +188,6 @@ const ChatMessageBody = ({
           },
         }
       : {}),
-    maxWidth: '80%',
     p: {mb: 0},
     ul: {my: 2},
     ol: {my: 2},

@@ -7,7 +7,7 @@ import ChatMessageBody from './ChatMessageBody';
 import {Message, User} from '../helpers/types';
 import styles from './ChatMessage.module.css';
 import {AVATAR_LOAD_TIMEOUT_MS} from '../helpers/agent-card';
-import {isLightColor} from '../helpers/theme';
+import {guestBubbleColors, isLightColor} from '../helpers/theme';
 
 dayjs.extend(utc);
 
@@ -144,8 +144,8 @@ const ChatMessage = ({
   const timestamp = created ? formatRelativeTime(created) : null;
   // White on the accent colour and dark on the grey, as ever. On a colour the
   // look sets, the text and the time are whichever of the two reads.
-  const isGuestBubbleDark =
-    !guestBubbleColor || !isLightColor(guestBubbleColor);
+  const guestBubble = guestBubbleColors(guestBubbleColor);
+  const isGuestBubbleDark = guestBubble.isDark;
   const isAssistantBubbleDark = !isLightColor(assistantBubbleColor);
   // The styles know the time's colour on the chat's own two bubbles. `data-on`
   // names the bubble only where the look makes it the other kind.
@@ -268,17 +268,12 @@ const ChatMessage = ({
   );
 
   if (isMe) {
-    const isDarkBubble = isGuestBubbleDark;
     return (
       <Box pr={0} pl={4} pb={isLastInGroup ? 3 : 2}>
         <Flex sx={{justifyContent: 'flex-end'}}>
           <ChatMessageBody
-            className={isDarkBubble ? 'Text--white' : undefined}
-            sx={{
-              color: isDarkBubble ? 'background' : 'text',
-              bg: guestBubbleColor || 'primary',
-              whiteSpace: 'pre-wrap',
-            }}
+            className={isGuestBubbleDark ? 'Text--white' : undefined}
+            sx={{...guestBubble.sx, whiteSpace: 'pre-wrap'}}
             content={body}
             attachments={attachments}
             timestamp={timestampNode}

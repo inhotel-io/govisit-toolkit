@@ -55,8 +55,10 @@ const {
 const {guardedFetch} = require('../helpers/playground.ts');
 const library = require('../appearance-library.json');
 const {fetchAppearanceProfile} = require('../helpers/appearance-api.ts');
+const getThemeConfig = require('../helpers/theme.ts').default;
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
+const {ThemeProvider} = require('theme-ui');
 const ChatWindow = require('../components/ChatWindow.tsx').default;
 const ContactForm = require('../components/ContactForm.tsx').default;
 const Widget = require('../components/Widget.tsx').default;
@@ -1696,6 +1698,134 @@ test('the time under a message reads on its bubble', () => {
   assert.doesNotMatch(time({guestBubbleColor: '#0B6E4F'}, 2), /data-on=/);
   assert.match(time({assistantBubbleColor: '#1F2937'}, 3), /data-on="dark"/);
   assert.doesNotMatch(time({assistantBubbleColor: '#EEF2FF'}, 3), /data-on=/);
+});
+
+// The chat as a browser draws it: under the theme the widget gives it, where a
+// colour the theme names is the colour itself.
+const ACCENT = '#0b6e4f';
+const themed = (instance) =>
+  quietly(() =>
+    renderToStaticMarkup(
+      React.createElement(
+        ThemeProvider,
+        {theme: getThemeConfig({primary: ACCENT})},
+        instance.render()
+      )
+    )
+  );
+// What the element a pattern finds declares for itself, a later value in
+// front of an earlier one. The pattern's first group is the element's class.
+const declared = (markup, pattern) => {
+  const found = markup.match(pattern);
+  assert.ok(found, `nothing in the chat matches ${pattern}`);
+  const name = found[1].split(' ').find((part) => part.startsWith('css-'));
+  const rule = markup.match(new RegExp(`\\.${name}\\{([^}]*)\\}`));
+  assert.ok(rule, `the chat gives .${name} no style of its own`);
+  const values = {};
+  for (const declaration of rule[1].split(';')) {
+    const colon = declaration.indexOf(':');
+    if (colon > 0)
+      values[declaration.slice(0, colon)] = declaration.slice(colon + 1);
+  }
+  return {name, values};
+};
+// How a bubble looks: its fill, its text, its corners, the room around its
+// words, the size of its text and how wide it may grow.
+const bubbleLook = ({values}) => ({
+  fill: values.background || values['background-color'],
+  text: values.color,
+  corners: values['border-radius'],
+  room: ['top', 'right', 'bottom', 'left'].map(
+    (side) => values[`padding-${side}`]
+  ),
+  textSize: values['font-size'],
+  width: values['max-width'],
+  lines: values['white-space'],
+});
+// The colour a value names. The theme writes its own as `var(--name,#colour)`.
+const colour = (value) => (/^var\([^,]+,(.+)\)$/.exec(value) || [0, value])[1];
+const GUEST_BUBBLE = /<div data-chat-bubble="true" class="([^"]+)"><div class="Text--markdown[^"]*"><p><span[^>]*>Is breakfast included\?/;
+const buttonSaying = (words) =>
+  new RegExp(`<button[^>]*class="([^"]+)"[^>]*>${words}</button>`);
+const QUESTION = 'When is breakfast?';
+const QUESTION_BUTTON = buttonSaying('When is breakfast\\?');
+// The chat before the guest writes, offering a question, and after.
+const offering = (messages = {}) => {
+  const appearance = {
+    ...whole(),
+    messages: {...whole().messages, ...messages},
+  };
+  return {
+    before: themed(
+      chat(
+        {appearance, suggestions: [QUESTION]},
+        {messages: conversation().slice(0, 1)}
+      )
+    ),
+    after: themed(chat({appearance}, {messages: conversation().slice(0, 2)})),
+  };
+};
+
+test('a question the chat offers is drawn as the guest’s own message', () => {
+  const {before, after} = offering();
+  const question = bubbleLook(declared(before, QUESTION_BUTTON));
+  assert.deepEqual(question, bubbleLook(declared(after, GUEST_BUBBLE)));
+  // As the guest's messages are: white on the accent colour, round, at most
+  // four fifths of the list wide.
+  assert.equal(colour(question.fill), ACCENT);
+  assert.equal(colour(question.text), '#fff');
+  assert.equal(question.corners, '16px');
+  assert.equal(question.width, '80%');
+});
+
+test('a question follows the colour the look gives the guest’s messages', () => {
+  for (const [guestBubbleColor, text] of [
+    ['#FFF4CC', '#141414'],
+    ['#1F2937', '#fff'],
+  ]) {
+    const {before, after} = offering({guestBubbleColor});
+    const question = bubbleLook(declared(before, QUESTION_BUTTON));
+    assert.deepEqual(question, bubbleLook(declared(after, GUEST_BUBBLE)));
+    assert.equal(colour(question.fill), guestBubbleColor);
+    assert.equal(colour(question.text), text);
+  }
+});
+
+test('a question is still a button: in the chat’s own type, and it answers the pointer and the keyboard', () => {
+  const {before} = offering();
+  const {name, values} = declared(before, QUESTION_BUTTON);
+  // A button has a frame, a type and a centred text of its own; the question
+  // takes the chat's.
+  assert.equal(values.border, '0');
+  assert.equal(values['font-family'], 'inherit');
+  assert.equal(values['line-height'], 'inherit');
+  assert.equal(values['text-align'], 'left');
+  assert.equal(values.cursor, 'pointer');
+  for (const state of ['hover', 'active', 'focus-visible'])
+    assert.ok(
+      before.includes(`.${name}:${state}{`),
+      `a question does not change on ${state}`
+    );
+});
+
+test('a reply the assistant offers is drawn the same way', () => {
+  const [greeting, guest, answer] = conversation();
+  const markup = themed(
+    chat(
+      {appearance: whole()},
+      {
+        messages: [
+          greeting,
+          guest,
+          {...answer, quick_replies: [{text: 'Book a table', action: 'book'}]},
+        ],
+      }
+    )
+  );
+  assert.deepEqual(
+    bubbleLook(declared(markup, buttonSaying('Book a table'))),
+    bubbleLook(declared(markup, GUEST_BUBBLE))
+  );
 });
 
 test('the chat opens with the greeting of its look and follows it until the guest writes', async () => {

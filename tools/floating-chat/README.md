@@ -328,7 +328,10 @@ publishes.
   phone; an inHotel chat drawn from its settings keeps its line as before.
 - **The questions** a `Suggestions` part offers are the example questions of the
   agent's card. Without a profile, a card's chat offers three of them; an
-  inHotel chat drawn from its settings offers none.
+  inHotel chat drawn from its settings offers none. A click sends a question as
+  the guest's message, so each is drawn as that message: in the guest's bubble,
+  `guest_bubble_color` or else the accent colour. Replies an agent offers are
+  drawn the same way.
 - A value that is not of its prop's type is not drawn: the library's default
   stands in. Words in a language are cut to the length their prop takes; a
   phone, an address or a name that is too long is not taken at all. A link is
