@@ -20,3 +20,21 @@ test("owner audience packs ship overlapping readers before update skills are ava
   assert.ok(!Object.keys(output.generated).some(p=>p.startsWith(`plugins/${pack}/skills/govisit-update-`)));
  }
 });
+
+test("blog readers ship in All and Travel Planner while owner selections retain their scope", async () => {
+  const output = await buildToolkit({ root });
+  const manifest = JSON.parse(output.assets["release-manifest.json"]);
+  for (const [name, count, includesBlogs] of [["govisit", 24, true], ["govisit-travel-planner", 20, true], ["govisit-destination", 13, false], ["govisit-local-business", 10, false]]) {
+    const pack = manifest.plugins.find(pack => pack.name === name);
+    assert.equal(pack.skills.length, count, name);
+    for (const skill of ["govisit-get-blog-post", "govisit-search-blog-posts"]) {
+      assert.equal(pack.skills.includes(skill), includesBlogs, `${name}: ${skill}`);
+      if (includesBlogs) {
+        const contract = JSON.parse(output.generated[`plugins/${name}/skills/${skill}/references/contract.json`]);
+        assert.ok(contract.inputSchema.required.includes("pagePath"));
+        assert.equal(contract.annotations.readOnlyHint, true);
+        assert.equal(contract.endpoint, `https://govisit.ai/api/tools/v1/${contract.tool}`);
+      }
+    }
+  }
+});

@@ -92,7 +92,8 @@
             "type": "string"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "Published long destination description in the page language; empty when absent."
           },
           "region": {
             "type": "string"
@@ -137,13 +138,21 @@
               "null"
             ],
             "maxLength": 2048,
-            "description": "Published long overview in the page language; null when absent. Independent of the short description."
+            "description": "Legacy published overview field in the page language; null when absent."
+          },
+          "metaDescription": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Published search and page meta description in the page language; null when absent."
           }
         },
         "required": [
           "code",
           "name",
           "description",
+          "metaDescription",
           "country",
           "region",
           "type",
@@ -198,6 +207,6 @@
     "readOnlyHint": true,
     "untrustedContentHint": true
   },
-  "sourceDigest": "sha256:c49af023b65d166a756510a83fe95de27f16b096bfc488f5ceb92ad5355bdceb",
-  "version": "1-c49af023b65d166a"
+  "sourceDigest": "sha256:61cad3cadd4f66ca0f003c8b3bb7def45b8b2dca7e1749b7b137cda1b04a9d1d",
+  "version": "1-61cad3cadd4f66ca"
 }
