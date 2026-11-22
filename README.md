@@ -26,6 +26,7 @@
 [![Listed on PickAPlugin](https://pickaplugin.com/badge/govisit-toolkit.svg)](https://pickaplugin.com/p/govisit-toolkit)
 [![Listed on mcp.site](https://mcp.site/badge/govisit-tools)](https://mcp.site/servers/govisit-tools)
 [![mdr](https://markdownregistry.com/badge/art_mmm7uzzeoar7kmm2.svg)](https://markdownregistry.com/a/art_mmm7uzzeoar7kmm2)
+[![Security status by Agent Skills Hub](https://agentskillshub.top/badge/inhotel-io/govisit-toolkit.svg)](https://agentskillshub.top/skill/inhotel-io/govisit-toolkit/)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
