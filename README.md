@@ -33,6 +33,8 @@
 [![Listed on MCPIndex.ai](https://mcpindex.ai/api/v1/badge/ai-govisit-govisit-tools)](https://mcpindex.ai/server/ai-govisit-govisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-tools.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-mcp.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-mcp)
+[![Listed on AgentScout](https://agentscouthq.com/badges/listed-light.svg)](https://agentscouthq.com/tools/govisit-mcp-server.html)
+[![MCP tool check](https://lazaretto.dev/mcp-registry/ai-govisit-tools/badge.svg)](https://lazaretto.dev/mcp-registry/ai-govisit-tools)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
