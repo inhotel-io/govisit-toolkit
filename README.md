@@ -29,6 +29,7 @@
 [![mdr](https://markdownregistry.com/badge/art_mmm7uzzeoar7kmm2.svg)](https://markdownregistry.com/a/art_mmm7uzzeoar7kmm2)
 [![Security status by Agent Skills Hub](https://agentskillshub.top/badge/inhotel-io/govisit-toolkit.svg)](https://agentskillshub.top/skill/inhotel-io/govisit-toolkit/)
 [![GoVisit MCP Server on AI-Powered](https://ai-powered.com/badge/govisit-mcp-server.svg)](https://ai-powered.com/mcp/govisit-mcp-server/status)
+[![Lowdown](https://lowdown.art2meta.com/servers/ai.govisit/govisit-tools/badge.svg)](https://lowdown.art2meta.com/servers/ai.govisit/govisit-tools?ref=badge)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
