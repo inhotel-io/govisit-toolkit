@@ -1,5 +1,7 @@
 # GoVisit Toolkit
 
+[![Listed on mcpizy.com](https://mcpizy.com/badge.svg)](https://mcpizy.com/directory/govisit-mcp)
+
 [![GoVisit Tools on AI SEO Gazette](https://aiseogazette.com/badge.svg)](https://aiseogazette.com/tools/govisit-tools/?ref=badge)
 [![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Listed on AgentSkillsHub](https://agentskillshub.dev/badges/listed-on-agentskillshub.svg)](https://agentskillshub.dev/skills/govisit-toolkit/)
