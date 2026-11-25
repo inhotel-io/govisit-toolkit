@@ -1,14 +1,15 @@
 # GoVisit Toolkit
 
-[![Listed on mcpizy.com](https://mcpizy.com/badge.svg)](https://mcpizy.com/directory/govisit-mcp)
-
+[![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
+[![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
 [![GoVisit Tools on AI SEO Gazette](https://aiseogazette.com/badge.svg)](https://aiseogazette.com/tools/govisit-tools/?ref=badge)
+[![Listed on AgentScout](https://agentscouthq.com/badges/listed-light.svg)](https://agentscouthq.com/tools/govisit-mcp-server.html)
 [![GoVisit Tools on Muse Directory](https://musedirectory.ai/badge/govisit-tools.svg)](https://musedirectory.ai/connector/govisit-tools)
 [![Listed on AgentSkillsHub](https://agentskillshub.dev/badges/listed-on-agentskillshub.svg)](https://agentskillshub.dev/skills/govisit-toolkit/)
 [![Listed on HookMCP](https://hookmcp.com/badge.svg)](https://hookmcp.com)
+
 [![MCP handshake](https://www.influzer.ai/api/v1/probe/badge?slug=govisit-tools)](https://www.influzer.ai/mcp/probe?url=https%3A%2F%2Fgovisit.ai%2Fmcp)
 [![MCP status](https://mcp.aianytime.net/badge/govisit-tools.svg)](https://mcp.aianytime.net/s/govisit-tools/)
-
 [![MCP status](https://mcpi.app/servers/govisit-tools/badge.svg)](https://mcpi.app/servers/govisit-tools)
 [![govisit.ai on the Neuronto ARD Registry](https://neuronto.com/badge/govisit.ai.svg?theme=dark)](https://neuronto.com/ard-publishers/govisit.ai)
 [![MCP security](https://gateturbo.com/badge/scan/14b3623a-6c16-45c6-8bea-9b56a44e30aa)](https://gateturbo.com/report/14b3623a-6c16-45c6-8bea-9b56a44e30aa)
@@ -35,14 +36,11 @@
 [![Listed on MCPIndex.ai](https://mcpindex.ai/api/v1/badge/ai-govisit-govisit-tools)](https://mcpindex.ai/server/ai-govisit-govisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-tools.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-mcp.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-mcp)
-[![Listed on AgentScout](https://agentscouthq.com/badges/listed-light.svg)](https://agentscouthq.com/tools/govisit-mcp-server.html)
 [![MCP tool check](https://lazaretto.dev/mcp-registry/ai-govisit-tools/badge.svg)](https://lazaretto.dev/mcp-registry/ai-govisit-tools)
 [![MCP Score](https://nestdaddy.com/mcp/servers/ai-govisit-tools/score.svg)](https://nestdaddy.com/mcp/servers/ai-govisit-tools)
-[![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
 [![Indexed on TensorBlock MCP Index](https://mcp-index.tensorblock.co/v1/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9/badge.svg)](https://www.tensorblock.co/mcp/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9)
-[![NHS Agentic Readiness Score](https://nothumansearch.ai/badge/govisit.ai.svg)](https://nothumansearch.ai/site/govisit.ai)
 [![Suede AI Skills Directory: listed](https://suedeai.directory/inhotel-io/govisit-toolkit/badge.svg)](https://suedeai.directory/inhotel-io/govisit-toolkit/)
-[![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
+[![Listed on mcpizy.com](https://mcpizy.com/badge.svg)](https://mcpizy.com/directory/govisit-mcp)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
