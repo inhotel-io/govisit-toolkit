@@ -1,0 +1,11 @@
+{
+  "name": "govisit-toolkit",
+  "version": "0.2.2",
+  "description": "Connect Gemini CLI to GoVisit's hosted travel MCP server and 24 reusable Agent Skills.",
+  "mcpServers": {
+    "govisit": {
+      "url": "https://govisit.ai/mcp",
+      "type": "http"
+    }
+  }
+}
