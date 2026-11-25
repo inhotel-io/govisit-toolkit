@@ -1,6 +1,7 @@
 # GoVisit Toolkit
 
 [![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
+[![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
 [![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
 [![GoVisit Tools on AI SEO Gazette](https://aiseogazette.com/badge.svg)](https://aiseogazette.com/tools/govisit-tools/?ref=badge)
 [![Listed on AgentScout](https://agentscouthq.com/badges/listed-light.svg)](https://agentscouthq.com/tools/govisit-mcp-server.html)
