@@ -56,6 +56,15 @@ Claude Code/Codex packages, release tooling, and implementation resources for Go
 The [website documentation](https://govisit.ai/en/docs/developers/agent-skills/overview)
 explains each tool's inputs and interpretation limits.
 
+## Gemini CLI
+
+Install this repository as a Gemini CLI extension to connect the hosted GoVisit
+MCP server and load the bundled Agent Skills:
+
+```sh
+gemini extensions install https://github.com/inhotel-io/govisit-toolkit
+```
+
 ## Open-source tools
 
 | Tool | Purpose | Source and setup |
