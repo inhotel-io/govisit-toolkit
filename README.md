@@ -41,6 +41,7 @@
 [![Indexed on TensorBlock MCP Index](https://mcp-index.tensorblock.co/v1/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9/badge.svg)](https://www.tensorblock.co/mcp/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9)
 [![Suede AI Skills Directory: listed](https://suedeai.directory/inhotel-io/govisit-toolkit/badge.svg)](https://suedeai.directory/inhotel-io/govisit-toolkit/)
 [![Listed on mcpizy.com](https://mcpizy.com/badge.svg)](https://mcpizy.com/directory/govisit-mcp)
+[![Rated B by Anchor Terminal](https://www.anchorterminal.com/badges/govisit.svg)](https://www.anchorterminal.com/tools/govisit)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
