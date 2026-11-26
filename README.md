@@ -43,6 +43,7 @@
 [![Suede AI Skills Directory: listed](https://suedeai.directory/inhotel-io/govisit-toolkit/badge.svg)](https://suedeai.directory/inhotel-io/govisit-toolkit/)
 [![Listed on mcpizy.com](https://mcpizy.com/badge.svg)](https://mcpizy.com/directory/govisit-mcp)
 [![Rated B by Anchor Terminal](https://www.anchorterminal.com/badges/govisit.svg)](https://www.anchorterminal.com/tools/govisit)
+[![Tested on mcptest.io](https://mcptest.io/badge/server/govisit.svg)](https://mcptest.io/servers/govisit/)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
