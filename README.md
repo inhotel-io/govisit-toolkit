@@ -47,6 +47,7 @@
 [![ProtocolProbe](https://protocolprobe.com/api/v1/badge/ai.govisit/govisit-tools)](https://protocolprobe.com/mcp/servers/ai.govisit/govisit-tools)
 [![SkillMD](https://skillmd.com/badge/janpopovic/govisit-search-places.svg)](https://skillmd.com/skills/janpopovic/govisit-search-places)
 [![Skills Playground](https://skillsplayground.com/badges/author/inhotel-io.svg)](https://skillsplayground.com/skills/by/inhotel-io/)
+[![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/inhotel-io-govisit-search-places/badge)](https://www.skillsdirectory.com/skills/inhotel-io-govisit-search-places)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
