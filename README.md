@@ -48,6 +48,8 @@
 [![SkillMD](https://skillmd.com/badge/janpopovic/govisit-search-places.svg)](https://skillmd.com/skills/janpopovic/govisit-search-places)
 [![Skills Playground](https://skillsplayground.com/badges/author/inhotel-io.svg)](https://skillsplayground.com/skills/by/inhotel-io/)
 [![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/inhotel-io-govisit-search-places/badge)](https://www.skillsdirectory.com/skills/inhotel-io-govisit-search-places)
+[![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-mcp)](https://index.percall.dev/l/govisit-mcp.html)
+[![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-agent-skills)](https://index.percall.dev/l/govisit-agent-skills.html)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
