@@ -1,5 +1,7 @@
 # GoVisit Toolkit
 
+[![GoVisit Tools MCP connector](https://glama.ai/mcp/connectors/ai.govisit/tools/badges/score.svg)](https://glama.ai/mcp/connectors/ai.govisit/tools)
+
 [![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
 [![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
 [![GoVisit Tools on AI SEO Gazette](https://aiseogazette.com/badge.svg)](https://aiseogazette.com/tools/govisit-tools/?ref=badge)
@@ -332,4 +334,3 @@ of terms, attribution guidance, and handling of examples and submissions.
   source and applicable terms for any separately licensed fixtures or media.
 - Keep credentials, personal information, and confidential business data out of
   public issues, examples, and pull requests.
-
