@@ -1,7 +1,6 @@
 # GoVisit Toolkit
 
 [![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
-[![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
 [![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
 [![GoVisit Tools on AI SEO Gazette](https://aiseogazette.com/badge.svg)](https://aiseogazette.com/tools/govisit-tools/?ref=badge)
 [![Listed on AgentScout](https://agentscouthq.com/badges/listed-light.svg)](https://agentscouthq.com/tools/govisit-mcp-server.html)
@@ -37,7 +36,6 @@
 [![Listed on MCPIndex.ai](https://mcpindex.ai/api/v1/badge/ai-govisit-govisit-tools)](https://mcpindex.ai/server/ai-govisit-govisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-tools.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-tools)
 [![MCP Toplist](https://mcptoplist.com/badge/ai.govisit%2Fgovisit-mcp.svg)](https://mcptoplist.com/server/ai.govisit%2Fgovisit-mcp)
-[![MCP tool check](https://lazaretto.dev/mcp-registry/ai-govisit-tools/badge.svg)](https://lazaretto.dev/mcp-registry/ai-govisit-tools)
 [![MCP Score](https://nestdaddy.com/mcp/servers/ai-govisit-tools/score.svg)](https://nestdaddy.com/mcp/servers/ai-govisit-tools)
 [![Indexed on TensorBlock MCP Index](https://mcp-index.tensorblock.co/v1/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9/badge.svg)](https://www.tensorblock.co/mcp/servers/govisit-ai-en-docs-developers-mcp-overview-1bda30c9)
 [![Suede AI Skills Directory: listed](https://suedeai.directory/inhotel-io/govisit-toolkit/badge.svg)](https://suedeai.directory/inhotel-io/govisit-toolkit/)
@@ -51,6 +49,7 @@
 [![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-mcp)](https://index.percall.dev/l/govisit-mcp.html)
 [![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-agent-skills)](https://index.percall.dev/l/govisit-agent-skills.html)
 [![Agent Readability](https://index.percall.dev/badge.svg?slug=govisit-agent-skills&show=score)](https://index.percall.dev/l/govisit-agent-skills.html)
+[![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
