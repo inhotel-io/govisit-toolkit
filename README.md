@@ -52,6 +52,7 @@
 [![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-agent-skills)](https://index.percall.dev/l/govisit-agent-skills.html)
 [![Agent Readability](https://index.percall.dev/badge.svg?slug=govisit-agent-skills&show=score)](https://index.percall.dev/l/govisit-agent-skills.html)
 [![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
+[![Listed on AgentShare MCP Registry](https://img.shields.io/badge/AgentShare-MCP%20Registry-0ea5e9?style=flat-square)](https://agentshare.dev/registry/215)
 
 [GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
