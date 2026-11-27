@@ -49,6 +49,7 @@
 [![Skills Playground](https://skillsplayground.com/badges/author/inhotel-io.svg)](https://skillsplayground.com/skills/by/inhotel-io/)
 [![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/inhotel-io-govisit-search-places/badge)](https://www.skillsdirectory.com/skills/inhotel-io-govisit-search-places)
 [![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-mcp)](https://index.percall.dev/l/govisit-mcp.html)
+[![Agent Readability](https://index.percall.dev/badge.svg?slug=govisit-mcp&show=score)](https://index.percall.dev/l/govisit-mcp.html)
 [![AI Agent Ready](https://index.percall.dev/badge.svg?slug=govisit-agent-skills)](https://index.percall.dev/l/govisit-agent-skills.html)
 [![Agent Readability](https://index.percall.dev/badge.svg?slug=govisit-agent-skills&show=score)](https://index.percall.dev/l/govisit-agent-skills.html)
 [![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
