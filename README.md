@@ -1,6 +1,7 @@
 # GoVisit Toolkit
 
 [![GoVisit Tools MCP connector](https://glama.ai/mcp/connectors/ai.govisit/tools/badges/score.svg)](https://glama.ai/mcp/connectors/ai.govisit/tools)
+[![Claude & Codex plugin](https://claudecodexplugins.com/badge/inhotel-io/govisit-toolkit)](https://claudecodexplugins.com/plugins/inhotel-io/govisit-toolkit/govisit)
 
 [![Listed in the Wever Labs Agent Directory](https://weverlabs.com/directory/badge.svg?name=GoVisit%20Tools%20MCP)](https://weverlabs.com/directory/verify?name=GoVisit%20Tools%20MCP)
 [![Featured on TrustedMCP](https://trustedmcp.io/badge/s/1uptkm3dzjkssdoindn7.svg)](https://trustedmcp.io/l/1uptkm3dzjkssdoindn7)
