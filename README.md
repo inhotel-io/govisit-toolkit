@@ -1,5 +1,6 @@
 # GoVisit Toolkit
 [![SkillPass](https://api.skillpass.dev/skills/govisit-search-places/badge.svg)](https://skillpass.dev/skills/govisit-search-places)
+[![MCPpedia Score](https://mcppedia.org/api/badge/ai-govisit-govisit-tools)](https://mcppedia.org/s/ai-govisit-govisit-tools)
 
 [![GoVisit Tools MCP connector](https://glama.ai/mcp/connectors/ai.govisit/tools/badges/score.svg)](https://glama.ai/mcp/connectors/ai.govisit/tools)
 [![Claude & Codex plugin](https://claudecodexplugins.com/badge/inhotel-io/govisit-toolkit)](https://claudecodexplugins.com/plugins/inhotel-io/govisit-toolkit/govisit)
