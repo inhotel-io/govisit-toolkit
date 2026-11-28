@@ -1,3 +1,9 @@
+# GoVisit Toolkit v0.2.3
+
+Adds `govisit-search-availability` to All and Travel Planner. It reads provider-reported rates and availability for eligible one-room stays and can return a link to the hotel’s checkout. The underlying HTTP API stays on v1.
+
+Aligns descriptions across 25 skills and clarifies GoVisit’s travel and hospitality positioning. Packs contain 25 All, 21 Travel Planner, 13 Destination, and 10 Local Business skills.
+
 # GoVisit Toolkit v0.2.2
 
 Adds two public blog skills to the All and Travel Planner packages:

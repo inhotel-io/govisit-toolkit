@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "govisit-travel-planner",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Discover destinations and research places, categories, collections, and activities using GoVisit.",
   "author": {
     "name": "inHotel Sàrl"
@@ -14,7 +14,7 @@
       "interface": {
         "displayName": "GoVisit — Travel Planner",
         "shortDescription": "Research trips with GoVisit",
-        "longDescription": "Research travel ideas using GoVisit destination and place profiles, categories, collections, activities, visit facts and published blog articles. Includes 20 public read skills for travel planners and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
+        "longDescription": "Research destinations, places, collections, activities, and published blog articles. Check availability and rates for eligible hotels and continue at their checkout. Includes 21 public read skills for travel planning.",
         "developerName": "inHotel Sàrl",
         "category": "Travel",
         "capabilities": [

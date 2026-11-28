@@ -24,7 +24,7 @@ test("owner audience packs ship overlapping readers before update skills are ava
 test("blog readers ship in All and Travel Planner while owner selections retain their scope", async () => {
   const output = await buildToolkit({ root });
   const manifest = JSON.parse(output.assets["release-manifest.json"]);
-  for (const [name, count, includesBlogs] of [["govisit", 24, true], ["govisit-travel-planner", 20, true], ["govisit-destination", 13, false], ["govisit-local-business", 10, false]]) {
+  for (const [name, count, includesBlogs] of [["govisit", 25, true], ["govisit-travel-planner", 21, true], ["govisit-destination", 13, false], ["govisit-local-business", 10, false]]) {
     const pack = manifest.plugins.find(pack => pack.name === name);
     assert.equal(pack.skills.length, count, name);
     for (const skill of ["govisit-get-blog-post", "govisit-search-blog-posts"]) {

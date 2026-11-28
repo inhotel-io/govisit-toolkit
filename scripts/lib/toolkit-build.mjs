@@ -101,7 +101,7 @@ export async function buildToolkit({ root, release, packs, revision } = {}) {
     assets[`govisit-skills-${label}.tar.gz`] = createSkillArchive(bundle);
     selected.push({ ...pack, members });
   }
-  const marketplace = { name: "govisit-toolkit", description: "GoVisit travel discovery skills and native agent packages.", owner: { name: "inHotel Sàrl" }, plugins: selected.map(p => ({ name: p.name, source: `./plugins/${p.name}`, description: p.description })) };
+  const marketplace = { name: "govisit-toolkit", description: "AI agent tools and skills for travel and hospitality. Discover destinations, places, and experiences, answer visitor questions, and find booking options where supported.", owner: { name: "inHotel Sàrl" }, plugins: selected.map(p => ({ name: p.name, source: `./plugins/${p.name}`, description: p.description })) };
   generated[".claude-plugin/marketplace.json"] = json(marketplace);
   generated[".agents/plugins/marketplace.json"] = json({ name: "govisit-toolkit", interface: { displayName: "GoVisit Toolkit" }, plugins: selected.map(p => ({ name: p.name, source: { source: "local", path: `./plugins/${p.name}` }, policy: { installation: "AVAILABLE", authentication: "ON_USE" }, category: "Travel" })) });
   const marketplaceIcon = await readFile(path.join(root, "config/plugin-icons/marketplace.svg"), "utf8");

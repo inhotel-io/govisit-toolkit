@@ -1,19 +1,19 @@
 ---
 name: "govisit-get-blog-post"
-description: "Read bounded public metadata and rich structured content from the current blog article. Use when an agent needs this public GoVisit page evidence through HTTP."
+description: "Read the current GoVisit blog article or a selected section. Use it to extract the article's published content and context, including available FAQs and related posts. Returns structured content with source and coverage information."
 license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "get_blog_post"
-  version: "1-d1e56bc603df5552"
+  version: "1-7907965bb88a5107"
   contract-version: "1"
-  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-blog-post/SKILL.md"
-  source-digest: "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697"
+  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-blog-post/SKILL.md"
+  source-digest: "sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f"
 ---
 
 # Read blog post
 
-Read bounded public metadata and rich structured content from the current blog article. Use when an agent needs this public GoVisit page evidence through HTTP.
+Read the current GoVisit blog article or a selected section. Use it to extract the article's published content and context, including available FAQs and related posts. Returns structured content with source and coverage information.
 
 ## Call the tool
 
@@ -29,7 +29,7 @@ SSE connection, cookies, or session is required.
 
 Read [references/contract.json](references/contract.json) for the exact input and
 output JSON schemas, supported fields, and defaults. On the website this reference
-is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-blog-post/references/contract.json.
+is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-blog-post/references/contract.json.
 
 The HTTP body requires pagePath plus the tool arguments. Use a canonical GoVisit pathname with no origin, query or fragment. Language and scope come from that public page. Browser WebMCP obtains this context from the loaded page and does not take pagePath. No inferred traveler location or browser session is used.
 
@@ -59,15 +59,15 @@ defaults above. Browser WebMCP uses `document.modelContext`, not an SSE server.
 
 ## Source and updates
 
-Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-blog-post/SKILL.md
+Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-blog-post/SKILL.md
 
-Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.2/govisit-skill-get-blog-post.tar.gz
+Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.3/govisit-skill-get-blog-post.tar.gz
 
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-d1e56bc603df5552`; its source digest is
-`sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-7907965bb88a5107`; its source digest is
+`sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

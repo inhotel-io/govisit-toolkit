@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "govisit-local-business",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Find and inspect business profiles and their local destination context. Place updates are planned.",
   "author": {
     "name": "inHotel Sàrl"

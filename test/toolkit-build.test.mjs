@@ -20,8 +20,8 @@ test("native packages are complete, selected once, and archives match approved d
     const pluginEntries = await readdir(path.join(dir, "plugins"), { withFileTypes: true });
     assert.deepEqual(pluginEntries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort(), ["assets", "govisit", "govisit-destination", "govisit-local-business", "govisit-travel-planner"]);
     assert.match(await readFile(path.join(dir, "plugins/assets/marketplace.svg"), "utf8"), /^<svg\b/);
-    assert.equal((await readdir(path.join(dir, "plugins/govisit/skills"))).length, 24);
-    assert.equal((await readdir(path.join(dir, "plugins/govisit-travel-planner/skills"))).length, 20);
+    assert.equal((await readdir(path.join(dir, "plugins/govisit/skills"))).length, 25);
+    assert.equal((await readdir(path.join(dir, "plugins/govisit-travel-planner/skills"))).length, 21);
     const portable = JSON.parse(await readFile(path.join(dir, "plugins/govisit/plugin.json")));
     const claude = JSON.parse(await readFile(path.join(dir, "plugins/govisit/.claude-plugin/plugin.json")));
     assert.equal(portable.name, claude.name); assert.equal(portable.version, JSON.parse(await readFile(path.join(dir, "config/release.json"))).tag.slice(1));

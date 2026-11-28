@@ -260,6 +260,7 @@
                 "maxItems": 20
               },
               "keywords": {
+                "description": "Localized topics in editorial order. Aim for 6–10 distinct phrases of 1–4 words, each at most 48 Unicode code points. Null means uncurated and an empty array means explicitly none.",
                 "type": [
                   "array",
                   "null"
@@ -267,7 +268,7 @@
                 "items": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 100
+                  "maxLength": 48
                 },
                 "maxItems": 10
               }
@@ -640,6 +641,7 @@
             "maxItems": 20
           },
           "keywords": {
+            "description": "Localized topics in editorial order. Aim for 6–10 distinct phrases of 1–4 words, each at most 48 Unicode code points. Null means uncurated and an empty array means explicitly none.",
             "type": [
               "array",
               "null"
@@ -647,7 +649,7 @@
             "items": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 100
+              "maxLength": 48
             },
             "maxItems": 10
           }
@@ -1592,6 +1594,6 @@
     "readOnlyHint": true,
     "untrustedContentHint": true
   },
-  "sourceDigest": "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697",
-  "version": "1-d1e56bc603df5552"
+  "sourceDigest": "sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f",
+  "version": "1-7907965bb88a5107"
 }
