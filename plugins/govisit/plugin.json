@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "govisit",
-  "version": "0.2.2",
-  "description": "Read published GoVisit travel information with all available toolkit skills.",
+  "version": "0.2.3",
+  "description": "AI agent tools and skills for travel and hospitality. Discover destinations, places, and experiences, answer visitor questions, and find booking options where supported.",
   "author": {
     "name": "inHotel Sàrl"
   },
@@ -13,8 +13,8 @@
     "com.openai": {
       "interface": {
         "displayName": "GoVisit — All skills",
-        "shortDescription": "Explore GoVisit travel data",
-        "longDescription": "Discover destinations and places, inspect published profiles and visit facts, and read GoVisit blog articles, documentation and catalog statistics. Includes all 24 public read skills and requires no GoVisit API key. Published information does not establish live prices or availability. This package cannot edit profiles or make reservations.",
+        "shortDescription": "GoVisit travel and hospitality",
+        "longDescription": "Discover destinations and places, inspect published profiles and visit facts, and read GoVisit articles, documentation, and statistics. Check hotel availability and rates or follow a provider checkout link where supported. Includes all 25 read skills.",
         "developerName": "inHotel Sàrl",
         "category": "Travel",
         "capabilities": [

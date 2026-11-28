@@ -1,19 +1,19 @@
 ---
 name: "govisit-list-related-places"
-description: "Find bounded, page-local related place cards using optional published-field filters. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision."
+description: "Browse or filter the related place cards shown on a GoVisit place profile. Use it to discover published nearby suggestions around the selected place and follow their profile links. Results cover the related places featured on that page."
 license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "list_related_places"
-  version: "1-d1e56bc603df5552"
+  version: "1-4c661d6aa7ac941c"
   contract-version: "1"
-  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-related-places/SKILL.md"
-  source-digest: "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697"
+  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-related-places/SKILL.md"
+  source-digest: "sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f"
 ---
 
 # Get related places
 
-Find bounded, page-local related place cards using optional published-field filters. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.
+Browse or filter the related place cards shown on a GoVisit place profile. Use it to discover published nearby suggestions around the selected place and follow their profile links. Results cover the related places featured on that page.
 
 ## Call the tool
 
@@ -30,7 +30,7 @@ SSE connection, cookies, or session is required.
 
 Read [references/contract.json](references/contract.json) for the exact input and
 output JSON schemas, supported fields, and defaults. On the website this reference
-is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-related-places/references/contract.json.
+is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-related-places/references/contract.json.
 
 The HTTP body requires pagePath plus the tool arguments. Use a canonical GoVisit pathname with no origin, query or fragment. Language and scope come from that public page. Browser WebMCP obtains this context from the loaded page and does not take pagePath. No inferred traveler location or browser session is used.
 
@@ -62,15 +62,15 @@ defaults above. Browser WebMCP uses `document.modelContext`, not an SSE server.
 
 ## Source and updates
 
-Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-related-places/SKILL.md
+Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-related-places/SKILL.md
 
-Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.2/govisit-skill-list-related-places.tar.gz
+Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.3/govisit-skill-list-related-places.tar.gz
 
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-d1e56bc603df5552`; its source digest is
-`sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-4c661d6aa7ac941c`; its source digest is
+`sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

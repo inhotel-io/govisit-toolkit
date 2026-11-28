@@ -1,6 +1,6 @@
 {
   "name": "govisit-toolkit",
-  "description": "GoVisit travel discovery skills and native agent packages.",
+  "description": "AI agent tools and skills for travel and hospitality. Discover destinations, places, and experiences, answer visitor questions, and find booking options where supported.",
   "owner": {
     "name": "inHotel Sàrl"
   },
@@ -8,7 +8,7 @@
     {
       "name": "govisit",
       "source": "./plugins/govisit",
-      "description": "Read published GoVisit travel information with all available toolkit skills."
+      "description": "AI agent tools and skills for travel and hospitality. Discover destinations, places, and experiences, answer visitor questions, and find booking options where supported."
     },
     {
       "name": "govisit-travel-planner",

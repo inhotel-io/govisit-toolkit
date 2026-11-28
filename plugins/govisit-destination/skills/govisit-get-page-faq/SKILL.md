@@ -1,19 +1,19 @@
 ---
 name: "govisit-get-page-faq"
-description: "Read the published questions and answers on the selected blog or documentation article. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision."
+description: "Read the published questions and answers on the current GoVisit blog or documentation page. Use it to find an answer already provided by that page. An optional search narrows the returned entries, which include links back to their source."
 license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "get_page_faq"
-  version: "1-d1e56bc603df5552"
+  version: "1-4c661d6aa7ac941c"
   contract-version: "1"
-  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-page-faq/SKILL.md"
-  source-digest: "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697"
+  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-page-faq/SKILL.md"
+  source-digest: "sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f"
 ---
 
 # Read published page FAQs
 
-Read the published questions and answers on the selected blog or documentation article. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.
+Read the published questions and answers on the current GoVisit blog or documentation page. Use it to find an answer already provided by that page. An optional search narrows the returned entries, which include links back to their source.
 
 ## Call the tool
 
@@ -29,7 +29,7 @@ SSE connection, cookies, or session is required.
 
 Read [references/contract.json](references/contract.json) for the exact input and
 output JSON schemas, supported fields, and defaults. On the website this reference
-is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-page-faq/references/contract.json.
+is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-page-faq/references/contract.json.
 
 The HTTP body requires pagePath plus the tool arguments. Use a canonical GoVisit pathname with no origin, query or fragment. Language and scope come from that public page. Browser WebMCP obtains this context from the loaded page and does not take pagePath. No inferred traveler location or browser session is used.
 
@@ -59,15 +59,15 @@ defaults above. Browser WebMCP uses `document.modelContext`, not an SSE server.
 
 ## Source and updates
 
-Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-get-page-faq/SKILL.md
+Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-get-page-faq/SKILL.md
 
-Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.2/govisit-skill-get-page-faq.tar.gz
+Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.3/govisit-skill-get-page-faq.tar.gz
 
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-d1e56bc603df5552`; its source digest is
-`sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-4c661d6aa7ac941c`; its source digest is
+`sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

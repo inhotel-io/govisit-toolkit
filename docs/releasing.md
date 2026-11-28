@@ -38,11 +38,11 @@ draft and deliberately stops before public publication. Existing releases cause
 creation to fail; an existing tag must resolve to the exact build commit. There is no clobber/update path.
 
 After reviewing the draft and immutable-release setting, publish it using GitHub
-or `gh release edit v0.2.2 --draft=false --repo inhotel-io/govisit-toolkit`.
+or `gh release edit v0.2.3 --draft=false --repo inhotel-io/govisit-toolkit`.
 Then run:
 
 ```sh
-gh release verify v0.2.2 --repo inhotel-io/govisit-toolkit
+gh release verify v0.2.3 --repo inhotel-io/govisit-toolkit
 npm run verify:release
 ```
 

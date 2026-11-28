@@ -55,7 +55,7 @@
 [![Skillstore security assessment](https://skillstore.io/badges/skills/inhotel-io-govisit-search-places/security.svg)](https://skillstore.io/skills/inhotel-io-govisit-search-places?utm_source=security_passport_badge)
 [![Listed on AgentShare MCP Registry](https://img.shields.io/badge/AgentShare-MCP%20Registry-0ea5e9?style=flat-square)](https://agentshare.dev/registry/215)
 
-[GoVisit](https://govisit.ai) is a travel platform that helps people and AI agents
+[GoVisit](https://govisit.ai) is a travel and hospitality platform that helps people and AI agents
 discover destinations, local businesses, and experiences. It brings together
 published destination and business profiles so travelers can explore what places
 offer and local businesses can make their services easier to find and understand.
@@ -64,7 +64,7 @@ Tools and resources for using [GoVisit](https://govisit.ai) with AI agents and
 coding assistants, including Claude Code, Codex, GitHub Copilot, Cursor, and other
 Agent Skills-compatible tools.
 
-This repository contains open-source tools, 24 portable read skills, native
+This repository contains open-source tools, 25 portable read skills, native
 Claude Code/Codex packages, release tooling, and implementation resources for GoVisit.
 The [website documentation](https://govisit.ai/en/docs/developers/agent-skills/overview)
 explains each tool's inputs and interpretation limits.
@@ -88,12 +88,16 @@ Each tool has its own dependencies, build, and deployment instructions. See
 [tools/README.md](tools/README.md) for the directory conventions. Agent skills and
 native plugins below are installed separately from these applications.
 
+## Hotel availability
+
+Use `govisit-search-availability` for dates, rates, and a checkout link where a hotel has an eligible provider connection. Provider support varies by property and itinerary. The hotel handles reservations and payments.
+
 ## Choose a package
 
 | Audience | Available package | Contents |
 | --- | --- | --- |
-| All | `govisit` | All 24 public read skills, including blog articles, documentation and catalog statistics |
-| Travel Planner | `govisit-travel-planner` | 20 destination, place, category, collection, activity and blog readers/searches |
+| All | `govisit` | All 25 public read skills, including hotel availability where supported |
+| Travel Planner | `govisit-travel-planner` | 21 skills for destinations, places, activities, articles, and hotel availability |
 | Destination | `govisit-destination` | 13 skills to find and inspect destination profiles and their published inventory; Update destination is planned |
 | Local Business | `govisit-local-business` | 10 skills to find and inspect place profiles and their local context; Update place is planned |
 
@@ -132,7 +136,7 @@ npx skills add inhotel-io/govisit-toolkit --skill '*'
 ```
 
 The portable skills are the shared route for compatible AI tools. For an
-explicit target, install all 24 skills for GitHub Copilot or Cursor:
+explicit target, install all 25 skills for GitHub Copilot or Cursor:
 
 ```sh
 npx skills add inhotel-io/govisit-toolkit --skill '*' --agent github-copilot
@@ -203,11 +207,11 @@ claude --version
 On Windows, use the [official Claude Code installation guide](https://code.claude.com/docs/en/getting-started) for the PowerShell or Command Prompt installer. Then add the marketplace and install a plugin:
 
 ```sh
-claude plugin marketplace add inhotel-io/govisit-toolkit#v0.2.2
+claude plugin marketplace add inhotel-io/govisit-toolkit#v0.2.3
 claude plugin install govisit-travel-planner@govisit-toolkit --scope project
 ```
 
-The marketplace command selects the immutable `v0.2.2` release tag.
+The marketplace command selects the immutable `v0.2.3` release tag.
 
 Codex:
 
@@ -218,7 +222,7 @@ npm install -g @openai/codex@latest
 ```
 
 ```sh
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.2
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.3
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
@@ -260,13 +264,13 @@ live prices or availability. The example performs reads and makes no reservation
 
 ## Updates and diagnostics
 
-To upgrade an existing Codex marketplace to release `v0.2.2`, remove and re-add
+To upgrade an existing Codex marketplace to release `v0.2.3`, remove and re-add
 it at the release tag, then install the selected package again. Existing plugin
 snapshots are updated by the final command:
 
 ```sh
 codex plugin marketplace remove govisit-toolkit
-codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.2
+codex plugin marketplace add inhotel-io/govisit-toolkit --ref v0.2.3
 codex plugin add govisit-travel-planner@govisit-toolkit
 ```
 
@@ -274,9 +278,9 @@ Use your audience package name in the last command. Re-adding an existing
 marketplace with a different `--ref` requires removing its old marketplace
 declaration first. Each marketplace entry reads its plugin from that checkout,
 so selecting a release tag also selects the plugin contents. For an exact commit,
-replace `v0.2.2` with the full reviewed commit SHA. Include `plugins/` if you use
+replace `v0.2.3` with the full reviewed commit SHA. Include `plugins/` if you use
 `--sparse`. To follow development changes explicitly, use `--ref main` for Codex
-or omit `#v0.2.2` from the Claude marketplace source.
+or omit `#v0.2.3` from the Claude marketplace source.
 
 For an existing Claude marketplace, run `claude plugin marketplace remove govisit-toolkit`,
 re-add the tagged source shown above, and reinstall the selected

@@ -1,19 +1,19 @@
 ---
 name: "govisit-list-destination-categories"
-description: "Read the published category projection shown on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision."
+description: "List the categories shown on a GoVisit destination page. Use it to see how that destination organizes its places and choose a category to explore next. Returns published labels and codes with parent relationships and counts where available."
 license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "list_destination_categories"
-  version: "1-d1e56bc603df5552"
+  version: "1-4c661d6aa7ac941c"
   contract-version: "1"
-  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-destination-categories/SKILL.md"
-  source-digest: "sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697"
+  canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-destination-categories/SKILL.md"
+  source-digest: "sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f"
 ---
 
 # Get destination categories
 
-Read the published category projection shown on the destination page. Use when an agent needs this published GoVisit evidence through HTTP for an integration or travel decision.
+List the categories shown on a GoVisit destination page. Use it to see how that destination organizes its places and choose a category to explore next. Returns published labels and codes with parent relationships and counts where available.
 
 ## Call the tool
 
@@ -29,7 +29,7 @@ SSE connection, cookies, or session is required.
 
 Read [references/contract.json](references/contract.json) for the exact input and
 output JSON schemas, supported fields, and defaults. On the website this reference
-is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-destination-categories/references/contract.json.
+is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-destination-categories/references/contract.json.
 
 The HTTP body requires pagePath plus the tool arguments. Use a canonical GoVisit pathname with no origin, query or fragment. Language and scope come from that public page. Browser WebMCP obtains this context from the loaded page and does not take pagePath. No inferred traveler location or browser session is used.
 
@@ -59,15 +59,15 @@ defaults above. Browser WebMCP uses `document.modelContext`, not an SSE server.
 
 ## Source and updates
 
-Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.2/skills/govisit-list-destination-categories/SKILL.md
+Canonical skill: https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-list-destination-categories/SKILL.md
 
-Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.2/govisit-skill-list-destination-categories.tar.gz
+Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/download/v0.2.3/govisit-skill-list-destination-categories.tar.gz
 
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-d1e56bc603df5552`; its source digest is
-`sha256:d1e56bc603df5552e701ac12614e9f99620b9ca8a11fb99cffb38315b010d697`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-4c661d6aa7ac941c`; its source digest is
+`sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.
