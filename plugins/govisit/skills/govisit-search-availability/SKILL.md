@@ -5,10 +5,10 @@ license: MIT
 metadata:
   author: "GoVisit.ai"
   tool: "search_availability"
-  version: "1-4c661d6aa7ac941c"
+  version: "1-7907965bb88a5107"
   contract-version: "1"
   canonical-url: "https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.2.3/skills/govisit-search-availability/SKILL.md"
-  source-digest: "sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f"
+  source-digest: "sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f"
 ---
 
 # Search availability
@@ -38,7 +38,7 @@ is available at https://raw.githubusercontent.com/inhotel-io/govisit-toolkit/v0.
 The HTTP body requires pagePath plus the tool arguments. Use a canonical GoVisit pathname with no origin, query or fragment. Language and scope come from that public page. Browser WebMCP obtains this context from the loaded page and does not take pagePath. No inferred traveler location or browser session is used.
 
 - Use an actual GoVisit hotel profile URL. A supported capability is determined by the property’s connected provider. An unsupported itinerary should not be replaced with different occupancy, dates, or currency.
-- Read status and observedAt. A returned observation can be up to four hours old. Treat offers as provider-reported estimates and make no availability claim for unsupported or unavailable results.
+- Read status, observedAt and warnings. A returned observation can be up to four hours old. If a warning flags currency or occupancy, tell the traveler to confirm the price, currency and guest details in checkout before relying on the quote.
 - Show bookingUrl only when supplied. If bookingUrlScope is dates, tell the traveler to recheck guest details on the provider site. Final price, availability, and terms are confirmed by the hotel checkout.
 
 ## Interpret the response
@@ -70,8 +70,8 @@ Downloadable package: https://github.com/inhotel-io/govisit-toolkit/releases/dow
 Discovery index: https://govisit.ai/.well-known/agent-skills/index.json
 
 This package was generated from GoVisit's reviewed tool catalog, shared template,
-and implementation sources. Its version is `1-4c661d6aa7ac941c`; its source digest is
-`sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f`. The index publishes the downloadable package's SHA-256 digest.
+and implementation sources. Its version is `1-7907965bb88a5107`; its source digest is
+`sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f`. The index publishes the downloadable package's SHA-256 digest.
 For updates, refresh this whole skill directory from the canonical source using
 your installer's update mechanism. If this is a directory submission, replace it
 with the freshly generated package; do not edit the copied contract independently.

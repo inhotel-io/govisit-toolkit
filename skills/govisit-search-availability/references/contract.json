@@ -52,7 +52,8 @@
           "CAD",
           "GBP",
           "AUD",
-          "JPY"
+          "JPY",
+          "CZK"
         ],
         "default": "EUR",
         "description": "Requested quote currency. Defaults to EUR. Unsupported currencies are returned without substitution."
@@ -114,7 +115,8 @@
               "CAD",
               "GBP",
               "AUD",
-              "JPY"
+              "JPY",
+              "CZK"
             ],
             "default": "EUR"
           }
@@ -177,7 +179,8 @@
                     "CAD",
                     "GBP",
                     "AUD",
-                    "JPY"
+                    "JPY",
+                    "CZK"
                   ]
                 }
               },
@@ -203,7 +206,8 @@
                     "CAD",
                     "GBP",
                     "AUD",
-                    "JPY"
+                    "JPY",
+                    "CZK"
                   ]
                 }
               },
@@ -229,7 +233,8 @@
                     "CAD",
                     "GBP",
                     "AUD",
-                    "JPY"
+                    "JPY",
+                    "CZK"
                   ]
                 }
               },
@@ -275,6 +280,17 @@
       "retryAfter": {
         "type": "integer",
         "minimum": 1
+      },
+      "warnings": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "enum": [
+            "price_currency_unverified",
+            "occupancy_unverified"
+          ]
+        },
+        "description": "Pilot provider caveats. Verify the reported currency, final price and guest occupancy at checkout."
       }
     },
     "required": [
@@ -367,6 +383,6 @@
     "openWorldHint": true,
     "untrustedContentHint": true
   },
-  "sourceDigest": "sha256:4c661d6aa7ac941ca9e5cfdbd621e113d109c5168b21688db5fc20030285bd2f",
-  "version": "1-4c661d6aa7ac941c"
+  "sourceDigest": "sha256:7907965bb88a5107bf84c6b01972a00fe47e834b3eddcace4d82779ed8c7ce4f",
+  "version": "1-7907965bb88a5107"
 }
